@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Assets/Logo.png" width="200">
+  <img src="Assets/Logo.png" width="100%">
 </p>
 # ⚽ Jogo
 
