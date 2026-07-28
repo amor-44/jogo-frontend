@@ -1,6 +1,7 @@
 <p align="center">
   <img src="Assets/Logo.png" width="100%">
 </p>
+
 # ⚽ Jogo
 
 > AI-Powered Football Performance Analysis & Talent Discovery Platform
