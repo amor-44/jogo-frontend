@@ -1,0 +1,31 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="docker-compose.yml" />
+    <File Path="Dockerfile" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Jogo.Api/Jogo.Api.csproj" />
+    <Project Path="src/Jogo.Application/Jogo.Application.csproj" />
+    <Project Path="src/Jogo.Contracts/Jogo.Contracts.csproj" />
+    <Project Path="src/Jogo.Domain/Jogo.Domain.csproj" />
+    <Project Path="src/Jogo.Infrastructure/Jogo.Infrastructure.csproj" />
+  </Folder>
+  <!-- <Folder Name="/tests/">
+    <Project Path="tests/Jogo.Api.IntegrationTests/Jogo.Api.IntegrationTests.csproj" />
+    <Project Path="tests/Jogo.Application.SubcutaneousTests/Jogo.Application.SubcutaneousTests.csproj" />
+    <Project Path="tests/Jogo.Application.UnitTests/Jogo.Application.UnitTests.csproj" />
+    <Project Path="tests/Jogo.Domain.UnitTests/Jogo.Domain.UnitTests.csproj" />
+    <Project Path="tests/Jogo.Tests.Common/Jogo.Tests.Common.csproj" />
+  </Folder> -->
+</Solution>
