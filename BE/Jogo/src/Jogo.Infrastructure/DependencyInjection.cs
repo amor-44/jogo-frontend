@@ -1,6 +1,7 @@
 using System.Text;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Infrastructure.Data;
+using Jogo.Infrastructure.Data.Identity;
 using Jogo.Infrastructure.Data.Interceptors;
 using Jogo.Infrastructure.Identity;
 using Jogo.Infrastructure.Services;
