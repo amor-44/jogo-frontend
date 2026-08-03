@@ -6,5 +6,6 @@ public class ContactUnlock
     public Guid PlayerId { get; set; }
     public Player Player { get; set; } = null!;
     public int TokensUsed { get; set; }
+    public byte[] RowVersion { get; set; } = [];
     public DateTime UnlockDate { get; set; }
 }

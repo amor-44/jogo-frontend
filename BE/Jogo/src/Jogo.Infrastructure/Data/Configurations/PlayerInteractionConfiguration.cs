@@ -8,14 +8,16 @@ namespace Jogo.Infrastructure.Data.Configurations
         public void Configure(EntityTypeBuilder<PlayerInteraction> builder)
         {
             builder.HasKey(x => x.Id);
+            builder.Property(x => x.RowVersion)
+           .IsRowVersion();
 
             builder.HasOne(x => x.Player)
                    .WithMany()
                    .HasForeignKey(x => x.PlayerId);
 
-            builder.HasOne(x => x.Organization)
+            builder.HasOne(x => x.User)
                    .WithMany()
-                   .HasForeignKey(x => x.OrganizationId);
+                   .HasForeignKey(x => x.UserId);
         }
     }
 }

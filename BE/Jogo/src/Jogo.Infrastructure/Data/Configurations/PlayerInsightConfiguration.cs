@@ -16,6 +16,8 @@ namespace Jogo.Infrastructure.Data.Configurations
             builder.Property(x => x.Description)
                    .HasMaxLength(1000)
                    .IsRequired();
+            builder.Property(x => x.RowVersion)
+           .IsRowVersion();
 
             builder.HasOne(x => x.Report)
                    .WithMany(x => x.Insights)

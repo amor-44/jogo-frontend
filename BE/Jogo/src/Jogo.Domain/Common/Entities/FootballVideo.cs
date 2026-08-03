@@ -9,4 +9,5 @@ public class FootballVideo
     public int Duration { get; set; }
     public DateTime UploadDate { get; set; }
     public AIReport? Report { get; set; }
+    public byte[] RowVersion { get; set; } = [];
 }

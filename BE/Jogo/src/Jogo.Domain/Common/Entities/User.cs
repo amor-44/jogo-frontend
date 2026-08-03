@@ -9,5 +9,6 @@ public abstract class User
     public string PasswordHash { get; set; } = null!;
     public string? PhoneNumber { get; set; }
     public DateTime CreatedAt { get; set; }
+    public byte[] RowVersion { get; set; } = [];
     public AccountStatus AccountStatus { get; set; }
 }

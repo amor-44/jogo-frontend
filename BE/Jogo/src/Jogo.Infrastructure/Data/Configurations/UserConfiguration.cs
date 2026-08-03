@@ -31,6 +31,8 @@ namespace Jogo.Infrastructure.Data.Configurations
 
             builder.Property(x => x.PhoneNumber)
                 .HasMaxLength(20);
+            builder.Property(x => x.RowVersion)
+           .IsRowVersion();
         }
     }
 }

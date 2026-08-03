@@ -18,6 +18,8 @@ namespace Jogo.Infrastructure.Data.Configurations
 
             builder.Property(x => x.UploadDate)
                 .IsRequired();
+            builder.Property(x => x.RowVersion)
+           .IsRowVersion();
 
             builder.HasOne(x => x.Player)
                 .WithMany(x => x.Videos)

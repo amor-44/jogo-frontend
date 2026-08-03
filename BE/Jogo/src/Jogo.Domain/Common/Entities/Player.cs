@@ -7,6 +7,7 @@ public class Player : User
     public string? CurrentTeam { get; set; }
     public string? FootballExperience { get; set; }
     public bool ProfileVisibility { get; set; }
+   
     public ICollection<FootballVideo> Videos { get; set; } = new List<FootballVideo>();
     public ICollection<ContactUnlock> ContactUnlocks { get; set; } = new List<ContactUnlock>();
 }

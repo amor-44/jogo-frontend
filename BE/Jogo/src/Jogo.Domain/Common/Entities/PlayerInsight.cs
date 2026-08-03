@@ -5,4 +5,6 @@ public class PlayerInsight
     public AIReport Report { get; set; } = null!;
     public InsightType Type { get; set; }
     public string Description { get; set; } = null!;
+    public string Title { get; set; }
+    public byte[] RowVersion { get; set; } = [];
 }

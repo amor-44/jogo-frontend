@@ -11,6 +11,8 @@ namespace Jogo.Infrastructure.Data.Configurations
 
             builder.Property(x => x.Amount)
                    .HasPrecision(18, 2);
+            builder.Property(x => x.RowVersion)
+           .IsRowVersion();
 
             builder.HasOne(x => x.Organization)
                    .WithMany(x => x.Transactions)

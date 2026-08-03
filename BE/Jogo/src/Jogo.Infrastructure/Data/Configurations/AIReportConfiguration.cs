@@ -21,6 +21,8 @@ namespace Jogo.Infrastructure.Data.Configurations
             builder.Property(x => x.DefensiveActions).HasPrecision(5, 2);
             builder.Property(x => x.AttackingImpact).HasPrecision(5, 2);
             builder.Property(x => x.DecisionMaking).HasPrecision(5, 2);
+            builder.Property(x => x.RowVersion)
+       .IsRowVersion();
 
             builder.HasOne(x => x.Video)
                    .WithOne(x => x.Report)

@@ -8,6 +8,8 @@ namespace Jogo.Infrastructure.Data.Configurations
         public void Configure(EntityTypeBuilder<ContactUnlock> builder)
         {
             builder.HasKey(x => x.Id);
+            builder.Property(x => x.RowVersion)
+            .IsRowVersion();
 
             builder.HasOne(x => x.Player)
                    .WithMany(x => x.ContactUnlocks)

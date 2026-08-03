@@ -14,5 +14,7 @@ public class AIReport
     public decimal DecisionMaking { get; set; }
     public string AIModelVersion { get; set; } = null!;
     public DateTime AnalysisDate { get; set; }
+    public byte[] RowVersion { get; set; } = [];
+
     public ICollection<PlayerInsight> Insights { get; set; } = new List<PlayerInsight>();
 }
