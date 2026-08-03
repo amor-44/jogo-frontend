@@ -1,9 +1,13 @@
 using System.Text;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Infrastructure.Data;
+
 using Jogo.Infrastructure.Data.Interceptors;
 using Jogo.Infrastructure.Identity;
 using Jogo.Infrastructure.Services;
+
+using MechanicShop.Application.Common.Interfaces;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

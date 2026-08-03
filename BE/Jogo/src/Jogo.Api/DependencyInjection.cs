@@ -6,6 +6,9 @@ using Jogo.Api.OpenApi.Transformers;
 using Jogo.Api.Services;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Infrastructure.Settings;
+
+using MechanicShop.Api.OpenApi.Transformers;
+
 using Microsoft.AspNetCore.RateLimiting;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
