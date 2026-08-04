@@ -21,11 +21,11 @@
     <Project Path="src/Jogo.Domain/Jogo.Domain.csproj" />
     <Project Path="src/Jogo.Infrastructure/Jogo.Infrastructure.csproj" />
   </Folder>
-  <!-- <Folder Name="/tests/">
+  <Folder Name="/tests/">
     <Project Path="tests/Jogo.Api.IntegrationTests/Jogo.Api.IntegrationTests.csproj" />
-    <Project Path="tests/Jogo.Application.SubcutaneousTests/Jogo.Application.SubcutaneousTests.csproj" />
+    <!-- <Project Path="tests/Jogo.Application.SubcutaneousTests/Jogo.Application.SubcutaneousTests.csproj" /> -->
     <Project Path="tests/Jogo.Application.UnitTests/Jogo.Application.UnitTests.csproj" />
     <Project Path="tests/Jogo.Domain.UnitTests/Jogo.Domain.UnitTests.csproj" />
-    <Project Path="tests/Jogo.Tests.Common/Jogo.Tests.Common.csproj" />
-  </Folder> -->
+    <!-- <Project Path="tests/Jogo.Tests.Common/Jogo.Tests.Common.csproj" /> -->
+  </Folder>
 </Solution>
