@@ -13,9 +13,9 @@ namespace Jogo.Infrastructure.Data.Configurations
                    .WithMany()
                    .HasForeignKey(x => x.PlayerId);
 
-            builder.HasOne(x => x.Organization)
-                   .WithMany()
-                   .HasForeignKey(x => x.OrganizationId);
+            //builder.HasOne(x => x.Organization)
+            //       .WithMany()
+            //       .HasForeignKey(x => x.OrganizationId);
         }
     }
 }
