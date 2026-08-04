@@ -27,7 +27,7 @@ public static class DependencyInjection
         services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
 
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
-
+        services.AddAntiforgery();
         services
             .AddCustomProblemDetails()
             .AddCustomApiVersioning()

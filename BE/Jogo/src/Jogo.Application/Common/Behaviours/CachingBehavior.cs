@@ -7,8 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace Jogo.Application.Common.Behaviours;
 
 public class CachingBehavior<TRequest, TResponse>(
-    HybridCache cache,
-    ILogger<CachingBehavior<TRequest, TResponse>> logger
+    HybridCache cache,ILogger<CachingBehavior<TRequest, TResponse>> logger
 ) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
