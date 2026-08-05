@@ -1,4 +1,5 @@
 using Jogo.Application.Common.Interfaces;
+using Jogo.Application.Features.Player.CreateProfile;
 using Jogo.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

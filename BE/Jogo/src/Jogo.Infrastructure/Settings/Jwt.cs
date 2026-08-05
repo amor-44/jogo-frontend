@@ -1,8 +1,8 @@
-﻿namespace Infrastrucre.Settings
+namespace Jogo.Infrastructure.Settings
 {
     public class Jwt
     {
-        public string Key { get; set; } = string.Empty;
+        public string Secret { get; set; } = string.Empty;
         public string Issuer { get; set; } = string.Empty;
         public string Audience { get; set; } = string.Empty;
         public int ExpiryInMinutes { get; set; }

@@ -78,7 +78,7 @@ public class LoginCommandHandlerTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.TopErrors.Should().Contain(e => e.Code == "Identity.InvalidCredentials");
+        result.Errors.Should().Contain(e => e.Code == "Identity.InvalidCredentials");
     }
 
     [Fact]
@@ -99,6 +99,6 @@ public class LoginCommandHandlerTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.TopErrors.Should().Contain(e => e.Code == "User.NotFound");
+        result.Errors.Should().Contain(e => e.Code == "User.NotFound");
     }
 }

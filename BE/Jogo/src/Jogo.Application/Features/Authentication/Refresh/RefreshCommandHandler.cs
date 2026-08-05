@@ -39,7 +39,7 @@ public class RefreshCommandHandler(
         var revokeResult = existingToken.Revoke();
         if (revokeResult.IsError)
         {
-            return revokeresult.TopErrors;
+            return revokeResult.Errors;
         }
 
         var newAccessToken = tokenProvider.GenerateAccessToken(user.Id, user.Role.ToString());
@@ -51,7 +51,7 @@ public class RefreshCommandHandler(
         var issueResult = RefreshToken.Issue(user.Id, newHashedToken, DateTimeOffset.UtcNow.AddDays(7));
         if (issueResult.IsError)
         {
-            return issueresult.TopErrors;
+            return issueResult.Errors;
         }
 
         context.RefreshTokens.Add(issueResult.Value);

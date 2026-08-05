@@ -1,6 +1,9 @@
 using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Common.Results;
 using Jogo.Domain.Entities;
+using Jogo.Domain.Enums;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 using MediatR;
 
@@ -44,7 +47,7 @@ public class CreateProfileCommandHandler : IRequestHandler<CreateProfileCommand,
 
         if (profileResult.IsError)
         {
-            return profileresult.TopError;
+            return profileResult.Errors;
         }
 
         _context.PlayerProfiles.Add(profileResult.Value);

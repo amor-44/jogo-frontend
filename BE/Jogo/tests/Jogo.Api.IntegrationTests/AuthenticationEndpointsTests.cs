@@ -1,11 +1,15 @@
+using System.Net;
+using System.Net.Http.Json;
+
 using FluentAssertions;
+
 using Jogo.Application.Features.Authentication.Login;
 using Jogo.Application.Features.Authentication.Refresh;
 using Jogo.Application.Features.Authentication.Register;
-using Microsoft.Extensions.DependencyInjection;
 using Jogo.Infrastructure.Data;
-using System.Net;
-using System.Net.Http.Json;
+
+using Microsoft.Extensions.DependencyInjection;
+
 using Xunit;
 
 namespace Jogo.Api.IntegrationTests;
@@ -37,16 +41,16 @@ public class AuthenticationEndpointsTests : IClassFixture<CustomWebApplicationFa
         // 1. Register
         var registerCommand = new RegisterCommand(uniqueEmail, password, "Player");
         var registerResponse = await _client.PostAsJsonAsync("/api/v1/auth/register", registerCommand);
-        
+
         registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         // 2. Login
         var loginCommand = new LoginCommand(uniqueEmail, password);
         var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", loginCommand);
-        
+
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var loginResult = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
-        
+
         loginResult.Should().NotBeNull();
         loginResult!.AccessToken.Should().NotBeNullOrEmpty();
         loginResult.RefreshToken.Should().NotBeNullOrEmpty();
@@ -55,7 +59,7 @@ public class AuthenticationEndpointsTests : IClassFixture<CustomWebApplicationFa
         _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginResult.AccessToken);
         var refreshCommand = new RefreshCommand(loginResult.RefreshToken);
         var refreshResponse = await _client.PostAsJsonAsync("/api/v1/auth/refresh", refreshCommand);
-        
+
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var refreshResult = await refreshResponse.Content.ReadFromJsonAsync<RefreshResponse>();
 

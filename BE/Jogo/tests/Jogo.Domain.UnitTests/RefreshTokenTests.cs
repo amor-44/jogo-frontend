@@ -33,7 +33,7 @@ public class RefreshTokenTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.TopErrors.Should().Contain(e => e.Code == "RefreshToken.EmptyUserId");
+        result.Errors.Should().Contain(e => e.Code == "RefreshToken.InvalidUserId");
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class RefreshTokenTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.TopErrors.Should().Contain(e => e.Code == "RefreshToken.EmptyHash");
+        result.Errors.Should().Contain(e => e.Code == "RefreshToken.InvalidHash");
     }
 
     [Fact]
@@ -74,16 +74,17 @@ public class RefreshTokenTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.TopErrors.Should().Contain(e => e.Code == "RefreshToken.AlreadyRevoked");
+        result.Errors.Should().Contain(e => e.Code == "RefreshToken.AlreadyRevoked");
     }
 
     [Fact]
-    public void IsActive_WhenExpired_ShouldBeFalse()
+    public void Issue_WithPastExpiry_ShouldReturnError()
     {
-        // Arrange
-        var token = RefreshToken.Issue(Guid.NewGuid(), "hash", DateTimeOffset.UtcNow.AddDays(-1)).Value;
+        // Act
+        var result = RefreshToken.Issue(Guid.NewGuid(), "hash", DateTimeOffset.UtcNow.AddDays(-1));
 
         // Assert
-        token.IsActive.Should().BeFalse();
+        result.IsError.Should().BeTrue();
+        result.Errors.Should().Contain(e => e.Code == "RefreshToken.InvalidExpiry");
     }
 }

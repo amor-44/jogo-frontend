@@ -64,7 +64,7 @@ public class RegisterCommandHandlerTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.TopErrors.Should().Contain(e => e.Code == "Email.InUse");
+        result.Errors.Should().Contain(e => e.Code == "Email.InUse");
         
         _dbContextMock.Verify(c => c.Users.Add(It.IsAny<User>()), Times.Never);
         _dbContextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

@@ -2,6 +2,7 @@ using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace Jogo.Application.Features.Player.UploadProfileImage;
 
@@ -52,9 +53,7 @@ public class UploadProfileImageCommandHandler : IRequestHandler<UploadProfileIma
 
         if (updateResult.IsError)
         {
-            return updateresult.TopError; // Implicit conversion fails if types don't match, so wait, Result<Success> Error -> Result<string> needs cast?
-            // Actually, returning updateresult.TopError works if implicit conversion from Error to Result<string> exists. 
-            // Let's assume it exists, but just in case, we return Error object.
+            return updateResult.Errors;
         }
 
         await _context.SaveChangesAsync(cancellationToken);

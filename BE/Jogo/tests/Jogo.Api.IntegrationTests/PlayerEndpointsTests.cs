@@ -1,4 +1,8 @@
+using System.Net;
+using System.Net.Http.Json;
+
 using FluentAssertions;
+
 using Jogo.Application.Features.Authentication.Login;
 using Jogo.Application.Features.Authentication.Register;
 using Jogo.Application.Features.Player.CreateProfile;
@@ -6,9 +10,9 @@ using Jogo.Application.Features.Player.GetProfile;
 using Jogo.Application.Features.Player.UpdateProfile;
 using Jogo.Domain.Enums;
 using Jogo.Infrastructure.Data;
+
 using Microsoft.Extensions.DependencyInjection;
-using System.Net;
-using System.Net.Http.Json;
+
 using Xunit;
 
 namespace Jogo.Api.IntegrationTests;
@@ -31,7 +35,7 @@ public class PlayerEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         await _client.PostAsJsonAsync("/api/v1/auth/register", new RegisterCommand(uniqueEmail, password, "Player"));
         var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new LoginCommand(uniqueEmail, password));
-        
+
         var loginResult = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
         return loginResult!.AccessToken;
     }
@@ -57,7 +61,7 @@ public class PlayerEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var createCommand = new CreateProfileCommand("John Doe", new DateTime(2000, 1, 1), Position.Striker, PreferredFoot.Right, "USA");
         var createResponse = await _client.PostAsJsonAsync("/api/v1/player/profile", createCommand);
         createResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var profileId = await createResponse.Content.ReadFromJsonAsync<Guid>();
         profileId.Should().NotBeEmpty();
 

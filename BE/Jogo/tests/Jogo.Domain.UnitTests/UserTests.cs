@@ -21,7 +21,7 @@ public class UserTests
         result.IsSuccess.Should().BeTrue();
         result.Value.Id.Should().Be(id);
         result.Value.Role.Should().Be(role);
-        result.Value.AccountStatus.Should().Be(AccountStatus.Active);
+        result.Value.Status.Should().Be(AccountStatus.Active);
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public class UserTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.TopErrors.Should().Contain(e => e.Code == "User.EmptyId");
+        result.Errors.Should().Contain(e => e.Code == "User.InvalidId");
     }
 
     [Fact]

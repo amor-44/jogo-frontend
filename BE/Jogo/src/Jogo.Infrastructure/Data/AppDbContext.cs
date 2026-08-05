@@ -1,7 +1,6 @@
 using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Common;
-
-using MechanicShop.Application.Common.Interfaces;
+using Jogo.Domain.Entities;
 
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -14,23 +13,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IMediator medi
     : IdentityDbContext<IdentityUser>(options),
         IAppDbContext
 {
-    public DbSet<Player> Players => Set<Player>();
+    public DbSet<User> Users => Set<User>();
 
-    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
-    public DbSet<Scout> Scouts => Set<Scout>();
+    public DbSet<PlayerProfile> PlayerProfiles => Set<PlayerProfile>();
+
+    public DbSet<ScoutProfile> ScoutProfiles => Set<ScoutProfile>();
 
     public DbSet<FootballVideo> FootballVideos => Set<FootballVideo>();
 
-    public DbSet<AIReport> AIReports => Set<AIReport>();
+    public DbSet<AnalysisReport> AnalysisReports => Set<AnalysisReport>();
 
-    public DbSet<PlayerInsight> PlayerInsights => Set<PlayerInsight>();
+    public DbSet<ContactRequest> ContactRequests => Set<ContactRequest>();
 
-    public DbSet<ContactUnlock> ContactUnlocks => Set<ContactUnlock>();
-
-    public DbSet<PlayerInteraction> PlayerInteractions => Set<PlayerInteraction>();
-
-    public DbSet<TokenTransaction> TokenTransactions => Set<TokenTransaction>();
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await DispatchDomainEventsAsync(cancellationToken);

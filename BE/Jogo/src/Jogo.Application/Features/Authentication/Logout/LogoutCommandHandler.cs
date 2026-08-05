@@ -30,7 +30,7 @@ public class LogoutCommandHandler(IAppDbContext context) : IRequestHandler<Logou
         var revokeResult = existingToken.Revoke();
         if (revokeResult.IsError)
         {
-            return revokeresult.TopErrors;
+            return revokeResult.Errors;
         }
 
         await context.SaveChangesAsync(cancellationToken);

@@ -1,35 +1,36 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Jogo.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Jogo.Infrastructure.Data.Configurations
+namespace Jogo.Infrastructure.Data.Configurations;
+
+public class FootballVideoConfiguration : IEntityTypeConfiguration<FootballVideo>
 {
-    public class FootballVideoConfiguration : IEntityTypeConfiguration<FootballVideo>
+    public void Configure(EntityTypeBuilder<FootballVideo> builder)
     {
-        public void Configure(EntityTypeBuilder<FootballVideo> builder)
-        {
-            builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.VideoUrl)
-                .HasMaxLength(500)
-                .IsRequired();
+        builder.Property(x => x.StorageUrl)
+            .HasMaxLength(500)
+            .IsRequired();
 
-            builder.Property(x => x.Duration)
-                .IsRequired();
+        builder.Property(x => x.OriginalFileName)
+            .HasMaxLength(255)
+            .IsRequired();
 
-            builder.Property(x => x.UploadDate)
-                .IsRequired();
-            builder.Property(x => x.RowVersion)
-           .IsRowVersion();
+        builder.Property(x => x.Duration)
+            .IsRequired();
 
-            builder.HasOne(x => x.Player)
-                .WithMany(x => x.Videos)
-                .HasForeignKey(x => x.PlayerId);
+        builder.Property(x => x.UploadedAt)
+            .IsRequired();
 
-            builder.HasOne(x => x.Report)
-                .WithOne(x => x.Video)
-                .HasForeignKey<AIReport>(x => x.VideoId);
-        }
+        builder.Property(x => x.Status)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
+
+        builder.HasOne<PlayerProfile>()
+            .WithMany()
+            .HasForeignKey(x => x.PlayerProfileId);
     }
 }
-
-

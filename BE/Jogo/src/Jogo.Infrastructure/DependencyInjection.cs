@@ -1,13 +1,10 @@
 using System.Text;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Infrastructure.Data;
-
 using Jogo.Infrastructure.Data.Interceptors;
 using Jogo.Infrastructure.Identity;
 using Jogo.Infrastructure.Services;
-
-using MechanicShop.Application.Common.Interfaces;
-
+using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -97,6 +94,20 @@ public static class DependencyInjection
         services.AddScoped<ITokenProvider, TokenProvider>();
 
         services.AddScoped<INotificationService, NotificationService>();
+
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<IVideoStorageService, LocalVideoStorageService>();
+        
+        services.AddScoped<IAiAnalysisService, FakeAiAnalysisService>();
+        services.AddScoped<IBackgroundJobService, BackgroundJobService>();
+
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(connectionString));
+
+        services.AddHangfireServer();
 
         return services;
     }

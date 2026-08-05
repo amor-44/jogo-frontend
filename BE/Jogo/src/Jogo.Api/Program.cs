@@ -1,3 +1,4 @@
+using Hangfire;
 using Jogo.Api.Extensions.DependencyInjection;
 using Jogo.Infrastructure.Data;
 using Scalar.AspNetCore;
@@ -40,6 +41,8 @@ else
 {
     app.UseHsts();
 }
+
+app.UseHangfireDashboard();
 
 app.UseCoreMiddlewares(builder.Configuration);
 

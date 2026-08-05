@@ -2,6 +2,7 @@ using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace Jogo.Application.Features.Player.UpdateProfile;
 

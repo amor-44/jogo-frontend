@@ -1,5 +1,7 @@
-using Jogo.Domain.Common.Results;
-
 namespace Jogo.Application.Common.Interfaces;
 
-public interface ITokenProvider { }
+public interface ITokenProvider
+{
+    string GenerateAccessToken(Guid userId, string role);
+    string GenerateRefreshToken();
+}

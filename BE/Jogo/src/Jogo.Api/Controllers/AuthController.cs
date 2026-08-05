@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Jogo.Application.Features.Authentication.Login;
 using Jogo.Application.Features.Authentication.Logout;
 using Jogo.Application.Features.Authentication.Refresh;
@@ -8,7 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Jogo.Api.Controllers;
 
-[Route("api/v1/auth")]
+[ApiVersion("1")]
+[Route("api/v{version:apiVersion}/auth")]
 public class AuthController(IMediator mediator) : ApiController
 {
     [HttpPost("register")]
@@ -41,7 +43,7 @@ public class AuthController(IMediator mediator) : ApiController
     }
 
     [HttpPost("refresh")]
-    [Authorize]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

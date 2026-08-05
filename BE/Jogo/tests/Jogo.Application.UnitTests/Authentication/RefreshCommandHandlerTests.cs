@@ -79,6 +79,6 @@ public class RefreshCommandHandlerTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.TopErrors.Should().Contain(e => e.Code == "RefreshToken.Invalid");
+        result.Errors.Should().Contain(e => e.Code == "RefreshToken.Invalid");
     }
 }
