@@ -48,49 +48,6 @@ app/
 tests/
 ```
 
-## Setup
-
-```bash
-cd jogo-ai-chatbot
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env   # then add your GEMINI_API_KEY
-```
-
-| Variable | Required | Default |
-|---|---|---|
-| `GEMINI_API_KEY` | Yes | — |
-| `GEMINI_MODEL` | No | `gemini-2.5-flash` |
-| `APP_ENV` | No | `development` |
-| `LOG_LEVEL` | No | `INFO` |
-
-## Run & test
-
-```bash
-uvicorn app.main:app --reload   # → http://localhost:8000/docs
-pytest -v                        # no real Gemini key needed, LLM is mocked
-```
-
-## API
-
-**GET /health** → `{"status": "ok"}`
-
-**POST /api/chat**
-```json
-// request
-{ "player_id": "player_001", "message": "How is my performance?", "conversation_id": null }
-
-// response
-{ "conversation_id": "uuid...", "response": "Your overall score is 82, up from 76..." }
-```
-
-| Error case | Status |
-|---|---|
-| Invalid/missing fields, empty message | 422 |
-| Player not found | 404 |
-| Conversation not found | 404 |
-| Gemini not configured | 500 |
-| Gemini API failure | 502 |
 
 ## Mock data
 
@@ -112,14 +69,10 @@ integration, it must come from the authenticated Jogo session/token, not the req
 3. Add real player authentication.
 4. Swap `InMemoryConversationStore` for Redis/DB if history needs to persist.
 
-## Not in this MVP (by design)
 
-Video/computer vision, RAG/vector DB, fine-tuning, Postgres/Redis/Kafka, full auth system,
-payments, scout/club/academy dashboards, frontend UI.
+## Run & test
 
-## Assumptions
+```bash
+uvicorn app.main:app --reload   # → http://localhost:8000/docs
+```
 
-- Default model: `gemini-2.5-flash`, overridable via env var.
-- One mock player is enough to demo all use cases.
-- New `conversation_id` per new conversation; client passes it back to continue.
-- In-memory storage only — not durable across restarts, documented as a known MVP limitation.
