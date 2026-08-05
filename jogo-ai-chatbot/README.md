@@ -1,4 +1,4 @@
-# Jogo AI Football Player Assistant Chatbot (MVP)
+# Jogo AI Football Player Assistant Chatbot 
 
 AI chatbot backend for Jogo. A player chats with an assistant that knows their real performance
 data and gives grounded, personalized answers — not generic ChatGPT responses.
