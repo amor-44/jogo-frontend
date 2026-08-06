@@ -1,5 +1,5 @@
 using Jogo.Application.Common.Interfaces;
-using Jogo.Domain.Common.Entities;
+using Jogo.Domain.Common;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;

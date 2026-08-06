@@ -1,3 +1,4 @@
+using Hangfire;
 using Jogo.Api.Extensions.DependencyInjection;
 using Jogo.Infrastructure.Data;
 using Scalar.AspNetCore;
@@ -6,6 +7,7 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddDistributedMemoryCache();
 
 builder
     .Services.AddPresentation(builder.Configuration)
@@ -40,6 +42,8 @@ else
 {
     app.UseHsts();
 }
+
+app.UseHangfireDashboard();
 
 app.UseCoreMiddlewares(builder.Configuration);
 

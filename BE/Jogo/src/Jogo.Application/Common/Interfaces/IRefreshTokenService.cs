@@ -1,9 +1,9 @@
-﻿namespace Application.Common.Interfaces
+﻿// Application/Common/Interfaces/IRefreshTokenService.cs
+namespace Jogo.Application.Common.Interfaces;
+
+public interface IRefreshTokenService
 {
-    public interface IRefreshTokenService
-    {
-        Task SaveRefreshTokenAsync(Guid userId, string token);
-        Task<string?> GetRefreshTokenAsync(Guid userId);
-        Task RevokeRefreshTokenAsync(Guid userId);
-    }
+    Task SaveRefreshTokenAsync(Guid userId, string token, CancellationToken cancellationToken = default);
+    Task<string?> GetRefreshTokenAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task RevokeRefreshTokenAsync(Guid userId, CancellationToken cancellationToken = default);
 }

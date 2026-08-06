@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
-namespace MechanicShop.Api.OpenApi.Transformers;
+namespace Jogo.Api.OpenApi.Transformers;
 
 internal sealed class VersionInfoTransformer : IOpenApiDocumentTransformer
 {

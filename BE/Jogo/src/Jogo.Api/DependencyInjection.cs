@@ -7,7 +7,7 @@ using Jogo.Api.Services;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Infrastructure.Settings;
 
-using MechanicShop.Api.OpenApi.Transformers;
+using Jogo.Api.OpenApi.Transformers;
 
 using Microsoft.AspNetCore.RateLimiting;
 using OpenTelemetry.Metrics;
@@ -25,6 +25,7 @@ public static class DependencyInjection
     )
     {
         services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
+        services.Configure<Jogo.Application.Common.Models.VideoSettings>(configuration.GetSection(Jogo.Application.Common.Models.VideoSettings.SectionName));
 
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
         services.AddAntiforgery();
