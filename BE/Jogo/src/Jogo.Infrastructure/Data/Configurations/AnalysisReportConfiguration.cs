@@ -33,5 +33,8 @@ public class AnalysisReportConfiguration : IEntityTypeConfiguration<AnalysisRepo
                 v => JsonSerializer.Serialize(v, jsonOptions),
                 v => JsonSerializer.Deserialize<List<string>>(v, jsonOptions) ?? new List<string>()
             );
+        builder.HasOne(x => x.FootballVideo)
+             .WithOne(x => x.AnalysisReport)
+             .HasForeignKey<AnalysisReport>(x => x.VideoId);
     }
 }

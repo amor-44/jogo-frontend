@@ -13,6 +13,9 @@ public class FootballVideo : AuditableEntity
     public DateTimeOffset UploadedAt { get; private set; }
     public VideoAnalysisStatus Status { get; private set; }
 
+    public PlayerProfile PlayerProfile { get; private set; } = null!;
+
+    public AnalysisReport? AnalysisReport { get; private set; }
     public bool CanDelete => Status == VideoAnalysisStatus.Uploaded;
 
     private FootballVideo() { }

@@ -13,6 +13,7 @@ public class AnalysisReport : AuditableEntity
     public List<string> Recommendations { get; private set; } = [];
     public DateTimeOffset CompletedAt { get; private set; }
     public string AIModelVersion { get; private set; } = string.Empty;
+    public FootballVideo FootballVideo { get; private set; } = null!;
 
     private AnalysisReport() { }
 

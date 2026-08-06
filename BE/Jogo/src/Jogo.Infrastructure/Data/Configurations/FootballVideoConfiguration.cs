@@ -32,5 +32,12 @@ public class FootballVideoConfiguration : IEntityTypeConfiguration<FootballVideo
         builder.HasOne<PlayerProfile>()
             .WithMany()
             .HasForeignKey(x => x.PlayerProfileId);
+        builder.HasOne(x => x.PlayerProfile)
+       .WithMany(x => x.FootballVideos)
+        .HasForeignKey(x => x.PlayerProfileId);
+
+        builder.HasOne(x => x.AnalysisReport)
+            .WithOne(x => x.FootballVideo)
+            .HasForeignKey<AnalysisReport>(x => x.VideoId);
     }
 }

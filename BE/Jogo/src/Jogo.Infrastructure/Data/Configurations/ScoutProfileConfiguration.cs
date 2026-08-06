@@ -12,5 +12,12 @@ public class ScoutProfileConfiguration : IEntityTypeConfiguration<ScoutProfile>
 
         builder.Property(t => t.Organization).IsRequired().HasMaxLength(200);
         builder.Property(t => t.Country).IsRequired().HasMaxLength(100);
+        builder.HasOne<User>()
+        .WithOne()
+       .HasForeignKey<ScoutProfile>(x => x.UserId);
+
+        builder.HasMany(x => x.ContactRequests)
+            .WithOne(x => x.ScoutProfile)
+            .HasForeignKey(x => x.ScoutProfileId);
     }
 }

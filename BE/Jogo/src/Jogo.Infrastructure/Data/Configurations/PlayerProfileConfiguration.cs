@@ -24,5 +24,16 @@ public class PlayerProfileConfiguration : IEntityTypeConfiguration<PlayerProfile
         builder.Property(t => t.PrimaryPosition).HasConversion<string>().HasMaxLength(50);
         builder.Property(t => t.SecondaryPosition).HasConversion<string>().HasMaxLength(50);
         builder.Property(t => t.Visibility).HasConversion<string>().HasMaxLength(50);
+        builder.HasOne<User>()
+        .WithOne()
+         .HasForeignKey<PlayerProfile>(x => x.UserId);
+
+        builder.HasMany(x => x.FootballVideos)
+            .WithOne(x => x.PlayerProfile)
+            .HasForeignKey(x => x.PlayerProfileId);
+
+        builder.HasMany(x => x.ContactRequests)
+            .WithOne(x => x.PlayerProfile)
+            .HasForeignKey(x => x.PlayerProfileId);
     }
 }

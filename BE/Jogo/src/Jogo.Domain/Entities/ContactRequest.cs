@@ -11,7 +11,9 @@ public class ContactRequest : AuditableEntity
     public ContactRequestStatus Status { get; private set; }
     public DateTimeOffset RequestedAt { get; private set; }
     public DateTimeOffset? RespondedAt { get; private set; }
+    public PlayerProfile PlayerProfile { get; private set; } = null!;
 
+    public ScoutProfile ScoutProfile { get; private set; } = null!;
     private ContactRequest() { }
 
     private ContactRequest(Guid id, Guid scoutProfileId, Guid playerProfileId) : base(id)

@@ -25,6 +25,13 @@ public class PlayerProfile : AuditableEntity
     public bool IsComplete => !string.IsNullOrWhiteSpace(FullName) && 
                               !string.IsNullOrWhiteSpace(Country) && 
                               DateOfBirth != default;
+    public User User { get; private set; } = null!;
+
+    public ICollection<FootballVideo> FootballVideos { get; private set; }
+        = new List<FootballVideo>();
+
+    public ICollection<ContactRequest> ContactRequests { get; private set; }
+        = new List<ContactRequest>();
 
     public int Age
     {

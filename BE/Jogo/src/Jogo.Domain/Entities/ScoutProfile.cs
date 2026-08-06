@@ -11,6 +11,10 @@ public class ScoutProfile : AuditableEntity
     public string Country { get; private set; } = string.Empty;
     public int ExperienceYears { get; private set; }
 
+    public User User { get; private set; } = null!;
+
+    public ICollection<ContactRequest> ContactRequests { get; private set; }
+        = new List<ContactRequest>();
     private ScoutProfile() { }
 
     private ScoutProfile(Guid id, Guid userId, string organization, string country, int experienceYears) : base(id)
