@@ -2,7 +2,6 @@ using Asp.Versioning;
 using Jogo.Application.Features.Authentication.Login;
 using Jogo.Application.Features.Authentication.Logout;
 using Jogo.Application.Features.Authentication.Refresh;
-using Jogo.Application.Features.Authentication.Register;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,20 +12,6 @@ namespace Jogo.Api.Controllers;
 [Route("api/v{version:apiVersion}/auth")]
 public class AuthController(IMediator mediator) : ApiController
 {
-    [HttpPost("register")]
-    [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Register(RegisterCommand command, CancellationToken cancellationToken)
-    {
-        var result = await mediator.Send(command, cancellationToken);
-        return result.Match(
-            userId => Ok(new { UserId = userId }),
-            Problem
-        );
-    }
-
     [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]

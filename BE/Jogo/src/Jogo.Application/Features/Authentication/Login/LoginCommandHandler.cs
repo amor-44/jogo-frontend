@@ -1,9 +1,8 @@
-using System.Security.Cryptography;
-using System.Text;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Common.Results;
-using Jogo.Domain.Entities;
+
 using MediatR;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace Jogo.Application.Features.Authentication.Login;
@@ -11,6 +10,7 @@ namespace Jogo.Application.Features.Authentication.Login;
 public class LoginCommandHandler(
     IIdentityService identityService,
     ITokenProvider tokenProvider,
+    IRefreshTokenService refreshTokenService,
     IAppDbContext context) : IRequestHandler<LoginCommand, Result<LoginResponse>>
 {
     public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -30,27 +30,12 @@ public class LoginCommandHandler(
         }
 
         user.RecordLogin();
-
-        var accessToken = tokenProvider.GenerateAccessToken(user.Id, user.Role.ToString());
-        var refreshTokenString = tokenProvider.GenerateRefreshToken();
-
-        using var sha256 = SHA256.Create();
-        var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(refreshTokenString));
-        var hashedToken = Convert.ToBase64String(hashBytes);
-
-        var refreshTokenResult = RefreshToken.Issue(
-            user.Id, 
-            hashedToken,
-            DateTimeOffset.UtcNow.AddDays(7));
-
-        if (refreshTokenResult.IsError)
-        {
-            return refreshTokenResult.Errors;
-        }
-
-        context.RefreshTokens.Add(refreshTokenResult.Value);
         await context.SaveChangesAsync(cancellationToken);
 
-        return new LoginResponse(accessToken, refreshTokenString);
+        var (accessToken, refreshToken) = tokenProvider.GenerateTokens(user);
+
+        await refreshTokenService.SaveRefreshTokenAsync(user.Id, refreshToken, cancellationToken);
+
+        return new LoginResponse(accessToken, refreshToken, user.Role.ToString(), user.Id);
     }
 }

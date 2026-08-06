@@ -2,43 +2,41 @@ using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Common.Results;
 using Jogo.Domain.Entities;
 using Jogo.Domain.Enums;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 using MediatR;
-
-using Microsoft.EntityFrameworkCore;
 
 namespace Jogo.Application.Features.Player.CreateProfile;
 
-public class CreateProfileCommandHandler : IRequestHandler<CreateProfileCommand, Result<Guid>>
+public class CreateProfileCommandHandler(
+    IIdentityService identityService,
+    ITokenProvider tokenProvider,
+    IRefreshTokenService refreshTokenService,
+    IAppDbContext context) : IRequestHandler<CreateProfileCommand, Result<CreateProfileResponse>>
 {
-    private readonly IAppDbContext _context;
-    private readonly IUser _currentUser;
-
-    public CreateProfileCommandHandler(IAppDbContext context, IUser currentUser)
+    public async Task<Result<CreateProfileResponse>> Handle(CreateProfileCommand request, CancellationToken cancellationToken)
     {
-        _context = context;
-        _currentUser = currentUser;
-    }
+        // 1. تحويل نوع الـ Role
+        var role = Enum.Parse<Role>(request.Role, ignoreCase: true);
 
-    public async Task<Result<Guid>> Handle(CreateProfileCommand request, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrEmpty(_currentUser.Id) || !Guid.TryParse(_currentUser.Id, out var currentUserId))
+        // 2. إنشاء الحساب في Identity
+        var identityResult = await identityService.RegisterUserAsync(request.Email, request.Password, cancellationToken);
+        if (identityResult.IsError)
         {
-            return Error.Unauthorized("PlayerProfile.Unauthorized", "User is not authorized.");
+            return identityResult.Errors;
         }
 
-        var profileExists = await _context.PlayerProfiles
-            .AnyAsync(p => p.UserId == currentUserId, cancellationToken);
+        var userId = identityResult.Value;
 
-        if (profileExists)
+        // 3. إنشاء كائن User الـ Domain
+        var userResult = User.Create(userId, role);
+        if (userResult.IsError)
         {
-            return Error.Conflict("PlayerProfile.AlreadyExists", "A profile already exists for this user.");
+            return userResult.Errors;
         }
 
+        // 4. إنشاء كائن البروفايل
         var profileResult = PlayerProfile.Create(
-            currentUserId,
+            userId,
             request.FullName,
             request.DateOfBirth,
             request.PrimaryPosition,
@@ -50,9 +48,21 @@ public class CreateProfileCommandHandler : IRequestHandler<CreateProfileCommand,
             return profileResult.Errors;
         }
 
-        _context.PlayerProfiles.Add(profileResult.Value);
-        await _context.SaveChangesAsync(cancellationToken);
+        // 5. الحفظ في قاعدة البيانات
+        context.Users.Add(userResult.Value);
+        context.PlayerProfiles.Add(profileResult.Value);
+        await context.SaveChangesAsync(cancellationToken);
 
-        return profileResult.Value.Id;
+        // 6. توليد التوكينات وحفظ الـ Refresh Token في Redis
+        var (accessToken, refreshToken) = tokenProvider.GenerateTokens(userResult.Value);
+        await refreshTokenService.SaveRefreshTokenAsync(userId, refreshToken, cancellationToken);
+
+        // 7. إرجاع الـ Response كامل بالتوكينات ومعرف البروفايل
+        return new CreateProfileResponse(
+            profileResult.Value.Id,
+            accessToken,
+            refreshToken,
+            userResult.Value.Role.ToString(),
+            userId);
     }
 }

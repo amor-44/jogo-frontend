@@ -38,6 +38,7 @@ public class PlayerController : ApiController
     }
 
     [HttpPost("profile")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

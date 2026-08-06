@@ -1,10 +1,14 @@
 using System.Text;
+
+using Hangfire;
+
 using Jogo.Application.Common.Interfaces;
 using Jogo.Infrastructure.Data;
 using Jogo.Infrastructure.Data.Interceptors;
 using Jogo.Infrastructure.Identity;
 using Jogo.Infrastructure.Services;
-using Hangfire;
+using Jogo.Infrastructure.Settings;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -42,30 +46,48 @@ public static class DependencyInjection
 
         services.AddScoped<ApplicationDbContextInitialiser>();
 
-        services
-            .AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                var jwtSettings = configuration.GetSection("JwtSettings");
+        // 1. ربط الـ Settings بالـ DI Container عشان IOptions<Jwt> يقرأ صح في TokenProvider
+        services.Configure<Jwt>(configuration.GetSection("Jwt"));
 
-                options.TokenValidationParameters = new TokenValidationParameters
+        var jwtSettings = configuration.GetSection("Jwt").Get<Jwt>()
+                 ?? throw new InvalidOperationException("JWT settings are missing in appsettings.json!");
+
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSettings["Issuer"],
-                    ValidAudience = jwtSettings["Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtSettings["Secret"]!)
-                    ),
-                };
-            });
+                    var accessToken = context.Request.Query["access_token"];
+                    if (!string.IsNullOrEmpty(accessToken))
+                    {
+                        context.Token = accessToken;
+                    }
+
+                    return Task.CompletedTask;
+                }
+            };
+
+            options.SaveToken = true;
+            options.RequireHttpsMetadata = false;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+
+                ValidIssuer = jwtSettings.Issuer,
+                ValidAudience = jwtSettings.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
+            };
+        });
 
         services
             .AddIdentityCore<IdentityUser>(options =>
@@ -92,12 +114,13 @@ public static class DependencyInjection
         );
 
         services.AddScoped<ITokenProvider, TokenProvider>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
         services.AddScoped<INotificationService, NotificationService>();
 
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IVideoStorageService, LocalVideoStorageService>();
-        
+
         services.AddScoped<IAiAnalysisService, FakeAiAnalysisService>();
         services.AddScoped<IBackgroundJobService, BackgroundJobService>();
 
