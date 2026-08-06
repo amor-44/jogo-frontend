@@ -1,4 +1,5 @@
 using Jogo.Domain.Entities;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9,6 +10,12 @@ public class PlayerProfileConfiguration : IEntityTypeConfiguration<PlayerProfile
     public void Configure(EntityTypeBuilder<PlayerProfile> builder)
     {
         builder.HasKey(t => t.Id);
+
+        // ربط العلاقة 1:1 مرة واحدة فقط وبشكل صريح
+        builder.HasOne(x => x.User)
+            .WithOne()
+            .HasForeignKey<PlayerProfile>(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(t => t.FullName).IsRequired().HasMaxLength(200);
         builder.Property(t => t.Country).IsRequired().HasMaxLength(100);
@@ -24,9 +31,6 @@ public class PlayerProfileConfiguration : IEntityTypeConfiguration<PlayerProfile
         builder.Property(t => t.PrimaryPosition).HasConversion<string>().HasMaxLength(50);
         builder.Property(t => t.SecondaryPosition).HasConversion<string>().HasMaxLength(50);
         builder.Property(t => t.Visibility).HasConversion<string>().HasMaxLength(50);
-        builder.HasOne<User>()
-        .WithOne()
-         .HasForeignKey<PlayerProfile>(x => x.UserId);
 
         builder.HasMany(x => x.FootballVideos)
             .WithOne(x => x.PlayerProfile)

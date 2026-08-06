@@ -1,8 +1,11 @@
 using Asp.Versioning;
 
+using Jogo.Application.Features.Scout.CreateProfile;
 using Jogo.Application.Features.Scout.GetPlayerProfile;
+using Jogo.Application.Features.Scout.GetProfile;
 using Jogo.Application.Features.Scout.GetReport;
 using Jogo.Application.Features.Scout.SearchPlayers;
+using Jogo.Application.Features.Scout.UpdateProfile;
 using Jogo.Domain.Enums;
 
 using MediatR;
@@ -42,6 +45,59 @@ public class ScoutController : ApiController
         }
 
         return Ok(result.Value);
+    }
+    /// <summary>
+    /// Get current scout profile.
+    /// </summary>
+    [HttpGet("me")]
+    public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetProfileQuery(), cancellationToken);
+
+        if (result.IsError)
+        {
+            return Problem(result.Errors);
+        }
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Update current scout profile.
+    /// </summary>
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateProfile(
+        [FromBody] UpdateProfileCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+
+        if (result.IsError)
+        {
+            return Problem(result.Errors);
+        }
+
+        return Ok(result.Value);
+    }
+    /// <summary>
+    /// Create a new scout profile.
+    /// </summary>
+    [HttpPost]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(CreateScoutProfileResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateProfile(
+        [FromBody] CreateProfileCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+
+        if (result.IsError)
+        {
+            return Problem(result.Errors);
+        }
+
+        return CreatedAtAction(nameof(GetPlayerProfile), new { playerId = result.Value.ProfileId }, result.Value);
     }
 
     /// <summary>

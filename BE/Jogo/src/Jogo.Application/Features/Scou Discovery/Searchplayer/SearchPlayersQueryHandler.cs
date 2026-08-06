@@ -23,8 +23,6 @@ public class SearchPlayersQueryHandler
     {
         var query = _context.PlayerProfiles
             .AsNoTracking()
-            .Include(x => x.FootballVideos)
-                .ThenInclude(x => x.AnalysisReport)
             .AsQueryable();
 
         var today = DateTime.UtcNow.Date;
@@ -52,38 +50,44 @@ public class SearchPlayersQueryHandler
         }
 
         var players = await query
-            .Select(player => new PlayerCardDto(
-                player.Id,
-                player.FullName,
-                player.Age,
-                player.Country,
-                player.PrimaryPosition,
-                player.FootballVideos
+            .Select(player => new
+            {
+                Player = player,
+                BestScore = player.FootballVideos
                     .Where(v => v.AnalysisReport != null)
-                    .Select(v => v.AnalysisReport!.OverallScore)
-                    .DefaultIfEmpty(0)
-                    .Max(),
-                player.ProfilePictureUrl
-            ))
+                    .Select(v => (int?)v.AnalysisReport!.OverallScore)
+                    .Max() ?? 0
+            })
             .ToListAsync(cancellationToken);
+
+        var playerDtos = players
+            .Select(x => new PlayerCardDto(
+                x.Player.Id,
+                x.Player.FullName,
+                x.Player.Age,
+                x.Player.Country,
+                x.Player.PrimaryPosition,
+                x.BestScore,
+                x.Player.ProfilePictureUrl
+            ));
 
         if (request.MinOverallScore.HasValue)
         {
-            players = players
-                .Where(x => x.BestOverallScore >= request.MinOverallScore.Value)
-                .ToList();
+            playerDtos = playerDtos
+                .Where(x => x.BestOverallScore >= request.MinOverallScore.Value);
         }
 
-        var totalCount = players.Count;
+        var filteredList = playerDtos.ToList();
+        var totalCount = filteredList.Count;
 
-        players = players
+        var resultPlayers = filteredList
             .OrderByDescending(x => x.BestOverallScore)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToList();
 
         return new SearchPlayersResponse(
-            players,
+            resultPlayers,
             totalCount,
             request.PageNumber,
             request.PageSize);
