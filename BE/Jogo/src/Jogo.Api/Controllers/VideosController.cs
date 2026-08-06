@@ -1,10 +1,12 @@
 using Jogo.Api.Infrastructure;
+using Jogo.Application.Features.Analysis.RequestAnalysis;
+using Jogo.Application.Features.Analysis.RetryAnalysis;
 using Jogo.Application.Features.Videos.DeleteVideo;
 using Jogo.Application.Features.Videos.Queries;
 using Jogo.Application.Features.Videos.UploadVideo;
-using Jogo.Application.Features.Analysis.RequestAnalysis;
-using Jogo.Application.Features.Analysis.RetryAnalysis;
+
 using MediatR;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

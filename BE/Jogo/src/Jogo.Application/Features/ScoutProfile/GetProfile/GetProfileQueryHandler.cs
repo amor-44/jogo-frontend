@@ -3,6 +3,8 @@ using Jogo.Domain.Common.Results;
 
 using MediatR;
 
+using Microsoft.EntityFrameworkCore;
+
 namespace Jogo.Application.Features.Scout.GetProfile;
 
 public class GetProfileQueryHandler : IRequestHandler<GetProfileQuery, Result<ProfileDto>>
