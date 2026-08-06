@@ -29,15 +29,15 @@ public class FootballVideoConfiguration : IEntityTypeConfiguration<FootballVideo
             .HasMaxLength(50)
             .IsRequired();
 
-        builder.HasOne<PlayerProfile>()
-            .WithMany()
-            .HasForeignKey(x => x.PlayerProfileId);
+
         builder.HasOne(x => x.PlayerProfile)
-       .WithMany(x => x.FootballVideos)
-        .HasForeignKey(x => x.PlayerProfileId);
+        .WithMany(x => x.FootballVideos)
+         .HasForeignKey(x => x.PlayerProfileId)
+           .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(x => x.AnalysisReport)
             .WithOne(x => x.FootballVideo)
-            .HasForeignKey<AnalysisReport>(x => x.VideoId);
+            .HasForeignKey<AnalysisReport>(x => x.VideoId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -1,8 +1,8 @@
 using Asp.Versioning;
 
-using Jogo.Application.Features.Player.CreateProfile;
-using Jogo.Application.Features.Player.GetProfile;
-using Jogo.Application.Features.Player.UpdateProfile;
+using Jogo.Application.Features.Scout.GetPlayerProfile;
+using Jogo.Application.Features.Scout.GetReport;
+using Jogo.Application.Features.Scout.SearchPlayers;
 using Jogo.Domain.Enums;
 
 using MediatR;
@@ -24,54 +24,67 @@ public class ScoutController : ApiController
         _sender = sender;
     }
 
-    [HttpGet("profile")]
-    [ProducesResponseType(typeof(ProfileDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
+    /// <summary>
+    /// Search players with filters.
+    /// </summary>
+    [HttpGet("players")]
+    [ProducesResponseType(typeof(SearchPlayersResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SearchPlayers(
+        [FromQuery] SearchPlayersQuery query,
+        CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(new GetProfileQuery(), cancellationToken);
+        var result = await _sender.Send(query, cancellationToken);
 
         if (result.IsError)
         {
-            return Problem(new List<Jogo.Domain.Common.Results.Error> { result.TopError });
+            return Problem(result.Errors);
         }
 
         return Ok(result.Value);
     }
 
-    [HttpPost("profile")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> CreateProfile(
-        [FromBody] CreateProfileCommand command,
+    /// <summary>
+    /// Get player profile by id.
+    /// </summary>
+    [HttpGet("players/{playerId:guid}")]
+    [ProducesResponseType(typeof(PlayerProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPlayerProfile(
+        Guid playerId,
         CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _sender.Send(
+            new GetPlayerProfileQuery(playerId),
+            cancellationToken);
 
         if (result.IsError)
         {
-            return Problem(new List<Jogo.Domain.Common.Results.Error> { result.TopError });
+            return Problem(result.Errors);
         }
 
         return Ok(result.Value);
     }
 
-    [HttpPut("profile")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    /// <summary>
+    /// Get player's best analysis report.
+    /// </summary>
+    [HttpGet("players/{playerId:guid}/report")]
+    [ProducesResponseType(typeof(ReportDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateProfile(
-        [FromBody] UpdateProfileCommand command,
+    public async Task<IActionResult> GetReport(
+        Guid playerId,
         CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _sender.Send(
+            new GetReportQuery(playerId),
+            cancellationToken);
 
         if (result.IsError)
         {
-            return Problem(new List<Jogo.Domain.Common.Results.Error> { result.TopError });
+            return Problem(result.Errors);
         }
 
-        return Ok();
+        return Ok(result.Value);
     }
 }

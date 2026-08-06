@@ -3,6 +3,8 @@ using Jogo.Domain.Common.Results;
 
 using MediatR;
 
+using Microsoft.EntityFrameworkCore;
+
 namespace Jogo.Application.Features.Scout.UpdateProfile;
 
 public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand, Result<Success>>
