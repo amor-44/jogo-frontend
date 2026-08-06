@@ -1,10 +1,11 @@
-using Jogo.Domain.Common;
 using Jogo.Domain.Common.Results;
 using Jogo.Domain.Enums;
 
+using Microsoft.AspNetCore.Identity;
+
 namespace Jogo.Domain.Entities;
 
-public class User : AuditableEntity
+public class User : IdentityUser<Guid>
 {
     public Role Role { get; private set; }
     public AccountStatus Status { get; private set; }
@@ -12,8 +13,9 @@ public class User : AuditableEntity
 
     private User() { }
 
-    private User(Guid id, Role role) : base(id)
+    private User(Guid id, Role role) 
     {
+        Id = id;
         Role = role;
         Status = AccountStatus.Active;
     }

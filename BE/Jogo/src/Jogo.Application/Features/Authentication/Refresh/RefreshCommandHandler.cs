@@ -1,62 +1,73 @@
-using System.Security.Cryptography;
-using System.Text;
+using System.Security.Claims;
+
 using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Common.Results;
-using Jogo.Domain.Entities;
+
 using MediatR;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Jogo.Application.Features.Authentication.Refresh;
 
 public class RefreshCommandHandler(
     ITokenProvider tokenProvider,
-    IAppDbContext context) : IRequestHandler<RefreshCommand, Result<RefreshResponse>>
+    IRefreshTokenService refreshTokenService,
+    IAppDbContext context,
+    ILogger<RefreshCommandHandler> logger) : IRequestHandler<RefreshCommand, Result<RefreshResponse>>
 {
     public async Task<Result<RefreshResponse>> Handle(RefreshCommand request, CancellationToken cancellationToken)
     {
-        using var sha256 = SHA256.Create();
-        var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.RefreshToken));
-        var hashedToken = Convert.ToBase64String(hashBytes);
-
-        var existingToken = await context.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == hashedToken, cancellationToken);
-
-        if (existingToken == null)
+        // 1. استخراج الـ Claims من الـ Access Token المنتهي
+        ClaimsPrincipal? principal;
+        try
         {
-            return Error.Unauthorized("RefreshToken.Invalid", "Refresh token is invalid or expired.");
+            principal = tokenProvider.GetPrincipalFromExpiredToken(request.AccessToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to parse expired access token.");
+            return Error.Unauthorized("AccessToken.Invalid", "Invalid access token.");
         }
 
-        if (!existingToken.IsActive)
+        if (principal is null)
         {
-            return Error.Unauthorized("RefreshToken.Revoked", "Refresh token is revoked or expired.");
+            logger.LogWarning("Access token principal is null.");
+            return Error.Unauthorized("AccessToken.Invalid", "Invalid access token.");
         }
 
-        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == existingToken.UserId, cancellationToken);
-        if (user == null)
+        var userIdClaim = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
         {
+            logger.LogWarning("Invalid UserId claim format in token: {UserIdClaim}", userIdClaim);
+            return Error.Unauthorized("AccessToken.InvalidClaims", "Invalid token claims.");
+        }
+
+        // 2. التحقق من وجود المستخدم في قاعدة البيانات
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        if (user is null)
+        {
+            logger.LogWarning("User with ID {UserId} was not found during refresh token operation.", userId);
             return Error.NotFound("User.NotFound", "User not found.");
         }
 
-        var revokeResult = existingToken.Revoke();
-        if (revokeResult.IsError)
+        // 3. التحقق من الـ Refresh Token في Redis Cache
+        var savedRefreshToken = await refreshTokenService.GetRefreshTokenAsync(userId, cancellationToken);
+        if (string.IsNullOrEmpty(savedRefreshToken) || savedRefreshToken != request.RefreshToken)
         {
-            return revokeResult.Errors;
+            logger.LogWarning("Invalid or expired refresh token attempt for user {UserId}.", userId);
+            return Error.Unauthorized("RefreshToken.Invalid", "Refresh token is invalid or expired.");
         }
 
-        var newAccessToken = tokenProvider.GenerateAccessToken(user.Id, user.Role.ToString());
-        var newRefreshTokenString = tokenProvider.GenerateRefreshToken();
+        // 4. توليد التوكينات وتقسيم الـ Tuple
+        var (newAccessToken, newRefreshToken) = tokenProvider.GenerateTokens(user);
 
-        var newHashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(newRefreshTokenString));
-        var newHashedToken = Convert.ToBase64String(newHashBytes);
+        // 5. حفظ الـ Refresh Token الجديد في Redis
+        await refreshTokenService.SaveRefreshTokenAsync(userId, newRefreshToken, cancellationToken);
 
-        var issueResult = RefreshToken.Issue(user.Id, newHashedToken, DateTimeOffset.UtcNow.AddDays(7));
-        if (issueResult.IsError)
-        {
-            return issueResult.Errors;
-        }
+        logger.LogInformation("Successfully refreshed token for user: {UserId}", userId);
 
-        context.RefreshTokens.Add(issueResult.Value);
-        await context.SaveChangesAsync(cancellationToken);
-
-        return new RefreshResponse(newAccessToken, newRefreshTokenString);
+        // 6. إرجاع النتيجة
+        return new RefreshResponse(newAccessToken, newRefreshToken);
     }
 }

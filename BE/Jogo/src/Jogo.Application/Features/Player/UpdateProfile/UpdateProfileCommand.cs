@@ -1,5 +1,6 @@
 using Jogo.Domain.Common.Results;
 using Jogo.Domain.Enums;
+
 using MediatR;
 
 namespace Jogo.Application.Features.Player.UpdateProfile;

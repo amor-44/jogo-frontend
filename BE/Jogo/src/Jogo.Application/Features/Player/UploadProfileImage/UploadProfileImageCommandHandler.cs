@@ -2,7 +2,6 @@ using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
 
 namespace Jogo.Application.Features.Player.UploadProfileImage;
 
@@ -13,7 +12,7 @@ public class UploadProfileImageCommandHandler : IRequestHandler<UploadProfileIma
     private readonly IFileStorageService _fileStorageService;
 
     public UploadProfileImageCommandHandler(
-        IAppDbContext context, 
+        IAppDbContext context,
         IUser currentUser,
         IFileStorageService fileStorageService)
     {
