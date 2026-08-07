@@ -10,13 +10,15 @@ detection, PRD 5.6, which is also Production V1) — not implemented here.
 
 Output matches the `actions` field of the backend<->AI contract (PRD Section 11.2):
 a list of `{type, confidence, timestampMs}`.
+
+Takes plain timestamps + real-world positions rather than importing a specific tracker's
+or `metrics.py`'s types, so this module stays independent of whichever pipeline produces
+the trajectory (this repo's `metrics.py`, or a future consolidated one).
 """
 
 import math
 from dataclasses import dataclass
 from typing import Literal
-
-from metrics import TrajectoryPoint
 
 ActionType = Literal["sprint", "jog", "change_of_direction"]
 
@@ -53,16 +55,17 @@ def _velocity_vectors(real_world_points_m: list[tuple[float, float]], timestamps
     return vectors
 
 
-def classify_actions(trajectory: list[TrajectoryPoint], real_world_points_m: list[tuple[float, float]]) -> list[ActionEvent]:
+def classify_actions(timestamps_ms: list[float], real_world_points_m: list[tuple[float, float]]) -> list[ActionEvent]:
     """PRD 5.7 steps 62-64: rule-based sprint/jog/direction-change classification.
 
-    `real_world_points_m` must be the same length as `trajectory`, aligned index-for-index
-    (i.e. the output of `metrics.compute_metrics`'s homography transform).
+    `timestamps_ms` and `real_world_points_m` must be the same length and index-aligned
+    (i.e. `metrics.compute_metrics`'s homography-transformed trajectory, zipped with its
+    source timestamps — see that module's `TrajectoryPoint.timestamp_ms` /
+    `FootballMetrics.heatmap_positions_m`).
     """
-    if len(trajectory) != len(real_world_points_m) or len(trajectory) < 2:
+    if len(timestamps_ms) != len(real_world_points_m) or len(timestamps_ms) < 2:
         return []
 
-    timestamps_ms = [p.timestamp_ms for p in trajectory]
     vectors = _velocity_vectors(real_world_points_m, timestamps_ms)
 
     events: list[ActionEvent] = []
