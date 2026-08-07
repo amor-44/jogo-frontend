@@ -1,15 +1,4 @@
-# Jogo — AI Video Analysis Service (MVP)
-
-A standalone backend service that analyzes short football skill/training clips: it detects and
-tracks the main player, computes simple movement metrics, and returns a structured performance
-report as JSON.
-
-This is deliberately an **MVP**, scoped to what can be reliably extracted from a short,
-single-subject clip — not a research system for understanding a full professional match.
-
-> This service is independent from the Jogo chatbot backend and shares no code with it.
-
----
+# Jogo — AI Video Analysis Service
 
 ## Architecture
 
@@ -47,13 +36,14 @@ Upload video → Validate → Save → Extract metadata (fps/duration/resolution
 ```
 
 
-- Interactive API docs: `http://localhost:8000/docs`
-- Health check: `http://localhost:8000/health`
+
 
 ## API Documentation
 
+
 ### `POST /analyze`
 Accepts a video file and starts analysis in the background.
+<img width="1052" height="167" alt="image" src="https://github.com/user-attachments/assets/1fcf4081-8cd2-41ec-8931-da538b3f0b3f" />
 
 **Request:** `multipart/form-data`
 | Field       | Type | Required | Description                          |
@@ -62,6 +52,8 @@ Accepts a video file and starts analysis in the background.
 | `player_id` | str  | no       | Optional client-side player identifier |
 
 **Response `202 Accepted`:**
+<img width="1046" height="176" alt="image" src="https://github.com/user-attachments/assets/e6dd7cb9-b08f-458a-8589-c68cd8f0ee36" />
+
 ```json
 {
   "analysis_id": "a1b2c3d4e5f6",
