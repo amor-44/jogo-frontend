@@ -17,20 +17,6 @@ pip install -r requirements.txt
 - `src/` — pipeline modules (detection, tracking, pose, metrics, ...), one file per PRD Section 5 module.
 - `scripts/` — standalone entry points for local benchmarking (e.g. `scripts/benchmark_detection.py`).
 
-## Note on `ai-video-analysis/`
-
-There is a second, separately-built AI service at `../ai-video-analysis/` (FastAPI, YOLOv8 detection +
-ByteTrack tracking + movement analysis + report generation). The two folders currently overlap on
-detection/tracking/metrics/report-generation — that needs to be consolidated into one service, and this
-folder's PRs add capabilities (Re-ID, real-world metrics, PRD-11.2-exact report schema) worth merging in
-rather than picking one folder to delete outright.
-
-## Note on the backend report DTO
-
-`BE/Jogo/src/Jogo.Application/Dtos/AiAnalysisReportDto.cs` currently has a different shape
-(OverallScore/Summary/Strengths/Weaknesses/Recommendations/AIModelVersion) than the PRD 11.2 schema
-`report.py` implements here. Worth syncing with the backend devs on which is canonical.
-
 ## Status
 
 - [x] Player detection (PRD 5.3) — pretrained YOLOv8, `src/detection.py`
@@ -41,4 +27,4 @@ rather than picking one folder to delete outright.
 - [ ] Action recognition (5.7)
 - [ ] Fraud detection & trust score (5.2)
 - [ ] Position-based templates (5.9)
-- [x] Report generation (5.10) — `src/report.py`
+- [ ] Report generation (5.10)
