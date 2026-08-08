@@ -1,7 +1,7 @@
 ultralytics
 opencv-python
 numpy
-mediapipe>=0.10.30  # legacy `mp.solutions` API is gone as of this range — pose.py uses the Tasks API
+
 
 # Optional, used by video_quality.py's BRISQUE check (Section 5.1) if installed:
 # pyiqa
