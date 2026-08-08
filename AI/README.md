@@ -21,9 +21,6 @@ pip install -r requirements.txt
 
 There is a second, separately-built AI service at `../ai-video-analysis/` (FastAPI, YOLOv8 detection +
 ByteTrack tracking + movement analysis + report generation). The two folders currently overlap on
-detection/tracking/metrics/report-generation — that needs to be consolidated into one service. This
-folder's remaining modules below (quality, fraud/trust, pose, position templates) don't overlap with
-`ai-video-analysis/` and are being built independently of that decision.
 
 ## Status
 
@@ -35,4 +32,4 @@ folder's remaining modules below (quality, fraud/trust, pose, position templates
 - [ ] Action recognition (5.7)
 - [ ] Fraud detection & trust score (5.2)
 - [ ] Position-based templates (5.9)
-- [ ] Report generation (5.10)
+- [x] Report generation (5.10) — `src/report.py`
