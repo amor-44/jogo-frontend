@@ -22,6 +22,7 @@ pip install -r requirements.txt
 There is a second, separately-built AI service at `../ai-video-analysis/` (FastAPI, YOLOv8 detection +
 ByteTrack tracking + movement analysis + report generation). The two folders currently overlap on
 
+
 ## Status
 
 - [x] Player detection (PRD 5.3) — pretrained YOLOv8, `src/detection.py`
@@ -30,6 +31,6 @@ ByteTrack tracking + movement analysis + report generation). The two folders cur
 - [ ] Football metrics (5.8)
 - [ ] Pose estimation (5.5)
 - [ ] Action recognition (5.7)
-- [ ] Fraud detection & trust score (5.2)
+- [x] Fraud detection & trust score (5.2) — `src/fraud_trust.py`
 - [ ] Position-based templates (5.9)
 - [x] Report generation (5.10) — `src/report.py`
