@@ -1,0 +1,50 @@
+{
+  "analysis_id": "09ee0e55-b9fa-4eac-a5ff-0adb33ca9bc5",
+  "status": "completed",
+  "football_performance": {
+    "player": {
+      "position": "Unknown"
+    },
+    "scores": {
+      "overall_score": null,
+      "position_score": null,
+      "passing_accuracy": null,
+      "ball_control": null,
+      "positioning_score": null,
+      "movement_efficiency": null,
+      "defensive_actions": null,
+      "attacking_impact": null,
+      "decision_making": null
+    },
+    "strengths": [],
+    "weaknesses": [],
+    "recommendations": [],
+    "events": [],
+    "evidence": {},
+    "analysis_quality": "insufficient",
+    "limitations": [
+      "No player could be reliably detected in sampled frames.",
+      "Insufficient pitch/field context (either the camera is tightly cropped around one player, or fewer than 2 players are ever visible together). Positioning, tactical, and decision-making analysis will be marked limited/unavailable.",
+      "No player could be reliably detected; the video is not suitable for football performance evaluation."
+    ],
+    "video_profile": {
+      "path": "test/synthetic_match.mp4",
+      "duration_sec": 8.0,
+      "width": 960,
+      "height": 540,
+      "fps": 25.0,
+      "frame_count": 200,
+      "camera_movement": "static",
+      "camera_movement_score": 0.1894,
+      "ball_visible": true,
+      "ball_visibility_ratio": 1.0,
+      "primary_player_visible": false,
+      "other_players_detected": 0,
+      "pitch_context_available": false,
+      "notes": [
+        "No player could be reliably detected in sampled frames.",
+        "Insufficient pitch/field context (either the camera is tightly cropped around one player, or fewer than 2 players are ever visible together). Positioning, tactical, and decision-making analysis will be marked limited/unavailable."
+      ]
+    }
+  }
+}

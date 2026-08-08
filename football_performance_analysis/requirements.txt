@@ -1,0 +1,16 @@
+# Core pipeline (tested in this sandbox)
+opencv-python>=4.8
+numpy>=1.24
+scipy>=1.10
+
+# API layer only (not installable/testable in this sandbox - no internet
+# access here; install in a normal environment to run api.py)
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart>=0.0.9
+
+# Optional, for the future upgrade path described in README
+# ("Known limitations" / "What would improve accuracy"):
+# ultralytics>=8.2       # YOLOv8 detection, ideally fine-tuned on football footage
+# torch>=2.2             # required by ultralytics
+# supervision>=0.20      # ByteTrack multi-object tracking helpers
