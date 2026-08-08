@@ -27,7 +27,5 @@ ByteTrack tracking + movement analysis + report generation). The two folders cur
 
 - [x] Player detection (PRD 5.3) — pretrained YOLOv8, `src/detection.py`
 
-- [ ] Football metrics (5.8)
-
 - [ ] Position-based templates (5.9)
 - [x] Report generation (5.10) — `src/report.py`
