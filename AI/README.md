@@ -21,20 +21,11 @@ pip install -r requirements.txt
 
 There is a second, separately-built AI service at `../ai-video-analysis/` (FastAPI, YOLOv8 detection +
 ByteTrack tracking + movement analysis + report generation). The two folders currently overlap on
-detection/tracking/metrics/report-generation — that needs to be consolidated into one service, and this
-folder's PRs add capabilities (Re-ID, real-world metrics, PRD-11.2-exact report schema) worth merging in
-rather than picking one folder to delete outright.
-
-## Note on the backend report DTO
-
-`BE/Jogo/src/Jogo.Application/Dtos/AiAnalysisReportDto.cs` currently has a different shape
-(OverallScore/Summary/Strengths/Weaknesses/Recommendations/AIModelVersion) than the PRD 11.2 schema
-`report.py` implements here. Worth syncing with the backend devs on which is canonical.
 
 ## Status
 
 - [x] Player detection (PRD 5.3) — pretrained YOLOv8, `src/detection.py`
-- [ ] Video quality assessment (5.1)
+- [x] Video quality assessment (5.1) — `src/video_quality.py`
 - [ ] Player tracking + Re-ID (5.4)
 - [ ] Football metrics (5.8)
 - [ ] Pose estimation (5.5)
