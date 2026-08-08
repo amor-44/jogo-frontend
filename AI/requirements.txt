@@ -1,3 +1,13 @@
 ultralytics
 opencv-python
 numpy
+pydantic
+jinja2
+
+# Optional, used by report.py's PDF rendering (Section 5.10) if installed
+# (needs system Cairo/Pango — see WeasyPrint's install docs):
+# weasyprint
+
+# Optional, used by video_quality.py's BRISQUE check (Section 5.1) if installed:
+# pyiqa
+# torch
