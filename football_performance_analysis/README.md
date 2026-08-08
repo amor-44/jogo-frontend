@@ -1,6 +1,6 @@
 # Football Performance Analysis - Deliverables
 
-## 0. Environment constraint that shaped this build (read this first)
+##  Environment constraint that shaped this build (read this first)
 
 This sandbox has **no internet access** and, at the start, had **no ML
 libraries** (`pip install` fails for everything - confirmed by testing
@@ -19,7 +19,7 @@ path.
 
 ---
 
-## 1. Files created
+## Files created
 
 ```
 football_performance/
@@ -47,7 +47,7 @@ football_performance/
   README.md                      # this file
 ```
 
-## 2. Architecture
+## Architecture
 
 ```
 Video
@@ -70,7 +70,7 @@ touching anything downstream - `tracking.py`, `events.py`, `metrics.py`
 etc. only depend on the `Detection` interface, not on how detections were
 produced.
 
-## 3. Models used
+##  Models used
 
 - **Person detection:** OpenCV `HOGDescriptor` + `getDefaultPeopleDetector()`
   (classical HOG+SVM pedestrian detector, no training data or GPU
@@ -88,7 +88,7 @@ scores are arithmetic over detected geometry/events. Only the
 recommendation *text* is templated natural language, filled in with the
 real evidence numbers for that report (see `recommendations.py`).
 
-## 4. New dependencies
+## New dependencies
 
 Core pipeline (tested in this sandbox): `opencv-python`, `numpy`, `scipy`.
 API layer only (not installable/testable here - no internet access; the
@@ -97,7 +97,7 @@ normal environment): `fastapi`, `uvicorn`, `python-multipart`.
 See `requirements.txt` for the full list, including the optional future
 upgrade path (`ultralytics`, `torch`, `supervision`).
 
-## 5. API endpoint / request format
+## API endpoint / request format
 
 ```
 POST /analyze/football-performance
@@ -119,7 +119,7 @@ The core pipeline (`core/pipeline.py:analyze_video`) has zero dependency
 on FastAPI, so it's directly callable from `cli.py`, `api.py`, or a
 future different web framework unchanged.
 
-## 6. Example generated JSON
+## Example generated JSON
 
 Two are included in `test/`, for two different reasons:
 
@@ -193,7 +193,7 @@ in the constructed scenario (2 were deliberately made to go astray) - the
 event/metrics logic is doing real arithmetic on real event counts, not
 returning canned numbers.
 
-## 7. How scores are calculated
+## How scores are calculated
 
 - **passing_accuracy** = 100 × completed_passes / pass_attempts. Requires
   >=2 players tracked (to know who received it) and >=3 pass attempts;
@@ -232,14 +232,14 @@ returning canned numbers.
 All thresholds above are named constants in `metrics.py`/`scoring.py`/
 `strengths_weaknesses.py`, not buried magic numbers.
 
-## 8. How strengths/weaknesses are selected
+## How strengths/weaknesses are selected
 
 Only metrics with `value is not None` AND `confidence >= 0.5` are
 eligible. Strengths = eligible metrics >= 75, ranked highest-first, top 3.
 Weaknesses = eligible metrics <= 65, ranked lowest-first, top 3. If
 nothing clears a threshold, the list is empty - never padded.
 
-## 9. How recommendations are generated
+## How recommendations are generated
 
 Each weakness label is mapped to a template (`recommendations.py`) that
 is filled in with **that report's own evidence numbers** (e.g. "9/11
@@ -249,7 +249,7 @@ differently worded advice, and a metric with `value=None` (unavailable,
 not "weak") never generates a recommendation, since it was never eligible
 to become a weakness in the first place.
 
-## 10. Test results
+## 1Test results
 
 - **Full pipeline, real code path, synthetic video** (`test/synthetic_output.json`):
   ran end-to-end in 2.8s on an 8s/200-frame clip, no crashes, correctly
@@ -268,7 +268,7 @@ to become a weakness in the first place.
   the single biggest gap in these test results and should be the first
   thing done before trusting this pipeline's output on real footage.
 
-## 11. Known limitations
+## Known limitations
 
 - No network access in this sandbox meant no YOLO/torch/fastapi could be
   installed; person/ball detection uses classical CV (HOG, Hough
