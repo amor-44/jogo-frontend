@@ -26,8 +26,7 @@ ByteTrack tracking + movement analysis + report generation). The two folders cur
 ## Status
 
 - [x] Player detection (PRD 5.3) — pretrained YOLOv8, `src/detection.py`
-- [x] Video quality assessment (5.1) — `src/video_quality.py`
-- [ ] Player tracking + Re-ID (5.4)
+
 - [ ] Football metrics (5.8)
 - [ ] Pose estimation (5.5)
 - [ ] Action recognition (5.7)
