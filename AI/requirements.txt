@@ -1,8 +1,7 @@
 ultralytics
 opencv-python
 numpy
-imagehash
-Pillow
+
 
 # Optional, used by video_quality.py's BRISQUE check (Section 5.1) if installed:
 # pyiqa
