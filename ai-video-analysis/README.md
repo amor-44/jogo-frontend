@@ -1,4 +1,6 @@
 # Jogo — AI Video Analysis Service
+<img width="993" height="538" alt="image" src="https://github.com/user-attachments/assets/389d5345-98cd-4727-bea7-84095a061051" />
+
 
 ## Architecture
 
