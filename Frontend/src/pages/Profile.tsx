@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   CheckCircle2, 
   AlertCircle, 
@@ -16,10 +17,13 @@ import {
   Star, 
   Trophy 
 } from 'lucide-react';
-import playerAvatar from '../assets/images/ChatGPT Image Jul 24, 2026, 06_14_11 PM 1.png';
 
 const Profile = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+
+  // الاسم الأول للاستخدام في نصوص التحليل الذكي
+  const firstName = user?.name ? user.name.split(' ')[0] : 'اللاعب';
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto pb-16 text-right" dir="rtl">
@@ -53,11 +57,14 @@ const Profile = () => {
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
             <div className="relative mb-3">
               <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md">
-                <img 
-                  src={playerAvatar} 
-                  alt="أحمد الرشيدي" 
-                  className="w-full h-full object-cover object-top"
-                />
+            <img 
+              src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2B43A1&color=fff&size=128`} 
+              alt={user?.name || "اللاعب"} 
+              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md mb-3"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2B43A1&color=fff&size=128`;
+              }}
+            />
               </div>
               <button 
                 onClick={() => navigate('/chat')}
@@ -68,7 +75,7 @@ const Profile = () => {
               </button>
             </div>
             
-            <h2 className="text-xl font-bold text-gray-900 mb-1">أحمد الرشيدي</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">{user?.name || 'اللاعب'}</h2>
             <p className="text-gray-400 text-xs mb-4 font-medium">مهاجم وسط | الأهلي</p>
             
             <div className="grid grid-cols-2 gap-4 w-full py-3 border-t border-b border-gray-100 text-xs my-2">
@@ -256,7 +263,7 @@ const Profile = () => {
           <Bot className="w-5 h-5" /> تحليل الذكاء الاصطناعي
         </div>
         <p className="text-gray-700 text-xs leading-relaxed font-medium mb-4">
-          يُظهر أحمد رؤية تمريرية استثنائية وقدرة على اتخاذ القرار تحت الضغط، إذ يُصنَّف ضمن أفضل 15% للاعبي مركزه من بين جميع المباريات المحللة هذا الموسم.
+          يُظهر {firstName} رؤية تمريرية استثنائية وقدرة على اتخاذ القرار تحت الضغط، إذ يُصنَّف ضمن أفضل 15% للاعبي مركزه من بين جميع المباريات المحللة هذا الموسم.
         </p>
         <div className="bg-white p-4 rounded-2xl border border-indigo-50 text-xs text-gray-600 leading-relaxed font-medium">
           أهداف التحسين الرئيسية هي كفاءة الإنهاء والقوة الجسدية في المنازلات الجوية. يُوصى بخطة تدريبية مكثفة لمدة 4 أسابيع. التحسن المتوقع: <span className="text-[#2B43A1] font-bold">+6 إلى +9 نقاط بحلول نهاية أغسطس 2026</span>.

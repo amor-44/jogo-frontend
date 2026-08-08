@@ -1,4 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { LogOut, Settings } from 'lucide-react';
 
 interface SidebarProps {
   isMobileOpen?: boolean;
@@ -8,11 +10,18 @@ interface SidebarProps {
 const Sidebar = ({ isMobileOpen = false, onMobileClose }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   
   const isActive = (path: string) => location.pathname === path;
 
   const handleLinkClick = () => {
     if (onMobileClose) onMobileClose();
+  };
+
+  const handleLogout = () => {
+    logout();
+    if (onMobileClose) onMobileClose();
+    navigate('/login');
   };
 
   const sidebarContent = (
@@ -70,22 +79,33 @@ const Sidebar = ({ isMobileOpen = false, onMobileClose }: SidebarProps) => {
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-white p-0.5 shadow-2xs">
               <img 
-                src="https://upload.wikimedia.org/wikipedia/ar/7/70/Al-Ittihad_Saudi_Club_logo.png" 
-                alt="نادي الاتحاد" 
+                src={user?.avatar || "https://upload.wikimedia.org/wikipedia/ar/7/70/Al-Ittihad_Saudi_Club_logo.png"} 
+                alt={user?.name || "النادي"} 
                 className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Club')}&background=2B43A1&color=fff`;
+                }}
               />
             </div>
-            <span className="font-semibold text-gray-800 text-sm">نادي الاتحاد</span>
+            <span className="font-semibold text-gray-800 text-sm truncate max-w-27.5">{user?.name || 'نادي الاتحاد'}</span>
           </div>
-          <button 
-            onClick={() => { navigate('/settings'); handleLinkClick(); }} 
-            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-          </button>
+          
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => { navigate('/settings'); handleLinkClick(); }} 
+              className="text-gray-400 hover:text-gray-600 p-1 transition-colors cursor-pointer"
+              title="الإعدادات"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={handleLogout} 
+              className="text-red-400 hover:text-red-600 p-1 transition-colors cursor-pointer"
+              title="تسجيل الخروج"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </>

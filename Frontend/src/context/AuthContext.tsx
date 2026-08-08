@@ -23,10 +23,11 @@ export interface NotificationItem {
   read: boolean;
 }
 
-interface User {
+export interface User {
+  avatar?: string;
   name: string;
   email: string;
-  role: string;
+  role: 'player' | 'club';
 }
 
 interface AuthContextType {

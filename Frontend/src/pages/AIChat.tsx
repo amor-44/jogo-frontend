@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Navigation } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { 
   Send, 
   Plus, 
@@ -9,9 +9,9 @@ import {
   Zap, 
   Settings, 
   LayoutGrid,
-  Bot
+  Bot,
+  Navigation
 } from 'lucide-react';
-import playerAvatar from '../assets/images/ChatGPT Image Jul 24, 2026, 06_14_11 PM 1.png';
 
 interface Message {
   id: number;
@@ -20,10 +20,14 @@ interface Message {
 }
 
 const AIChat = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [inputMessage, setInputMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<'ai' | 'profile'>('ai');
+
+  // استخراج الاسم الأول تلقائياً من اسم المستخدم المسجل
+  const firstName = user?.name ? user.name.split(' ')[0] : 'لاعبنا';
 
   const handleSendMessage = (textToSend?: string) => {
     const text = textToSend || inputMessage;
@@ -81,7 +85,11 @@ const AIChat = () => {
           </div>
 
           <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white shadow-xs">
-            <img src={playerAvatar} alt="أحمد الرشيدي" className="w-full h-full object-cover" />
+            <img 
+              src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"} 
+              alt={user?.name || "اللاعب"} 
+              className="w-full h-full object-cover" 
+            />
           </div>
         </div>
       </div>
@@ -147,8 +155,7 @@ const AIChat = () => {
 
             <div className="pt-3 border-t border-gray-100 flex justify-between items-center mt-auto">
               <div className="flex items-center gap-2">
-                <img src={playerAvatar} alt="أحمد" className="w-7 h-7 rounded-full object-cover" />
-                <span className="text-xs font-bold text-gray-800">أحمد الرشيدي</span>
+                <span className="text-xs font-bold text-gray-800">{user?.name || 'اللاعب'}</span>
               </div>
               <button onClick={() => navigate('/settings')} className="text-gray-400 hover:text-gray-600 cursor-pointer">
                 <Settings className="w-4 h-4" />
@@ -162,7 +169,7 @@ const AIChat = () => {
             <div className="flex flex-col items-center justify-center my-auto w-full max-w-2xl mx-auto">
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-extrabold text-[#1C2C5E] mb-3 flex items-center justify-center gap-2">
-                  مرحباً أحمد <span>👋</span>
+                  مرحباً {firstName} <span>👋</span>
                 </h1>
                 <p className="text-gray-500 text-xs max-w-md mx-auto leading-relaxed font-medium">
                   مرحباً بعودتك إلى مدربك الذكي. ارفع مباراة أو اسأل أي شيء عن أدائك.
@@ -252,7 +259,7 @@ const AIChat = () => {
                     className={`flex items-start gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs shrink-0 ${msg.sender === 'user' ? 'bg-[#2B43A1]' : 'bg-emerald-600'}`}>
-                      {msg.sender === 'user' ? 'أ' : <Bot className="w-4 h-4" />}
+                      {msg.sender === 'user' ? firstName[0] : <Bot className="w-4 h-4" />}
                     </div>
                     
                     <div className={`p-4 rounded-2xl text-xs leading-relaxed max-w-lg ${
