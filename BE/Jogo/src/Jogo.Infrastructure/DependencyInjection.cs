@@ -122,7 +122,17 @@ public static class DependencyInjection
                           ?? throw new InvalidOperationException("AI Service BaseUrl is not configured.");
 
             client.BaseAddress = new Uri(baseUrl);
-            client.Timeout = TimeSpan.FromSeconds(30);
+
+            // POST /analyze-by-url on the AI service runs the whole CV pipeline
+            // synchronously before it responds — it's not a fire-and-forget kick-off.
+            // 30s was way too short: even an 8s synthetic clip takes ~6s to process
+            // locally, so any real multi-minute match video blows past that and the
+            // request gets cancelled before the AI service can ever answer, which is
+            // exactly the "video crashes / nothing comes back" integration symptom.
+            // Give it real headroom; make it configurable so this doesn't need a
+            // recompile to tune per environment.
+            var timeoutSeconds = configuration.GetValue<int?>("AiService:TimeoutSeconds") ?? 600;
+            client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
         });
 
         // 🟡 خيار 2: لو عايز تجرّب الـ Fake بدلاً من הـ HttpClient، فك التهميش عن السطر اللي تحت واعمل Comment للـ AddHttpClient فوق
