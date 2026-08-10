@@ -8,7 +8,7 @@ namespace Jogo.Domain.UnitTests.Entities;
 public class PlayerProfileTests
 {
     [Fact]
-    public void Create_WithValidData_ShouldCreateCompleteProfile()
+    public void Create_WithValidData_ShouldCreateProfileWithBasicInfo()
     {
         // Arrange & Act
         var result = PlayerProfile.Create(
@@ -23,11 +23,12 @@ public class PlayerProfileTests
         result.IsSuccess.Should().BeTrue();
         var profile = result.Value;
         
-        profile.IsComplete.Should().BeTrue();
+        profile.HasBasicInfo.Should().BeTrue();
+        profile.IsComplete.Should().BeFalse(); // Requires videos
     }
 
     [Fact]
-    public void IsComplete_ShouldBeFalse_WhenCountryIsMissing()
+    public void HasBasicInfo_ShouldBeFalse_WhenCountryIsMissing()
     {
         // Note: the Create factory method enforces country. 
         // We'll test with reflection or just bypass it for the sake of checking the property logic if needed,
@@ -43,8 +44,10 @@ public class PlayerProfileTests
             Position.Striker,
             PreferredFoot.Right,
             "USA").Value;
-            
-        profile.IsComplete.Should().BeTrue();
+
+        typeof(PlayerProfile).GetProperty("Country")!.SetValue(profile, "");
+
+        profile.HasBasicInfo.Should().BeFalse();
     }
 
     [Fact]

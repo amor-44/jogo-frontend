@@ -24,10 +24,11 @@ public class PlayerProfile : AuditableEntity
     public string? FootballExperience { get; private set; }
     public decimal? MarketValue { get; private set; }
 
-    public bool IsComplete => !string.IsNullOrWhiteSpace(FullName) && 
-                              !string.IsNullOrWhiteSpace(Country) && 
-                              DateOfBirth != default &&
-                              FootballVideos.Any();
+    public bool HasBasicInfo => !string.IsNullOrWhiteSpace(FullName) && 
+                                !string.IsNullOrWhiteSpace(Country) && 
+                                DateOfBirth != default;
+
+    public bool IsComplete => HasBasicInfo && FootballVideos.Any();
     public User User { get; private set; } = null!;
 
     public ICollection<FootballVideo> FootballVideos { get; private set; }

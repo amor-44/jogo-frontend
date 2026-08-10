@@ -43,7 +43,7 @@ public class UploadVideoCommandHandler : IRequestHandler<UploadVideoCommand, Res
             return Error.NotFound("UploadVideo.ProfileNotFound", "Player profile not found.");
         }
 
-        if (!profile.IsComplete)
+        if (!profile.HasBasicInfo)
         {
             return Error.Validation("UploadVideo.ProfileIncomplete", "Your profile must be complete before uploading videos.");
         }

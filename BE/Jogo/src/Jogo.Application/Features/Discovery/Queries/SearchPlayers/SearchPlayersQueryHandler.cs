@@ -42,7 +42,17 @@ public class SearchPlayersQueryHandler(IAppDbContext context) : IRequestHandler<
 
         var projectedQuery = query.Select(p => new
         {
-            Player = p,
+            Id = p.Id,
+            FullName = p.FullName,
+            DateOfBirth = p.DateOfBirth,
+            Country = p.Country,
+            City = p.City,
+            PrimaryPosition = p.PrimaryPosition,
+            SecondaryPosition = p.SecondaryPosition,
+            CurrentClub = p.CurrentClub,
+            FootballExperience = p.FootballExperience,
+            MarketValue = p.MarketValue,
+            ProfilePictureUrl = p.ProfilePictureUrl,
             LatestOverallScore = p.FootballVideos
                 .Where(v => v.AnalysisReport != null)
                 .OrderByDescending(v => v.AnalysisReport!.CompletedAt)
@@ -64,23 +74,23 @@ public class SearchPlayersQueryHandler(IAppDbContext context) : IRequestHandler<
         var totalCount = await projectedQuery.CountAsync(cancellationToken);
 
         var paginatedItems = await projectedQuery
-            .OrderBy(p => p.Player.FullName)
+            .OrderBy(p => p.FullName)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
         var resultItems = paginatedItems.Select(item => new PlayerCardDto(
-            item.Player.Id,
-            item.Player.FullName,
-            item.Player.Age,
-            item.Player.Country,
-            item.Player.City,
-            item.Player.PrimaryPosition,
-            item.Player.SecondaryPosition,
-            item.Player.CurrentClub,
-            item.Player.FootballExperience,
-            item.Player.MarketValue,
-            item.Player.ProfilePictureUrl,
+            item.Id,
+            item.FullName,
+            (int)((DateTime.Today - item.DateOfBirth).TotalDays / 365.2425),
+            item.Country,
+            item.City,
+            item.PrimaryPosition,
+            item.SecondaryPosition,
+            item.CurrentClub,
+            item.FootballExperience,
+            item.MarketValue,
+            item.ProfilePictureUrl,
             item.LatestOverallScore,
             item.VideoCount
         )).ToList();

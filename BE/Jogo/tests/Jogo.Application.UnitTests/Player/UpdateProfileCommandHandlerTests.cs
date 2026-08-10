@@ -49,7 +49,7 @@ public class UpdateProfileCommandHandlerTests
         var profile = PlayerProfile.Create(userId, "John", new DateTime(2000, 1, 1), Position.Striker, PreferredFoot.Right, "USA").Value;
         _contextMock.Setup(x => x.PlayerProfiles).ReturnsDbSet(new List<PlayerProfile> { profile });
 
-        var command = new UpdateProfileCommand("NY", 180, 75, Position.LeftWinger, "NYFC", "Hi", "2 years", 1000m, ProfileVisibility.Public);
+        var command = new UpdateProfileCommand("NY", 180, 75, Position.LeftWinger, "NYFC", "Hi", "2 years", 1000m, ProfileVisibility.Hidden);
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
@@ -57,8 +57,26 @@ public class UpdateProfileCommandHandlerTests
         profile.City.Should().Be("NY");
         profile.Height.Should().Be(180);
         profile.Weight.Should().Be(75);
-        profile.Visibility.Should().Be(ProfileVisibility.Public);
+        profile.Visibility.Should().Be(ProfileVisibility.Hidden);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _hybridCacheMock.Verify(x => x.RemoveByTagAsync("players", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnError_WhenMakingPublicWithIncompleteProfile()
+    {
+        var userId = Guid.NewGuid();
+        _currentUserMock.Setup(x => x.Id).Returns(userId.ToString());
+
+        // Profile created without videos is not "Complete"
+        var profile = PlayerProfile.Create(userId, "John", new DateTime(2000, 1, 1), Position.Striker, PreferredFoot.Right, "USA").Value;
+        _contextMock.Setup(x => x.PlayerProfiles).ReturnsDbSet(new List<PlayerProfile> { profile });
+
+        var command = new UpdateProfileCommand("NY", 180, 75, Position.LeftWinger, "NYFC", "Hi", "2 years", 1000m, ProfileVisibility.Public);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.TopError.Code.Should().Be("PlayerProfile.Incomplete");
     }
 }

@@ -60,7 +60,17 @@ public class GetReportQueryHandler : IRequestHandler<GetReportQuery, Result<Anal
                 // Not a player and not a scout
                 return Error.Forbidden("GetReport.Forbidden", "You do not have permission to view this report.");
             }
-            // Scouts can freely view any report per business requirements
+            
+            // Scouts can only view reports if there is an accepted contact request
+            var hasAcceptedContactRequest = await _context.ContactRequests
+                .AnyAsync(cr => cr.ScoutProfileId == scoutProfile.Id 
+                             && cr.PlayerProfileId == report.FootballVideo.PlayerProfileId 
+                             && cr.Status == ContactRequestStatus.Accepted, cancellationToken);
+                             
+            if (!hasAcceptedContactRequest)
+            {
+                return Error.Forbidden("GetReport.Forbidden", "You must have an accepted contact request with this player to view their reports.");
+            }
         }
 
         var metricsDto = new PerformanceMetricsDto(

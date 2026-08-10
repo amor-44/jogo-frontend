@@ -48,7 +48,9 @@ public class PlayersDiscoveryEndpointsTests : IClassFixture<CustomWebApplication
 
         // Act
         var response = await _client.GetAsync("/api/v1/players");
-        var result = await response.Content.ReadFromJsonAsync<PaginatedList<PlayerCardDto>>();
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        var result = await response.Content.ReadFromJsonAsync<PaginatedList<PlayerCardDto>>(options);
 
         // Assert
         response.EnsureSuccessStatusCode();
@@ -76,7 +78,9 @@ public class PlayersDiscoveryEndpointsTests : IClassFixture<CustomWebApplication
 
         // Act
         var response = await _client.GetAsync($"/api/v1/players/{publicProfile.Id}");
-        var result = await response.Content.ReadFromJsonAsync<PlayerCardDto>();
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        var result = await response.Content.ReadFromJsonAsync<PlayerCardDto>(options);
 
         // Assert
         response.EnsureSuccessStatusCode();
