@@ -3,10 +3,12 @@ using System.Text;
 using Hangfire;
 
 using Jogo.Application.Common.Interfaces;
+using Jogo.Infrastructure.BackgroundJobs;
 using Jogo.Infrastructure.Data;
 using Jogo.Infrastructure.Data.Interceptors;
 using Jogo.Infrastructure.Identity;
 using Jogo.Infrastructure.Services;
+using Jogo.Infrastructure.Services.Ai; // ✅ السطر المطلوب لمنع CS0246
 using Jogo.Infrastructure.Settings;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -46,7 +48,6 @@ public static class DependencyInjection
 
         services.AddScoped<ApplicationDbContextInitialiser>();
 
-        // 1. ربط الـ Settings بالـ DI Container عشان IOptions<Jwt> يقرأ صح في TokenProvider
         services.Configure<Jwt>(configuration.GetSection("Jwt"));
 
         var jwtSettings = configuration.GetSection("Jwt").Get<Jwt>()
@@ -108,10 +109,23 @@ public static class DependencyInjection
         services.AddHybridCache(options =>
             options.DefaultEntryOptions = new HybridCacheEntryOptions
             {
-                Expiration = TimeSpan.FromMinutes(10), // L2, L3
-                LocalCacheExpiration = TimeSpan.FromSeconds(30), // L1
+                Expiration = TimeSpan.FromMinutes(10),
+                LocalCacheExpiration = TimeSpan.FromSeconds(30),
             }
         );
+
+        // 🟢 خيار 1: تشغيل الـ HttpClient الحقيقي
+        services.AddHttpClient<IAiAnalysisService, AiAnalysisService>(client =>
+        {
+            var baseUrl = configuration["AiService:BaseUrl"]
+                          ?? throw new InvalidOperationException("AI Service BaseUrl is not configured.");
+
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        // 🟡 خيار 2: لو عايز تجرّب الـ Fake بدلاً من הـ HttpClient، فك التهميش عن السطر اللي تحت واعمل Comment للـ AddHttpClient فوق
+        // services.AddScoped<IAiAnalysisService, FakeAiAnalysisService>();
 
         services.AddScoped<ITokenProvider, TokenProvider>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
@@ -121,7 +135,6 @@ public static class DependencyInjection
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IVideoStorageService, LocalVideoStorageService>();
 
-        services.AddScoped<IAiAnalysisService, FakeAiAnalysisService>();
         services.AddScoped<IBackgroundJobService, BackgroundJobService>();
 
         services.AddHangfire(config => config

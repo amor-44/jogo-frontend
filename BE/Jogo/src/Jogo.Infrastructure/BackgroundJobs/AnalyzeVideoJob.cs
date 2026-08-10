@@ -1,5 +1,10 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
 using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Entities;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -21,12 +26,12 @@ public class AnalyzeVideoJob
         _logger = logger;
     }
 
-    public async Task ExecuteAsync(Guid videoId)
+    public async Task ExecuteAsync(Guid videoId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Starting AI analysis for video {VideoId}", videoId);
 
         var video = await _context.FootballVideos
-            .FirstOrDefaultAsync(v => v.Id == videoId);
+            .FirstOrDefaultAsync(v => v.Id == videoId, cancellationToken);
 
         if (video == null)
         {
@@ -41,20 +46,29 @@ public class AnalyzeVideoJob
             return;
         }
 
-        await _context.SaveChangesAsync(CancellationToken.None);
+        await _context.SaveChangesAsync(cancellationToken);
 
         try
         {
-            var reportDto = await _aiAnalysisService.AnalyzeAsync(video.StorageUrl);
+            var analysisId = await _aiAnalysisService.TriggerAnalysisAsync(video.StorageUrl, cancellationToken);
 
+            var reportDto = await _aiAnalysisService.GetAnalysisStatusAsync(analysisId, cancellationToken);
+
+            if (reportDto == null)
+            {
+                throw new Exception($"Failed to retrieve analysis report for AnalysisId: {analysisId}");
+            }
+
+            // ✅ إضافة الـ 8 بارامترات المطلوبة بالضبط
             var reportResult = AnalysisReport.Create(
-                videoId,
-                reportDto.OverallScore,
-                reportDto.Summary,
-                reportDto.Strengths,
-                reportDto.Weaknesses,
-                reportDto.Recommendations,
-                reportDto.AIModelVersion);
+     videoId,
+     reportDto.OverallScore,
+     reportDto.Summary,
+     reportDto.Strengths,
+     reportDto.Weaknesses,
+     reportDto.Recommendations,
+     video.StorageUrl
+              );
 
             if (reportResult.IsError)
             {
@@ -68,7 +82,7 @@ public class AnalyzeVideoJob
             }
 
             _context.AnalysisReports.Add(reportResult.Value);
-            await _context.SaveChangesAsync(CancellationToken.None);
+            await _context.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Successfully completed AI analysis for video {VideoId}", videoId);
         }
@@ -76,8 +90,8 @@ public class AnalyzeVideoJob
         {
             _logger.LogError(ex, "Failed to analyze video {VideoId}. Marking as failed.", videoId);
             video.MarkFailed();
-            await _context.SaveChangesAsync(CancellationToken.None);
-            throw; // Re-throw for Hangfire to handle retries if configured
+            await _context.SaveChangesAsync(cancellationToken);
+            throw;
         }
     }
 }
