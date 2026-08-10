@@ -5,6 +5,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Jogo.Infrastructure.Data;
 
+using Jogo.Domain.Entities;
+using Jogo.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+
 public class ApplicationDbContextInitialiser(
     ILogger<ApplicationDbContextInitialiser> logger,
     AppDbContext context,
@@ -21,7 +25,14 @@ public class ApplicationDbContextInitialiser(
     {
         try
         {
-            await _context.Database.EnsureCreatedAsync();
+            if (_context.Database.IsRelational())
+            {
+                await _context.Database.MigrateAsync();
+            }
+            else
+            {
+                await _context.Database.EnsureCreatedAsync();
+            }
         }
         catch (Exception ex)
         {
@@ -46,8 +57,72 @@ public class ApplicationDbContextInitialiser(
     public async Task TrySeedAsync()
     {
         // Default roles
+        var roles = new[] { Role.Player.ToString(), Role.Scout.ToString(), Role.Admin.ToString() };
+        foreach (var role in roles)
+        {
+            if (_roleManager.Roles.All(r => r.Name != role))
+            {
+                await _roleManager.CreateAsync(new IdentityRole(role));
+            }
+        }
 
-        // Default users
+        // Default Admin User
+        var adminEmail = "admin@jogo.com";
+        if (_userManager.Users.All(u => u.Email != adminEmail))
+        {
+            var adminUser = new IdentityUser { UserName = adminEmail, Email = adminEmail };
+            var result = await _userManager.CreateAsync(adminUser, "P@ssword1234");
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(adminUser, Role.Admin.ToString());
+                var user = User.Create(Guid.Parse(adminUser.Id), Role.Admin).Value;
+                _context.Users.Add(user);
+            }
+        }
+
+        // Default Player
+        var playerEmail = "player@jogo.com";
+        if (_userManager.Users.All(u => u.Email != playerEmail))
+        {
+            var playerUser = new IdentityUser { UserName = playerEmail, Email = playerEmail };
+            var result = await _userManager.CreateAsync(playerUser, "P@ssword1234");
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(playerUser, Role.Player.ToString());
+                var user = User.Create(Guid.Parse(playerUser.Id), Role.Player).Value;
+                _context.Users.Add(user);
+
+                var profile = PlayerProfile
+                    .Create(
+                        user.Id,
+                        "Default Player",
+                        new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                        Position.Striker,
+                        PreferredFoot.Right,
+                        "Brazil"
+                    )
+                    .Value;
+                profile.ChangeVisibility(ProfileVisibility.Public);
+                _context.PlayerProfiles.Add(profile);
+            }
+        }
+
+        // Default Scout
+        var scoutEmail = "scout@jogo.com";
+        if (_userManager.Users.All(u => u.Email != scoutEmail))
+        {
+            var scoutUser = new IdentityUser { UserName = scoutEmail, Email = scoutEmail };
+            var result = await _userManager.CreateAsync(scoutUser, "P@ssword1234");
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(scoutUser, Role.Scout.ToString());
+                var user = User.Create(Guid.Parse(scoutUser.Id), Role.Scout).Value;
+                _context.Users.Add(user);
+
+                var profile = ScoutProfile.Create(user.Id, "Scout Org", "Brazil", 10).Value;
+                _context.ScoutProfiles.Add(profile);
+            }
+        }
 
         await _context.SaveChangesAsync();
     }

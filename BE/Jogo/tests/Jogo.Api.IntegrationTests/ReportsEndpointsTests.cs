@@ -133,6 +133,11 @@ public class ReportsEndpointsTests : IAsyncLifetime
 
         // Act
         var response = await _client.GetAsync("/api/v1/reports?pageNumber=1&pageSize=10");
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            throw new Exception($"ListReports failed with {response.StatusCode}: {error}");
+        }
 
         var content = await response.Content.ReadAsStringAsync();
         response.StatusCode.Should().Be(HttpStatusCode.OK, content);

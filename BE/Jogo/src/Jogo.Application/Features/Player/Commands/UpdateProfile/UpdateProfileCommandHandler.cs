@@ -66,6 +66,7 @@ public class UpdateProfileCommandHandler(
 
         // 6. Invalidate player discovery cache
         await hybridCache.RemoveByTagAsync("players", cancellationToken);
+        await hybridCache.RemoveByTagAsync($"player-{profile.Id}", cancellationToken);
 
         return Result.Success;
     }

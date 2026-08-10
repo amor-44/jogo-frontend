@@ -23,6 +23,7 @@ namespace Jogo.Infrastructure.Services.Ai;
 public class AiAnalysisService : IAiAnalysisService
 {
     private readonly HttpClient _httpClient;
+    private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
 
     // JSON options matching Python snake_case keys
     private static readonly JsonSerializerOptions _jsonOptions = new()
@@ -32,9 +33,10 @@ public class AiAnalysisService : IAiAnalysisService
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public AiAnalysisService(HttpClient httpClient)
+    public AiAnalysisService(HttpClient httpClient, Microsoft.Extensions.Configuration.IConfiguration configuration)
     {
         _httpClient = httpClient;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -43,6 +45,12 @@ public class AiAnalysisService : IAiAnalysisService
     /// </summary>
     public async Task<string> TriggerAnalysisAsync(string videoUrl, CancellationToken cancellationToken = default)
     {
+        if (videoUrl.StartsWith("/"))
+        {
+            var apiBaseUrl = _configuration["ApiBaseUrl"] ?? "http://jogo-api:8080";
+            videoUrl = $"{apiBaseUrl.TrimEnd('/')}{videoUrl}";
+        }
+
         var payload = new { video_url = videoUrl };
 
         var response = await _httpClient.PostAsJsonAsync(
@@ -51,7 +59,11 @@ public class AiAnalysisService : IAiAnalysisService
             _jsonOptions,
             cancellationToken);
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new HttpRequestException($"AI Analysis failed: {response.StatusCode}. Details: {errorContent}");
+        }
 
         var result = await response.Content.ReadFromJsonAsync<AnalysisTriggerResponse>(
             _jsonOptions, cancellationToken: cancellationToken);

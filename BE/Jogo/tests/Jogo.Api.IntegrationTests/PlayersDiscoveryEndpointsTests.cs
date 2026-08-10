@@ -1,5 +1,7 @@
 using Jogo.Application.Features.Discovery.DTOs;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Net.Http.Json;
 using Jogo.Application.Common.Models;
 using Jogo.Application.Features.Discovery;
@@ -48,6 +50,11 @@ public class PlayersDiscoveryEndpointsTests : IClassFixture<CustomWebApplication
 
         // Act
         var response = await _client.GetAsync("/api/v1/players");
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            throw new Exception($"SearchPlayers failed with {response.StatusCode}: {error}");
+        }
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         var result = await response.Content.ReadFromJsonAsync<PaginatedList<PlayerCardDto>>(options);

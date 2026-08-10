@@ -14,6 +14,7 @@ public class UploadProfileImageCommandHandlerTests
     private readonly Mock<IAppDbContext> _contextMock;
     private readonly Mock<IUser> _currentUserMock;
     private readonly Mock<IFileStorageService> _fileStorageMock;
+    private readonly Mock<Microsoft.Extensions.Caching.Hybrid.HybridCache> _hybridCacheMock;
     private readonly UploadProfileImageCommandHandler _handler;
 
     public UploadProfileImageCommandHandlerTests()
@@ -21,7 +22,8 @@ public class UploadProfileImageCommandHandlerTests
         _contextMock = new Mock<IAppDbContext>();
         _currentUserMock = new Mock<IUser>();
         _fileStorageMock = new Mock<IFileStorageService>();
-        _handler = new UploadProfileImageCommandHandler(_contextMock.Object, _currentUserMock.Object, _fileStorageMock.Object);
+        _hybridCacheMock = new Mock<Microsoft.Extensions.Caching.Hybrid.HybridCache>();
+        _handler = new UploadProfileImageCommandHandler(_contextMock.Object, _currentUserMock.Object, _fileStorageMock.Object, _hybridCacheMock.Object);
     }
 
     [Fact]

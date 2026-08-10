@@ -11,15 +11,18 @@ public class DeleteVideoCommandHandler : IRequestHandler<DeleteVideoCommand, Res
     private readonly IAppDbContext _context;
     private readonly IUser _currentUser;
     private readonly IVideoStorageService _videoStorageService;
+    private readonly Microsoft.Extensions.Caching.Hybrid.HybridCache _hybridCache;
 
     public DeleteVideoCommandHandler(
         IAppDbContext context,
         IUser currentUser,
-        IVideoStorageService videoStorageService)
+        IVideoStorageService videoStorageService,
+        Microsoft.Extensions.Caching.Hybrid.HybridCache hybridCache)
     {
         _context = context;
         _currentUser = currentUser;
         _videoStorageService = videoStorageService;
+        _hybridCache = hybridCache;
     }
 
     public async Task<Result<Success>> Handle(DeleteVideoCommand request, CancellationToken cancellationToken)
@@ -58,6 +61,9 @@ public class DeleteVideoCommandHandler : IRequestHandler<DeleteVideoCommand, Res
         await _videoStorageService.DeleteVideoAsync(video.StorageUrl, cancellationToken);
         _context.FootballVideos.Remove(video);
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _hybridCache.RemoveByTagAsync("players", cancellationToken);
+        await _hybridCache.RemoveByTagAsync($"player-{profile.Id}", cancellationToken);
 
         return Result.Success;
     }

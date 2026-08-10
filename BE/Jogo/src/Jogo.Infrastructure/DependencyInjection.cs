@@ -106,6 +106,7 @@ public static class DependencyInjection
 
         services.AddTransient<IIdentityService, IdentityService>();
 
+        services.AddDistributedMemoryCache();
         services.AddHybridCache(options =>
             options.DefaultEntryOptions = new HybridCacheEntryOptions
             {

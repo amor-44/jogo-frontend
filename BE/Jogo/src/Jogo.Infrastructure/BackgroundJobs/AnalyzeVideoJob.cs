@@ -1,13 +1,9 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Entities;
 using Jogo.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Logging;
 
 namespace Jogo.Infrastructure.BackgroundJobs;
 
@@ -22,7 +18,8 @@ public class AnalyzeVideoJob
         IAppDbContext context,
         IAiAnalysisService aiAnalysisService,
         ILogger<AnalyzeVideoJob> logger,
-        HybridCache cache)
+        HybridCache cache
+    )
     {
         _context = context;
         _aiAnalysisService = aiAnalysisService;
@@ -34,8 +31,10 @@ public class AnalyzeVideoJob
     {
         _logger.LogInformation("Starting AI analysis for video {VideoId}", videoId);
 
-        var video = await _context.FootballVideos
-            .FirstOrDefaultAsync(v => v.Id == videoId, cancellationToken);
+        var video = await _context.FootballVideos.FirstOrDefaultAsync(
+            v => v.Id == videoId,
+            cancellationToken
+        );
 
         if (video == null)
         {
@@ -46,7 +45,11 @@ public class AnalyzeVideoJob
         var processResult = video.MarkProcessing();
         if (processResult.IsError)
         {
-            _logger.LogWarning("Video {VideoId} could not be marked as processing: {Error}", videoId, processResult.TopError.Description);
+            _logger.LogWarning(
+                "Video {VideoId} could not be marked as processing: {Error}",
+                videoId,
+                processResult.TopError.Description
+            );
             return;
         }
 
@@ -54,13 +57,21 @@ public class AnalyzeVideoJob
 
         try
         {
-            var analysisId = await _aiAnalysisService.TriggerAnalysisAsync(video.StorageUrl, cancellationToken);
+            var analysisId = await _aiAnalysisService.TriggerAnalysisAsync(
+                video.StorageUrl,
+                cancellationToken
+            );
 
-            var reportDto = await _aiAnalysisService.GetAnalysisStatusAsync(analysisId, cancellationToken);
+            var reportDto = await _aiAnalysisService.GetAnalysisStatusAsync(
+                analysisId,
+                cancellationToken
+            );
 
             if (reportDto == null)
             {
-                throw new Exception($"Failed to retrieve analysis report for AnalysisId: {analysisId}");
+                throw new Exception(
+                    $"Failed to retrieve analysis report for AnalysisId: {analysisId}"
+                );
             }
 
             var metrics = PerformanceMetrics.Create(
@@ -71,7 +82,8 @@ public class AnalyzeVideoJob
                 reportDto.Metrics.MovementEfficiency,
                 reportDto.Metrics.DefensiveActions,
                 reportDto.Metrics.AttackingImpact,
-                reportDto.Metrics.DecisionMaking);
+                reportDto.Metrics.DecisionMaking
+            );
 
             var reportResult = AnalysisReport.Create(
                 videoId,
@@ -81,17 +93,22 @@ public class AnalyzeVideoJob
                 reportDto.Weaknesses,
                 reportDto.Recommendations,
                 reportDto.AIModelVersion,
-                metrics);
+                metrics
+            );
 
             if (reportResult.IsError)
             {
-                throw new Exception($"Failed to create AnalysisReport entity: {reportResult.TopError.Description}");
+                throw new Exception(
+                    $"Failed to create AnalysisReport entity: {reportResult.TopError.Description}"
+                );
             }
 
             var completeResult = video.MarkCompleted();
             if (completeResult.IsError)
             {
-                throw new Exception($"Failed to mark video as completed: {completeResult.TopError.Description}");
+                throw new Exception(
+                    $"Failed to mark video as completed: {completeResult.TopError.Description}"
+                );
             }
 
             _context.AnalysisReports.Add(reportResult.Value);
@@ -99,8 +116,12 @@ public class AnalyzeVideoJob
 
             // Invalidate cache so search results reflect new score
             await _cache.RemoveByTagAsync("players", CancellationToken.None);
+            await _cache.RemoveByTagAsync($"player-{video.PlayerProfileId}", CancellationToken.None);
 
-            _logger.LogInformation("Successfully completed AI analysis for video {VideoId}", videoId);
+            _logger.LogInformation(
+                "Successfully completed AI analysis for video {VideoId}",
+                videoId
+            );
         }
         catch (Exception ex)
         {

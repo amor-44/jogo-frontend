@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 import os
 import shutil
 import tempfile
@@ -107,6 +107,8 @@ async def analyze_by_url(request: AnalyzeByUrlRequest):
     except HTTPException:
         raise
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         with _store_lock:
             _result_store[analysis_id] = {
                 "analysis_id": analysis_id,

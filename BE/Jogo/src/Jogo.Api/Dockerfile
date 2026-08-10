@@ -15,7 +15,6 @@ WORKDIR /src
 COPY ["Directory.Packages.props", "."]
 COPY ["Directory.Build.props", "."]
 COPY ["src/Jogo.Api/Jogo.Api.csproj", "src/Jogo.Api/"]
-COPY ["src/Jogo.Contracts/Jogo.Contracts.csproj", "src/Jogo.Contracts/"]
 COPY ["src/Jogo.Application/Jogo.Application.csproj", "src/Jogo.Application/"]
 COPY ["src/Jogo.Domain/Jogo.Domain.csproj", "src/Jogo.Domain/"]
 COPY ["src/Jogo.Infrastructure/Jogo.Infrastructure.csproj", "src/Jogo.Infrastructure/"]
@@ -33,4 +32,10 @@ RUN dotnet publish "./Jogo.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Create the uploads folder and ensure the app user has write permissions
+USER root
+RUN mkdir -p /app/wwwroot/uploads && chown -R $APP_UID:$APP_UID /app/wwwroot
+USER $APP_UID
+
 ENTRYPOINT ["dotnet", "Jogo.Api.dll"]

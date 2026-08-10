@@ -11,15 +11,18 @@ public class UploadProfileImageCommandHandler : IRequestHandler<UploadProfileIma
     private readonly IAppDbContext _context;
     private readonly IUser _currentUser;
     private readonly IFileStorageService _fileStorageService;
+    private readonly Microsoft.Extensions.Caching.Hybrid.HybridCache _hybridCache;
 
     public UploadProfileImageCommandHandler(
         IAppDbContext context,
         IUser currentUser,
-        IFileStorageService fileStorageService)
+        IFileStorageService fileStorageService,
+        Microsoft.Extensions.Caching.Hybrid.HybridCache hybridCache)
     {
         _context = context;
         _currentUser = currentUser;
         _fileStorageService = fileStorageService;
+        _hybridCache = hybridCache;
     }
 
     public async Task<Result<string>> Handle(UploadProfileImageCommand request, CancellationToken cancellationToken)
@@ -57,6 +60,9 @@ public class UploadProfileImageCommandHandler : IRequestHandler<UploadProfileIma
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _hybridCache.RemoveByTagAsync("players", cancellationToken);
+        await _hybridCache.RemoveByTagAsync($"player-{profile.Id}", cancellationToken);
 
         return imageUrl;
     }

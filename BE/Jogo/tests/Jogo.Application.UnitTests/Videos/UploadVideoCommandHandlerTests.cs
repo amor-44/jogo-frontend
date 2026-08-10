@@ -20,6 +20,7 @@ public class UploadVideoCommandHandlerTests
     private readonly Mock<IAppDbContext> _contextMock;
     private readonly Mock<IUser> _currentUserMock;
     private readonly Mock<IVideoStorageService> _videoStorageMock;
+    private readonly Mock<Microsoft.Extensions.Caching.Hybrid.HybridCache> _hybridCacheMock;
     private readonly UploadVideoCommandHandler _handler;
 
     public UploadVideoCommandHandlerTests()
@@ -27,6 +28,7 @@ public class UploadVideoCommandHandlerTests
         _contextMock = new Mock<IAppDbContext>();
         _currentUserMock = new Mock<IUser>();
         _videoStorageMock = new Mock<IVideoStorageService>();
+        _hybridCacheMock = new Mock<Microsoft.Extensions.Caching.Hybrid.HybridCache>();
 
         var options = Options.Create(new VideoSettings
         {
@@ -38,7 +40,8 @@ public class UploadVideoCommandHandlerTests
             _contextMock.Object,
             _currentUserMock.Object,
             _videoStorageMock.Object,
-            options);
+            options,
+            _hybridCacheMock.Object);
     }
 
     [Fact]

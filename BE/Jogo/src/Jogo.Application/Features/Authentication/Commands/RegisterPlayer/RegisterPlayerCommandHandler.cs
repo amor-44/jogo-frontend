@@ -12,7 +12,8 @@ public class RegisterPlayerCommandHandler(
     IIdentityService identityService,
     ITokenProvider tokenProvider,
     IRefreshTokenService refreshTokenService,
-    IAppDbContext context) : IRequestHandler<RegisterPlayerCommand, Result<AuthResponse>>
+    IAppDbContext context,
+    Microsoft.Extensions.Caching.Hybrid.HybridCache hybridCache) : IRequestHandler<RegisterPlayerCommand, Result<AuthResponse>>
 {
     public async Task<Result<AuthResponse>> Handle(RegisterPlayerCommand request, CancellationToken cancellationToken)
     {
@@ -59,6 +60,10 @@ public class RegisterPlayerCommandHandler(
             await context.SaveChangesAsync(cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
+
+            // Invalidate cache since a new player profile was created
+            await hybridCache.RemoveByTagAsync("players", cancellationToken);
+            await hybridCache.RemoveByTagAsync($"player-{profileResult.Value.Id}", cancellationToken);
 
             var (accessToken, refreshToken) = tokenProvider.GenerateTokens(userResult.Value);
             await refreshTokenService.SaveRefreshTokenAsync(userId, refreshToken, cancellationToken);

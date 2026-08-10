@@ -15,17 +15,20 @@ public class UploadVideoCommandHandler : IRequestHandler<UploadVideoCommand, Res
     private readonly IUser _currentUser;
     private readonly IVideoStorageService _videoStorageService;
     private readonly VideoSettings _videoSettings;
+    private readonly Microsoft.Extensions.Caching.Hybrid.HybridCache _hybridCache;
 
     public UploadVideoCommandHandler(
         IAppDbContext context,
         IUser currentUser,
         IVideoStorageService videoStorageService,
-        IOptions<VideoSettings> videoSettings)
+        IOptions<VideoSettings> videoSettings,
+        Microsoft.Extensions.Caching.Hybrid.HybridCache hybridCache)
     {
         _context = context;
         _currentUser = currentUser;
         _videoStorageService = videoStorageService;
         _videoSettings = videoSettings.Value;
+        _hybridCache = hybridCache;
     }
 
     public async Task<Result<Guid>> Handle(UploadVideoCommand request, CancellationToken cancellationToken)
@@ -82,6 +85,9 @@ public class UploadVideoCommandHandler : IRequestHandler<UploadVideoCommand, Res
 
         _context.FootballVideos.Add(videoResult.Value);
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _hybridCache.RemoveByTagAsync("players", cancellationToken);
+        await _hybridCache.RemoveByTagAsync($"player-{profile.Id}", cancellationToken);
 
         return videoResult.Value.Id;
     }
