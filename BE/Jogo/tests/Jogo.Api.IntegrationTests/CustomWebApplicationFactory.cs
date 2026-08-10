@@ -63,6 +63,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
 
             services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlite(_connection));
+
+            services.AddDistributedMemoryCache();
         });
     }
 

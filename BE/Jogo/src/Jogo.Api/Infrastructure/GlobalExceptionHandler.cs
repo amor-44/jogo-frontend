@@ -21,9 +21,9 @@ public class GlobalExceptionHandler(IProblemDetailsService problemDetailsService
                 Exception = exception,
                 ProblemDetails = new ProblemDetails
                 {
-                    Type = exception.GetType().Name,
+                    Type = "InternalServerError",
                     Title = "Application error",
-                    Detail = exception.Message,
+                    Detail = "An internal server error occurred.",
                 },
             }
         );

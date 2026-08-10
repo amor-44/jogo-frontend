@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Jogo.Application.Common.Interfaces;
-using Jogo.Application.Features.Player.GetProfile;
+using Jogo.Application.Features.Player.Queries.GetProfile;
 using Jogo.Domain.Entities;
 using Jogo.Domain.Enums;
 using Moq;

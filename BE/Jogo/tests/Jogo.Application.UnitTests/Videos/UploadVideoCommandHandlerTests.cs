@@ -3,7 +3,7 @@ using System.Text;
 using FluentAssertions;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Application.Common.Models;
-using Jogo.Application.Features.Videos.UploadVideo;
+using Jogo.Application.Features.Videos.Commands.UploadVideo;
 using Jogo.Domain.Common.Results;
 using Jogo.Domain.Entities;
 using Jogo.Domain.Enums;

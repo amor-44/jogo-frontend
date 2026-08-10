@@ -1,12 +1,15 @@
-using System.Threading;
-using System.Threading.Tasks;
-
-using Jogo.Application.Dtos;
+using Jogo.Application.Features.Analysis.DTOs;
 
 namespace Jogo.Application.Common.Interfaces;
 
 public interface IAiAnalysisService
 {
-    Task<string> TriggerAnalysisAsync(string videoUrl, CancellationToken cancellationToken = default);
-    Task<AiAnalysisReportDto?> GetAnalysisStatusAsync(string analysisId, CancellationToken cancellationToken = default);
+    Task<string> TriggerAnalysisAsync(
+        string videoUrl,
+        CancellationToken cancellationToken = default
+    );
+    Task<AiAnalysisReportDto?> GetAnalysisStatusAsync(
+        string analysisId,
+        CancellationToken cancellationToken = default
+    );
 }

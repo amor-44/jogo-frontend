@@ -4,9 +4,10 @@ using System.Threading.Tasks;
 
 using Jogo.Application.Common.Interfaces;
 using Jogo.Domain.Entities;
-
+using Jogo.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace Jogo.Infrastructure.BackgroundJobs;
 
@@ -15,15 +16,18 @@ public class AnalyzeVideoJob
     private readonly IAppDbContext _context;
     private readonly IAiAnalysisService _aiAnalysisService;
     private readonly ILogger<AnalyzeVideoJob> _logger;
+    private readonly HybridCache _cache;
 
     public AnalyzeVideoJob(
         IAppDbContext context,
         IAiAnalysisService aiAnalysisService,
-        ILogger<AnalyzeVideoJob> logger)
+        ILogger<AnalyzeVideoJob> logger,
+        HybridCache cache)
     {
         _context = context;
         _aiAnalysisService = aiAnalysisService;
         _logger = logger;
+        _cache = cache;
     }
 
     public async Task ExecuteAsync(Guid videoId, CancellationToken cancellationToken = default)
@@ -59,16 +63,25 @@ public class AnalyzeVideoJob
                 throw new Exception($"Failed to retrieve analysis report for AnalysisId: {analysisId}");
             }
 
-            // ✅ إضافة الـ 8 بارامترات المطلوبة بالضبط
+            var metrics = PerformanceMetrics.Create(
+                reportDto.Metrics.PositionScore,
+                reportDto.Metrics.PassingAccuracy,
+                reportDto.Metrics.BallControl,
+                reportDto.Metrics.PositioningScore,
+                reportDto.Metrics.MovementEfficiency,
+                reportDto.Metrics.DefensiveActions,
+                reportDto.Metrics.AttackingImpact,
+                reportDto.Metrics.DecisionMaking);
+
             var reportResult = AnalysisReport.Create(
-     videoId,
-     reportDto.OverallScore,
-     reportDto.Summary,
-     reportDto.Strengths,
-     reportDto.Weaknesses,
-     reportDto.Recommendations,
-     video.StorageUrl
-              );
+                videoId,
+                reportDto.OverallScore,
+                reportDto.Summary,
+                reportDto.Strengths,
+                reportDto.Weaknesses,
+                reportDto.Recommendations,
+                reportDto.AIModelVersion,
+                metrics);
 
             if (reportResult.IsError)
             {
@@ -83,6 +96,9 @@ public class AnalyzeVideoJob
 
             _context.AnalysisReports.Add(reportResult.Value);
             await _context.SaveChangesAsync(cancellationToken);
+
+            // Invalidate cache so search results reflect new score
+            await _cache.RemoveByTagAsync("players", CancellationToken.None);
 
             _logger.LogInformation("Successfully completed AI analysis for video {VideoId}", videoId);
         }

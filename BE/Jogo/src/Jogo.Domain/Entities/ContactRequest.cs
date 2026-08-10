@@ -11,25 +11,29 @@ public class ContactRequest : AuditableEntity
     public ContactRequestStatus Status { get; private set; }
     public DateTimeOffset RequestedAt { get; private set; }
     public DateTimeOffset? RespondedAt { get; private set; }
+    public string? Message { get; private set; }
     public PlayerProfile PlayerProfile { get; private set; } = null!;
 
     public ScoutProfile ScoutProfile { get; private set; } = null!;
     private ContactRequest() { }
 
-    private ContactRequest(Guid id, Guid scoutProfileId, Guid playerProfileId) : base(id)
+    private ContactRequest(Guid id, Guid scoutProfileId, Guid playerProfileId, string? message) : base(id)
     {
         ScoutProfileId = scoutProfileId;
         PlayerProfileId = playerProfileId;
+        Message = message;
         Status = ContactRequestStatus.Pending;
         RequestedAt = DateTimeOffset.UtcNow;
     }
 
-    public static Result<ContactRequest> Create(Guid scoutProfileId, Guid playerProfileId)
+    public static Result<ContactRequest> Create(Guid scoutProfileId, Guid playerProfileId, string? message = null)
     {
         if (scoutProfileId == Guid.Empty) return Error.Validation("ContactRequest.InvalidScout", "Scout profile ID is required.");
         if (playerProfileId == Guid.Empty) return Error.Validation("ContactRequest.InvalidPlayer", "Player profile ID is required.");
 
-        return new ContactRequest(Guid.NewGuid(), scoutProfileId, playerProfileId);
+        if (message != null && message.Length > 500) return Error.Validation("ContactRequest.MessageTooLong", "Message cannot exceed 500 characters.");
+
+        return new ContactRequest(Guid.NewGuid(), scoutProfileId, playerProfileId, message);
     }
 
     public Result<Success> Accept()

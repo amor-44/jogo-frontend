@@ -5,8 +5,8 @@
 
 //using Jogo.Application.Features.Authentication.Login;
 //using Jogo.Application.Features.Player.CreateProfile;
-//using Jogo.Application.Features.Player.GetProfile;
-//using Jogo.Application.Features.Player.UpdateProfile;
+//using Jogo.Application.Features.Player.Queries.GetProfile;
+//using Jogo.Application.Features.Player.Commands.UpdateProfile;
 //using Jogo.Domain.Enums;
 //using Jogo.Infrastructure.Data;
 
@@ -67,7 +67,7 @@
 //        // 3. GetProfile (Found)
 //        var getResponse2 = await _client.GetAsync("/api/v1/player/profile");
 //        getResponse2.StatusCode.Should().Be(HttpStatusCode.OK);
-//        var profile = await getResponse2.Content.ReadFromJsonAsync<ProfileDto>();
+//        var profile = await getResponse2.Content.ReadFromJsonAsync<PlayerProfileDto>();
 //        profile.Should().NotBeNull();
 //        profile!.FullName.Should().Be("John Doe");
 //        profile.Country.Should().Be("USA");
@@ -80,7 +80,7 @@
 
 //        // 5. Verify Update
 //        var getResponse3 = await _client.GetAsync("/api/v1/player/profile");
-//        var updatedProfile = await getResponse3.Content.ReadFromJsonAsync<ProfileDto>();
+//        var updatedProfile = await getResponse3.Content.ReadFromJsonAsync<PlayerProfileDto>();
 //        updatedProfile!.City.Should().Be("NY");
 //        updatedProfile.Visibility.Should().Be(ProfileVisibility.Public);
 //    }

@@ -3,11 +3,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Jogo.Application.Common.Behaviours;
 
-public class UnhandledExceptionBehaviour<TRequest, TResponse>(ILogger<TRequest> logger)
+public class UnhandledExceptionBehaviour<TRequest, TResponse>(ILogger<UnhandledExceptionBehaviour<TRequest, TResponse>> logger)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private readonly ILogger<TRequest> _logger = logger;
+    private readonly ILogger<UnhandledExceptionBehaviour<TRequest, TResponse>> _logger = logger;
 
     public async Task<TResponse> Handle(
         TRequest request,

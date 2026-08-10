@@ -1,11 +1,10 @@
 using Asp.Versioning;
 
-using Jogo.Application.Features.Scout.CreateProfile;
-using Jogo.Application.Features.Scout.GetPlayerProfile;
-using Jogo.Application.Features.Scout.GetProfile;
-using Jogo.Application.Features.Scout.GetReport;
-using Jogo.Application.Features.Scout.SearchPlayers;
-using Jogo.Application.Features.Scout.UpdateProfile;
+using Jogo.Application.Common.Models;
+using Jogo.Application.Features.Scout.Commands.UpdateProfile;
+using Jogo.Application.Features.Scout.DTOs;
+using Jogo.Application.Features.Scout.Queries.GetProfile;
+using Jogo.Application.Features.Scout.Queries.ListContactRequests;
 using Jogo.Domain.Enums;
 
 using MediatR;
@@ -27,25 +26,6 @@ public class ScoutController : ApiController
         _sender = sender;
     }
 
-    /// <summary>
-    /// Search players with filters.
-    /// </summary>
-    [HttpGet("players")]
-    [ProducesResponseType(typeof(SearchPlayersResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SearchPlayers(
-        [FromQuery] SearchPlayersQuery query,
-        CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(query, cancellationToken);
-
-        if (result.IsError)
-        {
-            return Problem(result.Errors);
-        }
-
-        return Ok(result.Value);
-    }
     /// <summary>
     /// Get current scout profile.
     /// </summary>
@@ -71,70 +51,6 @@ public class ScoutController : ApiController
         CancellationToken cancellationToken)
     {
         var result = await _sender.Send(command, cancellationToken);
-
-        if (result.IsError)
-        {
-            return Problem(result.Errors);
-        }
-
-        return Ok(result.Value);
-    }
-    /// <summary>
-    /// Create a new scout profile.
-    /// </summary>
-    [HttpPost]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(CreateScoutProfileResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateProfile(
-        [FromBody] CreateProfileCommand command,
-        CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(command, cancellationToken);
-
-        if (result.IsError)
-        {
-            return Problem(result.Errors);
-        }
-
-        return CreatedAtAction(nameof(GetPlayerProfile), new { playerId = result.Value.ProfileId }, result.Value);
-    }
-
-    /// <summary>
-    /// Get player profile by id.
-    /// </summary>
-    [HttpGet("players/{playerId:guid}")]
-    [ProducesResponseType(typeof(PlayerProfileDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPlayerProfile(
-        Guid playerId,
-        CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(
-            new GetPlayerProfileQuery(playerId),
-            cancellationToken);
-
-        if (result.IsError)
-        {
-            return Problem(result.Errors);
-        }
-
-        return Ok(result.Value);
-    }
-
-    /// <summary>
-    /// Get player's best analysis report.
-    /// </summary>
-    [HttpGet("players/{playerId:guid}/report")]
-    [ProducesResponseType(typeof(ReportDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetReport(
-        Guid playerId,
-        CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(
-            new GetReportQuery(playerId),
-            cancellationToken);
 
         if (result.IsError)
         {

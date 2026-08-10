@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Xunit;
 using Jogo.Application.Common.Interfaces;
-using Jogo.Application.Features.Analysis.RetryAnalysis;
+using Jogo.Application.Features.Analysis.Commands.RetryAnalysis;
 using Jogo.Domain.Entities;
 using Jogo.Domain.Enums;
 using Microsoft.EntityFrameworkCore;

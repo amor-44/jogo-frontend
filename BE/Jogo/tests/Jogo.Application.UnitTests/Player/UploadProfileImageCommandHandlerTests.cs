@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Jogo.Application.Common.Interfaces;
-using Jogo.Application.Features.Player.UploadProfileImage;
+using Jogo.Application.Features.Player.Commands.UploadProfileImage;
 using Jogo.Domain.Entities;
 using Jogo.Domain.Enums;
 using Moq;

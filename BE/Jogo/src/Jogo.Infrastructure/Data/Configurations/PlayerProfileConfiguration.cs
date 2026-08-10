@@ -26,6 +26,7 @@ public class PlayerProfileConfiguration : IEntityTypeConfiguration<PlayerProfile
 
         builder.Property(t => t.Height).HasPrecision(5, 2);
         builder.Property(t => t.Weight).HasPrecision(5, 2);
+        builder.Property(t => t.MarketValue).HasPrecision(18, 2);
 
         builder.Property(t => t.PreferredFoot).HasConversion<string>().HasMaxLength(50);
         builder.Property(t => t.PrimaryPosition).HasConversion<string>().HasMaxLength(50);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Jogo.Application.Common.Interfaces;
-using Jogo.Application.Dtos;
+using Jogo.Application.Features.Analysis.DTOs;
 
 namespace Jogo.Infrastructure.Services.Ai;
 
@@ -101,13 +101,25 @@ public class AiAnalysisService : IAiAnalysisService
         var weaknesses = perf?.Weaknesses ?? new List<string>();
         var recommendations = perf?.Recommendations ?? new List<string>();
 
+        var metrics = new PerformanceMetricsDto(
+            PositionScore: (int)Math.Round(perf?.Scores?.PositioningScore ?? 0),
+            PassingAccuracy: (int)Math.Round(perf?.Scores?.PassingAccuracy ?? 0),
+            BallControl: (int)Math.Round(perf?.Scores?.BallControl ?? 0),
+            PositioningScore: (int)Math.Round(perf?.Scores?.PositioningScore ?? 0),
+            MovementEfficiency: (int)Math.Round(perf?.Scores?.MovementEfficiency ?? 0),
+            DefensiveActions: (int)Math.Round(perf?.Scores?.DefensiveActions ?? 0),
+            AttackingImpact: (int)Math.Round(perf?.Scores?.AttackingImpact ?? 0),
+            DecisionMaking: (int)Math.Round(perf?.Scores?.DecisionMaking ?? 0)
+        );
+
         return new AiAnalysisReportDto(
             overallScore,
             summary,
             strengths,
             weaknesses,
             recommendations,
-            AIModelVersion: "football-perf-mvp-v1"
+            "football-perf-mvp-v1",
+            metrics
         );
     }
 }

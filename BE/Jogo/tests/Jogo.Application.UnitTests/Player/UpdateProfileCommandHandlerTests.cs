@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Jogo.Application.Common.Interfaces;
-using Jogo.Application.Features.Player.UpdateProfile;
+using Jogo.Application.Features.Player.Commands.UpdateProfile;
 using Jogo.Domain.Entities;
 using Jogo.Domain.Enums;
 using Moq;
@@ -13,13 +13,15 @@ public class UpdateProfileCommandHandlerTests
 {
     private readonly Mock<IAppDbContext> _contextMock;
     private readonly Mock<IUser> _currentUserMock;
+    private readonly Mock<Microsoft.Extensions.Caching.Hybrid.HybridCache> _hybridCacheMock;
     private readonly UpdateProfileCommandHandler _handler;
 
     public UpdateProfileCommandHandlerTests()
     {
         _contextMock = new Mock<IAppDbContext>();
         _currentUserMock = new Mock<IUser>();
-        _handler = new UpdateProfileCommandHandler(_contextMock.Object, _currentUserMock.Object);
+        _hybridCacheMock = new Mock<Microsoft.Extensions.Caching.Hybrid.HybridCache>();
+        _handler = new UpdateProfileCommandHandler(_contextMock.Object, _currentUserMock.Object, _hybridCacheMock.Object);
     }
 
     [Fact]
@@ -30,7 +32,7 @@ public class UpdateProfileCommandHandlerTests
 
         _contextMock.Setup(x => x.PlayerProfiles).ReturnsDbSet(new List<PlayerProfile>());
 
-        var command = new UpdateProfileCommand(null, null, null, null, null, null, ProfileVisibility.Public);
+        var command = new UpdateProfileCommand(null, null, null, null, null, null, null, null, ProfileVisibility.Public);
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
@@ -47,7 +49,7 @@ public class UpdateProfileCommandHandlerTests
         var profile = PlayerProfile.Create(userId, "John", new DateTime(2000, 1, 1), Position.Striker, PreferredFoot.Right, "USA").Value;
         _contextMock.Setup(x => x.PlayerProfiles).ReturnsDbSet(new List<PlayerProfile> { profile });
 
-        var command = new UpdateProfileCommand("NY", 180, 75, Position.LeftWinger, "NYFC", "Hi", ProfileVisibility.Public);
+        var command = new UpdateProfileCommand("NY", 180, 75, Position.LeftWinger, "NYFC", "Hi", "2 years", 1000m, ProfileVisibility.Public);
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
@@ -57,5 +59,6 @@ public class UpdateProfileCommandHandlerTests
         profile.Weight.Should().Be(75);
         profile.Visibility.Should().Be(ProfileVisibility.Public);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _hybridCacheMock.Verify(x => x.RemoveByTagAsync("players", It.IsAny<CancellationToken>()), Times.Once);
     }
 }

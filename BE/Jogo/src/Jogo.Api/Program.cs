@@ -1,7 +1,10 @@
 using Hangfire;
+
 using Jogo.Api.Extensions.DependencyInjection;
 using Jogo.Infrastructure.Data;
+
 using Scalar.AspNetCore;
+
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +20,9 @@ builder
 builder.Host.UseSerilog(
     (context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration)
 );
+
+
+
 
 var app = builder.Build();
 

@@ -37,6 +37,7 @@ public class AnalysisEndpointsTests : IAsyncLifetime
 
         using var scope = _fixture.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        context.Users.Add(User.Create(_userId, Role.Player).Value);
         context.PlayerProfiles.Add(_profile);
         await context.SaveChangesAsync(CancellationToken.None);
     }

@@ -33,6 +33,19 @@ public class AnalysisReportConfiguration : IEntityTypeConfiguration<AnalysisRepo
                 v => JsonSerializer.Serialize(v, jsonOptions),
                 v => JsonSerializer.Deserialize<List<string>>(v, jsonOptions) ?? new List<string>()
             );
+
+        builder.OwnsOne(t => t.Metrics, metrics =>
+        {
+            metrics.Property(m => m.PositionScore).IsRequired();
+            metrics.Property(m => m.PassingAccuracy).IsRequired();
+            metrics.Property(m => m.BallControl).IsRequired();
+            metrics.Property(m => m.PositioningScore).IsRequired();
+            metrics.Property(m => m.MovementEfficiency).IsRequired();
+            metrics.Property(m => m.DefensiveActions).IsRequired();
+            metrics.Property(m => m.AttackingImpact).IsRequired();
+            metrics.Property(m => m.DecisionMaking).IsRequired();
+        });
+
         builder.HasOne(x => x.FootballVideo)
              .WithOne(x => x.AnalysisReport)
              .HasForeignKey<AnalysisReport>(x => x.VideoId);

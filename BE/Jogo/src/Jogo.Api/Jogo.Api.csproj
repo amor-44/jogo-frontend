@@ -3,6 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <UserSecretsId>ad6014a7-7538-4006-892b-4b9e6b1ad06d</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
@@ -13,7 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Jogo.Application\Jogo.Application.csproj" />
-    <ProjectReference Include="..\Jogo.Contracts\Jogo.Contracts.csproj" />
     <ProjectReference Include="..\Jogo.Infrastructure\Jogo.Infrastructure.csproj" />
   </ItemGroup>
 

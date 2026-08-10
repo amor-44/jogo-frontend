@@ -1,3 +1,4 @@
+using Jogo.Application.Features.Videos.DTOs;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Application.Common.Models;
 using Jogo.Domain.Common.Results;

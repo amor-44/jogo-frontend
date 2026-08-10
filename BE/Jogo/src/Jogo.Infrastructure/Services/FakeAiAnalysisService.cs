@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Jogo.Application.Common.Interfaces;
-using Jogo.Application.Dtos;
+using Jogo.Application.Features.Analysis.DTOs;
 
 namespace Jogo.Infrastructure.Services;
 
@@ -24,14 +24,26 @@ public class FakeAiAnalysisService : IAiAnalysisService
         // Ù…Ø­Ø§ÙƒØ§Ø© ØªØ£Ø®ÙŠØ± Ø§Ø³ØªØ±Ø¬Ø§Ø¹ Ø§Ù„Ù†ØªÙŠØ¬Ø©
         await Task.Delay(500, cancellationToken);
 
-        // Ø¥Ø±Ø¬Ø§Ø¹ Ø§Ù„Ù€ Dto Ø¨Ø¬Ù…ÙŠØ¹ Ø§Ù„Ù€ 6 Ù‚ÙŠÙ… Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø© Ø­Ø³Ø¨ Ø§Ù„Ù€ Constructor
+        var random = Random.Shared;
+        int overallScore = random.Next(50, 99);
+        
         return new AiAnalysisReportDto(
-            85,                                         // OverallScore (int)
-            "Analysis completed successfully.",         // Summary (string)
-            new List<string> { "Good pace", "High accuracy" },          // Strengths
-            new List<string> { "Need stamina improvement" },           // Weaknesses
-            new List<string> { "Practice daily drills" },               // Recommendations
-            "fake-ai-v1"                                            // AIModelVersion
+            OverallScore: overallScore,
+            Summary: $"Simulated performance analysis. Player showed varying degrees of proficiency.",
+            Strengths: ["Excellent ball control", "Accurate passing"],
+            Weaknesses: ["Defensive positioning", "Stamina"],
+            Recommendations: ["Focus on interval training", "Review defensive drills"],
+            AIModelVersion: "FakeAI-1.1.0",
+            Metrics: new PerformanceMetricsDto(
+                PositionScore: random.Next(40, 100),
+                PassingAccuracy: random.Next(40, 100),
+                BallControl: random.Next(40, 100),
+                PositioningScore: random.Next(40, 100),
+                MovementEfficiency: random.Next(40, 100),
+                DefensiveActions: random.Next(40, 100),
+                AttackingImpact: random.Next(40, 100),
+                DecisionMaking: random.Next(40, 100)
+            )
         );
     }
 }

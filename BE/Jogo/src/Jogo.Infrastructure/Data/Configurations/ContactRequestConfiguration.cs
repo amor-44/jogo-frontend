@@ -11,14 +11,15 @@ public class ContactRequestConfiguration : IEntityTypeConfiguration<ContactReque
         builder.HasKey(t => t.Id);
 
         builder.Property(t => t.Status).HasConversion<string>().HasMaxLength(50);
+        builder.Property(t => t.Message).HasMaxLength(500);
         builder.HasOne(x => x.PlayerProfile)
             .WithMany(x => x.ContactRequests)
             .HasForeignKey(x => x.PlayerProfileId)
-            .OnDelete(DeleteBehavior.NoAction);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.ScoutProfile)
             .WithMany(x => x.ContactRequests)
             .HasForeignKey(x => x.ScoutProfileId)
-            .OnDelete(DeleteBehavior.NoAction);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

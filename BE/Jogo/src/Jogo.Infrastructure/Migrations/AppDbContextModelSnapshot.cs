@@ -204,6 +204,9 @@ namespace Jogo.Infrastructure.Migrations
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("FootballExperience")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -218,6 +221,10 @@ namespace Jogo.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("LastModifiedUtc")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal?>("MarketValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("PreferredFoot")
                         .IsRequired()
@@ -613,7 +620,47 @@ namespace Jogo.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.OwnsOne("Jogo.Domain.ValueObjects.PerformanceMetrics", "Metrics", b1 =>
+                        {
+                            b1.Property<Guid>("AnalysisReportId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("AttackingImpact")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("BallControl")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("DecisionMaking")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("DefensiveActions")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("MovementEfficiency")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("PassingAccuracy")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("PositionScore")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("PositioningScore")
+                                .HasColumnType("int");
+
+                            b1.HasKey("AnalysisReportId");
+
+                            b1.ToTable("AnalysisReports");
+
+                            b1.WithOwner()
+                                .HasForeignKey("AnalysisReportId");
+                        });
+
                     b.Navigation("FootballVideo");
+
+                    b.Navigation("Metrics")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Jogo.Domain.Entities.ContactRequest", b =>
@@ -621,13 +668,13 @@ namespace Jogo.Infrastructure.Migrations
                     b.HasOne("Jogo.Domain.Entities.PlayerProfile", "PlayerProfile")
                         .WithMany("ContactRequests")
                         .HasForeignKey("PlayerProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Jogo.Domain.Entities.ScoutProfile", "ScoutProfile")
                         .WithMany("ContactRequests")
                         .HasForeignKey("ScoutProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("PlayerProfile");

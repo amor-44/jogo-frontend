@@ -1,18 +1,20 @@
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+
 using Asp.Versioning;
+
 using Jogo.Api.Infrastructure;
 using Jogo.Api.OpenApi.Transformers;
 using Jogo.Api.Services;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Infrastructure.Settings;
 
-using Jogo.Api.OpenApi.Transformers;
-
 using Microsoft.AspNetCore.RateLimiting;
+
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+
 using Serilog;
 
 namespace Jogo.Api.Extensions.DependencyInjection;
@@ -27,7 +29,6 @@ public static class DependencyInjection
         services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
         services.Configure<Jogo.Application.Common.Models.VideoSettings>(configuration.GetSection(Jogo.Application.Common.Models.VideoSettings.SectionName));
 
-        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
         services.AddAntiforgery();
         services
             .AddCustomProblemDetails()
@@ -40,7 +41,7 @@ public static class DependencyInjection
             .AddIdentityInfrastructure()
             .AddAppRateLimiting()
             .AddAppOutputCaching()
-            .AddAppOpenTelememrty()
+            .AddAppOpenTelemetry()
             .AddSignalR();
 
         return services;
@@ -57,7 +58,7 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddAppOpenTelememrty(this IServiceCollection services)
+    public static IServiceCollection AddAppOpenTelemetry(this IServiceCollection services)
     {
         services
             .AddOpenTelemetry()
@@ -174,10 +175,16 @@ public static class DependencyInjection
     )
     {
         services
-            .AddControllers()
+            .AddControllers(options =>
+            {
+                //options.Conventions.Add();
+            })
             .AddJsonOptions(options =>
+            {
                 options.JsonSerializerOptions.DefaultIgnoreCondition =
-                    JsonIgnoreCondition.WhenWritingNull
+                    JsonIgnoreCondition.WhenWritingNull;
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            }
             );
 
         return services;

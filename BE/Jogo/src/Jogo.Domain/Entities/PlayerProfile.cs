@@ -21,10 +21,13 @@ public class PlayerProfile : AuditableEntity
     public string? Biography { get; private set; }
     public string? ProfilePictureUrl { get; private set; }
     public ProfileVisibility Visibility { get; private set; }
+    public string? FootballExperience { get; private set; }
+    public decimal? MarketValue { get; private set; }
 
     public bool IsComplete => !string.IsNullOrWhiteSpace(FullName) && 
                               !string.IsNullOrWhiteSpace(Country) && 
-                              DateOfBirth != default;
+                              DateOfBirth != default &&
+                              FootballVideos.Any();
     public User User { get; private set; } = null!;
 
     public ICollection<FootballVideo> FootballVideos { get; private set; }
@@ -96,7 +99,9 @@ public class PlayerProfile : AuditableEntity
         decimal? weight,
         Position? secondaryPosition,
         string? currentClub,
-        string? biography)
+        string? biography,
+        string? footballExperience,
+        decimal? marketValue)
     {
         if (height.HasValue && height.Value <= 0)
             return Error.Validation("PlayerProfile.InvalidHeight", "Height must be positive.");
@@ -113,6 +118,8 @@ public class PlayerProfile : AuditableEntity
         SecondaryPosition = secondaryPosition;
         CurrentClub = currentClub;
         Biography = biography;
+        FootballExperience = footballExperience;
+        MarketValue = marketValue;
 
         return Result.Success;
     }

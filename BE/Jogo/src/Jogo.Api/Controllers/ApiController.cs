@@ -1,4 +1,4 @@
-﻿using Jogo.Domain.Common.Results;
+using Jogo.Domain.Common.Results;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
@@ -30,6 +30,7 @@ public class ApiController : ControllerBase
             ErrorKind.Validation => StatusCodes.Status400BadRequest,
             ErrorKind.NotFound => StatusCodes.Status404NotFound,
             ErrorKind.Unauthorized => StatusCodes.Status403Forbidden,
+            ErrorKind.Forbidden => StatusCodes.Status403Forbidden,
             _ => StatusCodes.Status500InternalServerError,
         };
 
