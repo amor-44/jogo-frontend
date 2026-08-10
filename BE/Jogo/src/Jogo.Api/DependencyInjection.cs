@@ -231,6 +231,10 @@ public static class DependencyInjection
         // 3. HTTPS redirection (before any other middleware that might generate URLs)
         app.UseHttpsRedirection();
 
+        // 3b. Static files — serves wwwroot/uploads/videos/* so the AI container
+        //     can download videos by URL (e.g. http://jogo-api:8080/uploads/videos/<file>)
+        app.UseStaticFiles();
+
         // 4. Serilog request logging (early to log all requests)
 
         app.UseRequestLogContext();
