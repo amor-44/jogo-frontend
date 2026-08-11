@@ -61,21 +61,35 @@ const ALL_NATIONALITIES = [
   'الكاميرون',
 ];
 
-const POSITION_OPTIONS = [
-  { value: 'Striker', label: 'مهاجم (Striker / ST)', group: 'هجوم' },
-  { value: 'LeftWinger', label: 'جناح أيسر (Left Winger / LW)', group: 'هجوم' },
-  { value: 'RightWinger', label: 'جناح أيمن (Right Winger / RW)', group: 'هجوم' },
-  { value: 'AttackingMidfielder', label: 'صانع ألعاب / وسط هجومي (CAM)', group: 'وسط' },
-  { value: 'CentralMidfielder', label: 'وسط محور (Central Midfielder / CM)', group: 'وسط' },
-  { value: 'DefensiveMidfielder', label: 'وسط دفاعي / ارتكاز (CDM)', group: 'وسط' },
-  { value: 'LeftBack', label: 'ظهير أيسر (Left Back / LB)', group: 'دفاع' },
-  { value: 'RightBack', label: 'ظهير أيمن (Right Back / RB)', group: 'دفاع' },
-  { value: 'CenterBack', label: 'قلب دفاع (Center Back / CB)', group: 'دفاع' },
-  { value: 'Goalkeeper', label: 'حارس مرمى (Goalkeeper / GK)', group: 'حراسة' },
+const POSITIONS = [
+  { label: 'مهاجم (Striker / ST)', value: 'ST' },
+  { label: 'جناح أيسر (Left Winger / LW)', value: 'LW' },
+  { label: 'جناح أيمن (Right Winger / RW)', value: 'RW' },
+  { label: 'صانع ألعاب / وسط هجومي (CAM)', value: 'CAM' },
+  { label: 'وسط محور (Central Midfielder / CM)', value: 'CM' },
+  { label: 'وسط دفاعي / ارتكاز (CDM)', value: 'CDM' },
+  { label: 'ظهير أيسر (Left Back / LB)', value: 'LB' },
+  { label: 'ظهير أيمن (Right Back / RB)', value: 'RB' },
+  { label: 'قلب دفاع (Center Back / CB)', value: 'CB' },
+  { label: 'حارس مرمى (Goalkeeper / GK)', value: 'GK' },
 ];
 
 const mapToBackendPosition = (pos: string): string => {
   const map: Record<string, string> = {
+    ST: 'Striker',
+    LW: 'LeftWinger',
+    RW: 'RightWinger',
+    CAM: 'AttackingMidfielder',
+    CM: 'CentralMidfielder',
+    CDM: 'DefensiveMidfielder',
+    LB: 'LeftBack',
+    RB: 'RightBack',
+    CB: 'CenterBack',
+    GK: 'Goalkeeper',
+    CF: 'Striker',
+    LM: 'LeftWinger',
+    RM: 'RightWinger',
+    DM: 'DefensiveMidfielder',
     Striker: 'Striker',
     LeftWinger: 'LeftWinger',
     RightWinger: 'RightWinger',
@@ -86,36 +100,6 @@ const mapToBackendPosition = (pos: string): string => {
     RightBack: 'RightBack',
     CenterBack: 'CenterBack',
     Goalkeeper: 'Goalkeeper',
-    ST: 'Striker',
-    CF: 'Striker',
-    LW: 'LeftWinger',
-    RW: 'RightWinger',
-    CAM: 'AttackingMidfielder',
-    CM: 'CentralMidfielder',
-    LM: 'LeftWinger',
-    RM: 'RightWinger',
-    CDM: 'DefensiveMidfielder',
-    DM: 'DefensiveMidfielder',
-    LB: 'LeftBack',
-    RB: 'RightBack',
-    CB: 'CenterBack',
-    GK: 'Goalkeeper',
-    'مهاجم': 'Striker',
-    'رأس حربة': 'Striker',
-    'جناح أيسر': 'LeftWinger',
-    'جناح أيمن': 'RightWinger',
-    'صانع ألعاب': 'AttackingMidfielder',
-    'وسط هجومي': 'AttackingMidfielder',
-    'وسط محور': 'CentralMidfielder',
-    'وسط': 'CentralMidfielder',
-    'وسط دفاعي': 'DefensiveMidfielder',
-    'ارتكاز': 'DefensiveMidfielder',
-    'ظهير أيسر': 'LeftBack',
-    'ظهير أيمن': 'RightBack',
-    'قلب دفاع': 'CenterBack',
-    'مدافع': 'CenterBack',
-    'حارس مرمى': 'Goalkeeper',
-    'حارس': 'Goalkeeper',
   };
   return map[pos] || 'Striker';
 };
@@ -139,7 +123,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Step 2: Football Info
-  const [mainPosition, setMainPosition] = useState<string>('Striker');
+  const [mainPosition, setMainPosition] = useState<string>('ST');
   const [prefPosition, setPrefPosition] = useState('');
   const [foot, setFoot] = useState<PreferredFoot>('اليمني');
   const [weight, setWeight] = useState('');
@@ -230,7 +214,7 @@ const Register = () => {
       };
       const mappedFoot = footMapping[foot] || 'Right';
 
-      // 3. Prepare position mapping to ensure exact Backend enum value
+      // 3. Prepare position mapping
       const mappedPosition = mapToBackendPosition(mainPosition);
 
       // 4. Prepare clubs (default to "بدون نادي" if empty)
@@ -568,7 +552,7 @@ const Register = () => {
                 required
                 className="w-full bg-gray-50/70 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl text-xs outline-none focus:border-[#2B43A1] focus:bg-white text-right shadow-2xs cursor-pointer transition-all font-medium"
               >
-                {POSITION_OPTIONS.map((pos) => (
+                {POSITIONS.map((pos) => (
                   <option key={pos.value} value={pos.value}>
                     {pos.label}
                   </option>
