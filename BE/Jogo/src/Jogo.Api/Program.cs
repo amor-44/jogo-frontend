@@ -1,16 +1,12 @@
 using Hangfire;
-
 using Jogo.Api.Extensions.DependencyInjection;
 using Jogo.Infrastructure.Data;
-
 using Scalar.AspNetCore;
-
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddDistributedMemoryCache();
 
 builder
     .Services.AddPresentation(builder.Configuration)
@@ -20,9 +16,6 @@ builder
 builder.Host.UseSerilog(
     (context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration)
 );
-
-
-
 
 var app = builder.Build();
 
@@ -49,13 +42,15 @@ else
     app.UseHsts();
 }
 
-app.UseHangfireDashboard();
-
 app.UseCoreMiddlewares(builder.Configuration);
 
-app.MapControllers();
-
 app.UseAntiforgery();
+
+app.UseHangfireDashboard();
+
+app.MapPrometheusScrapingEndpoint();
+
+app.MapControllers();
 
 app.MapStaticAssets();
 

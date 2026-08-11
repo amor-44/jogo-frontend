@@ -106,7 +106,20 @@ public static class DependencyInjection
 
         services.AddTransient<IIdentityService, IdentityService>();
 
-        services.AddDistributedMemoryCache();
+        var redisConnectionString = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrEmpty(redisConnectionString))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+                options.InstanceName = "Jogo_";
+            });
+        }
+        else
+        {
+            services.AddDistributedMemoryCache();
+        }
+
         services.AddHybridCache(options =>
             options.DefaultEntryOptions = new HybridCacheEntryOptions
             {
