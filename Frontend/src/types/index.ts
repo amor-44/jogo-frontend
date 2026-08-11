@@ -221,13 +221,40 @@ export interface RegisterPlayerCommand {
   fullName: string;
   email: string;
   password: string;
-  confirmPassword: string;
+  confirmPassword?: string;
   dateOfBirth: string;
-  nationality: string;
-  position: Position;
-  preferredFoot: ApiPreferredFoot;
+  country?: string;
+  nationality?: string;
+  city?: string;
+  region?: string;
+  primaryPosition?: Position | string;
+  position?: Position | string;
+  preferredFoot?: ApiPreferredFoot | string;
   height?: number;
   weight?: number;
+  currentClub?: string;
+  previousClub?: string;
+  age?: number;
+}
+
+export interface RegisterPlayerFormData {
+  fullName: string;
+  email: string;
+  phone?: string;
+  password: string;
+  confirmPassword: string;
+  nationality: string;
+  region: string;
+  dateOfBirth: string;
+  age?: number;
+  mainPosition: string;
+  prefPosition?: string;
+  foot: PreferredFoot | ApiPreferredFoot;
+  height?: string;
+  weight?: string;
+  currentClub?: string;
+  prevClub?: string;
+  playerBio?: string;
 }
 
 export interface RegisterScoutCommand {
@@ -268,31 +295,52 @@ export interface UserInfoDto {
 export interface PlayerProfileDto {
   id: string;
   fullName: string;
-  email: string;
+  email?: string;
   dateOfBirth: string;
   age: number;
-  nationality: string;
-  position: Position;
-  preferredFoot: ApiPreferredFoot;
+  country?: string;
+  nationality?: string;
+  city?: string;
+  region?: string;
+  position?: Position | string;
+  primaryPosition?: Position | string;
+  secondaryPosition?: Position | string;
+  preferredFoot?: ApiPreferredFoot | PreferredFoot;
   height?: number;
   weight?: number;
   currentClub?: string;
+  previousClub?: string;
   bio?: string;
+  biography?: string;
+  footballExperience?: string;
+  marketValue?: number;
   profilePictureUrl?: string;
-  profileVisibility: ProfileVisibility;
-  createdAt: string;
+  profileVisibility?: ProfileVisibility;
+  visibility?: ProfileVisibility;
+  isComplete?: boolean;
+  createdAt?: string;
 }
 
 export interface UpdateProfileCommand {
   fullName?: string;
   dateOfBirth?: string;
+  country?: string;
   nationality?: string;
-  position?: Position;
-  preferredFoot?: ApiPreferredFoot;
+  city?: string;
+  region?: string;
+  position?: Position | string;
+  primaryPosition?: Position | string;
+  secondaryPosition?: Position | string;
+  preferredFoot?: ApiPreferredFoot | PreferredFoot;
   height?: number;
   weight?: number;
   currentClub?: string;
+  previousClub?: string;
   bio?: string;
+  biography?: string;
+  footballExperience?: string;
+  marketValue?: number;
+  visibility?: ProfileVisibility;
   profileVisibility?: ProfileVisibility;
 }
 

@@ -10,10 +10,36 @@ export const ProfileSidebar = ({ user, playerProfile }: ProfileSidebarProps) => 
     playerProfile?.profilePictureUrl ||
     user?.avatar ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2B43A1&color=fff&size=128`;
-  const displayPosition = playerProfile?.position || 'مهاجم وسط';
-  const displayClub = playerProfile?.currentClub || 'الأهلي';
-  const displayAge = playerProfile?.age ? `${playerProfile.age} عاماً` : '24 عاماً';
-  const displayNationality = playerProfile?.nationality || 'السعودية SA';
+  
+  const positionMap: Record<string, string> = {
+    Striker: 'مهاجم',
+    LeftWinger: 'جناح أيسر',
+    RightWinger: 'جناح أيمن',
+    AttackingMidfielder: 'وسط هجومي / صانع ألعاب',
+    CentralMidfielder: 'وسط محور',
+    DefensiveMidfielder: 'وسط دفاعي / ارتكاز',
+    LeftBack: 'ظهير أيسر',
+    RightBack: 'ظهير أيمن',
+    CenterBack: 'قلب دفاع',
+    Goalkeeper: 'حارس مرمى',
+    GK: 'حارس مرمى',
+    CB: 'قلب دفاع',
+    LB: 'ظهير أيسر',
+    RB: 'ظهير أيمن',
+    CDM: 'وسط دفاعي',
+    CM: 'وسط محور',
+    CAM: 'وسط هجومي',
+    LW: 'جناح أيسر',
+    RW: 'جناح أيمن',
+    ST: 'مهاجم',
+  };
+  const rawPos = (playerProfile?.primaryPosition || playerProfile?.position || '') as string;
+  const displayPosition = positionMap[rawPos] || rawPos || 'لاعب كرة قدم';
+  const displayClub = playerProfile?.currentClub || 'بدون نادي';
+  const displayAge = playerProfile?.age ? `${playerProfile.age} عاماً` : '20 عاماً';
+  const displayCountry = playerProfile?.country || playerProfile?.nationality || 'السعودية';
+  const displayCity = playerProfile?.city || playerProfile?.region;
+  const displayLocation = displayCity ? `${displayCountry} (${displayCity})` : displayCountry;
 
   return (
     <div className="bg-white p-6 rounded-3xl shadow-2xs border border-gray-100 flex flex-col items-center text-center font-sans">
@@ -43,8 +69,8 @@ export const ProfileSidebar = ({ user, playerProfile }: ProfileSidebarProps) => 
           <span className="font-bold text-gray-800">{displayAge}</span>
         </div>
         <div className="border-r border-gray-100">
-          <span className="block text-gray-400 text-[11px] mb-0.5">الجنسية</span>
-          <span className="font-bold text-gray-800">{displayNationality}</span>
+          <span className="block text-gray-400 text-[11px] mb-0.5">الجنسية والمدينة</span>
+          <span className="font-bold text-gray-800 truncate block px-1" title={displayLocation}>{displayLocation}</span>
         </div>
       </div>
 
