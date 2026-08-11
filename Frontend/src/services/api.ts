@@ -1,8 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_URL || '/api';
+import type { RequestOptions } from '../types';
 
-interface RequestOptions extends RequestInit {
-  params?: Record<string, string>;
-}
+const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { params, ...fetchOptions } = options;

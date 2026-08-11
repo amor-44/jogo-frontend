@@ -1,19 +1,5 @@
 import React, { createContext, useState } from 'react';
-import type { User, Player, NotificationItem } from '../types';
-
-interface AuthContextType {
-  user: User | null;
-  players: Player[];
-  savedPlayerIds: number[];
-  notifications: NotificationItem[];
-  unreadCount: number;
-  login: (userData: User) => void;
-  register: (userData: User) => void;
-  logout: () => void;
-  addPlayer: (player: Player) => void;
-  toggleSavePlayer: (id: number) => void;
-  markAllAsRead: () => void;
-}
+import type { User, Player, NotificationItem, AuthContextType } from '../types';
 
 const INITIAL_PLAYERS: Player[] = [
   { id: 1, name: "عبدالرحمن الغامدي", position: "وسط", age: 22, country: "السعودية", foot: "اليمنى", club: "الاتفاق", height: "178 سم", overall: 82, aiScore: 89, value: "€2.5M" },

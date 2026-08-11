@@ -3,10 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Bell, Search, Menu } from 'lucide-react';
 import playerAvatar from '../assets/images/ChatGPT Image Jul 24, 2026, 06_14_11 PM 1.png';
-
-interface TopNavProps {
-  onHamburgerClick?: () => void;
-}
+import type { TopNavProps } from '../types';
 
 const TopNav = ({ onHamburgerClick }: TopNavProps) => {
   const { user, notifications, unreadCount, markAllAsRead } = useAuth();
