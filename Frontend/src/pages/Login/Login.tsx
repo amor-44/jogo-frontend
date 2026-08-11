@@ -46,7 +46,7 @@ const Login = () => {
             );
           }
         } else if (err.request && !err.response) {
-          setError('تعذر الاتصال بالخادم. يرجى التأكد من تشغيل الخادم على http://localhost:5001');
+          setError('تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.');
         } else {
           setError(err.message || 'حدث خطأ أثناء تسجيل الدخول');
         }
