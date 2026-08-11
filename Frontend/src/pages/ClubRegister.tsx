@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { Building2, ShieldCheck, Mail, MapPin, Trophy, User } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { Building2, ShieldCheck, Mail, MapPin, Trophy, User as UserIcon } from 'lucide-react';
+import type { User } from '../types';
 
 const ClubRegister = () => {
   const [searchParams] = useSearchParams();
@@ -19,23 +20,20 @@ const ClubRegister = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newClubData = {
+    const newClubData: User = {
       name: clubName || 'نادي جديد',
       email: email,
-      role: 'club' as const,
+      role: 'club',
       avatar: 'https://upload.wikimedia.org/wikipedia/ar/7/70/Al-Ittihad_Saudi_Club_logo.png'
     };
 
-    // 1. حفظ النادي في قاعدة بيانات الأندية
     const savedClubsRaw = localStorage.getItem('jogo_clubs_db');
     const savedClubs = savedClubsRaw ? JSON.parse(savedClubsRaw) : [];
-    savedClubs.push(newClubData);
+    savedClubs.push({ ...newClubData, league, country, managerName });
     localStorage.setItem('jogo_clubs_db', JSON.stringify(savedClubs));
 
-    // 2. تحديث الحساب الحالي فوراً كـ نادي
     login(newClubData);
 
-    // 3. التوجيه المباشر للداشبورد
     navigate('/dashboard');
   };
 
@@ -113,7 +111,7 @@ const ClubRegister = () => {
                 placeholder="اسم المسؤول"
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-[#2B43A1] focus:bg-white pr-10 text-right"
               />
-              <User className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <UserIcon className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             </div>
           </div>
 
@@ -121,7 +119,7 @@ const ClubRegister = () => {
             type="submit" 
             className="w-full bg-[#2B43A1] text-white py-3.5 rounded-xl font-bold text-xs hover:bg-blue-900 transition-colors shadow-md mt-4 cursor-pointer"
           >
-            تفعيل الحساب 
+            تفعيل الحساب
           </button>
         </form>
 

@@ -1,34 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
-
-export interface Player {
-  id: number;
-  name: string;
-  position: string;
-  age: number;
-  country: string;
-  foot: string;
-  club: string;
-  height: string;
-  overall: number;
-  aiScore: number;
-  value: string;
-  image?: string;
-}
-
-export interface NotificationItem {
-  id: number;
-  title: string;
-  desc: string;
-  time: string;
-  read: boolean;
-}
-
-export interface User {
-  avatar?: string;
-  name: string;
-  email: string;
-  role: 'player' | 'club';
-}
+import React, { createContext, useState } from 'react';
+import type { User, Player, NotificationItem } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -132,10 +103,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
 };

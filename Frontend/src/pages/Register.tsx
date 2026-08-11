@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 
 const Register = () => {
@@ -9,7 +9,6 @@ const Register = () => {
 
   const [step, setStep] = useState<1 | 2>(1);
 
-  // حقول الخطوة 1 العامة للاعب
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -18,7 +17,6 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // حقول الخطوة 2 للاعب
   const [mainPosition, setMainPosition] = useState('');
   const [prefPosition, setPrefPosition] = useState('');
   const [foot, setFoot] = useState<'اليمني' | 'اليسري' | 'كلتاهما'>('اليمني');
@@ -62,7 +60,6 @@ const Register = () => {
     <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center p-4 py-12 font-sans" dir="rtl">
       <div className="w-full max-w-xl flex flex-col items-center">
         
-        {/* Logo Jogo */}
         <div className="bg-[#2B43A1] text-white px-10 py-3 rounded-2xl font-bold text-2xl flex items-center justify-center gap-2 mb-6 shadow-xs">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
@@ -75,7 +72,6 @@ const Register = () => {
           أنشئ ملفك الكروي وابدأ رحلتك مع منصة Jogo للتحليل الرياضي
         </p>
 
-        {/* Stepper */}
         <div className="w-full max-w-md relative mb-8 flex justify-between items-center px-4">
           <div className="absolute top-4 left-12 right-12 h-0.5 bg-[#2B43A1]/40 z-0"></div>
           
@@ -106,7 +102,6 @@ const Register = () => {
           </div>
         )}
 
-        {/* Step 1 Form */}
         {step === 1 && (
           <form onSubmit={handleNextStep} className="w-full flex flex-col gap-4">
             <div>
@@ -181,7 +176,6 @@ const Register = () => {
           </form>
         )}
 
-        {/* Step 2 Form (اللاعب) */}
         {step === 2 && (
           <form onSubmit={handleSubmitFinal} className="w-full flex flex-col gap-4">
             <div>

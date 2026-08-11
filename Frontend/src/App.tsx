@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, Navigate, Link, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './hooks/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar'; 
 import TopNav from './components/TopNav'; 
@@ -21,7 +22,6 @@ import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import Welcome from './pages/Welcome';
 
-// 🏢 لي أوت النادي (Dashboard + Sidebar)
 const ClubLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -41,7 +41,6 @@ const ClubLayout = () => {
   );
 };
 
-// 🏃‍♂️ لي أوت اللاعب (بروفايل + شات فقط)
 const PlayerLayout = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -94,7 +93,6 @@ const PlayerLayout = () => {
   );
 };
 
-// 🔀 تحديد اللي أوت بناءً على نوع الحساب المضبوط
 const AdaptiveLayout = () => {
   const { user } = useAuth();
   return user?.role === 'club' ? <ClubLayout /> : <PlayerLayout />;

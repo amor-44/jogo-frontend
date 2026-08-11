@@ -13,7 +13,6 @@ const ForgotPassword = () => {
     setError('');
 
     if (email) {
-      // التوجيه المباشر لصفحة كود التفعيل
       navigate('/verify-otp');
     } else {
       setError('يرجى كتابة البريد الإلكتروني الخاص بك');

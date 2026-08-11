@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { 
   Send, 
   Plus, 
@@ -26,7 +26,6 @@ const AIChat = () => {
   const [chatHistory, setChatHistory] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<'ai' | 'profile'>('ai');
 
-  // استخراج الاسم الأول تلقائياً من اسم المستخدم المسجل
   const firstName = user?.name ? user.name.split(' ')[0] : 'لاعبنا';
 
   const handleSendMessage = (textToSend?: string) => {

@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
+import { useAuth } from '../hooks/useAuth';
+import type { Player } from '../types';
 
 const Home = () => {
-  const { user } = useAuth();
+  const { user, players: contextPlayers } = useAuth();
   const navigate = useNavigate();
 
-  // تنسيق تاريخ اليوم باللغة العربية تلقائياً
   const currentDate = new Date().toLocaleDateString('ar-EG', {
     weekday: 'long',
     year: 'numeric',
@@ -19,20 +19,21 @@ const Home = () => {
     { id: 2, value: "20", label: "اللاعبون المقترحون" },
     { id: 3, value: "10", label: "اللاعبون المحفوظون" },
     { id: 4, value: "30", label: "إجمالي التعاقدات" },
-    { id: 5, value: "247", label: "اللاعبون المشاهدون" },
+    { id: 5, value: "247", label: "الزيارات الحالية" },
   ];
 
-  const players = [
-    { id: 1, name: "محمد القحطاني", position: "CF", age: 20, rating: "87", country: "مصر", club: "برشلونة", value: "€620K" },
-    { id: 2, name: "عبدالرحمن الغامدي", position: "CM", age: 22, rating: "89", country: "السعودية", club: "الاتفاق", value: "€2.5M" },
-    { id: 3, name: "أحمد الرشيدي", position: "CB", age: 24, rating: "82", country: "مصر", club: "الأهلي", value: "€500K" },
-    { id: 4, name: "رياض محرز", position: "RW", age: 33, rating: "86", country: "الجزائر", club: "الأهلي السعودي", value: "€12M" },
-  ];
+  const playersList = contextPlayers && contextPlayers.length > 0 
+    ? contextPlayers 
+    : [
+        { id: 1, name: "محمد القحطاني", position: "CF", age: 20, overall: 87, country: "مصر", club: "برشلونة", value: "€620K", foot: "يمين", height: "175", aiScore: 87 },
+        { id: 2, name: "عبدالرحمن الغامدي", position: "CM", age: 22, overall: 89, country: "السعودية", club: "الاتفاق", value: "€2.5M", foot: "يمين", height: "180", aiScore: 89 },
+        { id: 3, name: "أحمد الرشيدي", position: "CB", age: 24, overall: 82, country: "مصر", club: "الأهلي", value: "€500K", foot: "يمين", height: "185", aiScore: 82 },
+        { id: 4, name: "رياض محرز", position: "RW", age: 33, overall: 86, country: "الجزائر", club: "الأهلي السعودي", value: "€12M", foot: "يسار", height: "179", aiScore: 86 },
+      ];
 
   return (
-    <div className="flex flex-col items-center w-full max-w-6xl mx-auto pb-10" dir="rtl">
+    <div className="flex flex-col items-center w-full max-w-6xl mx-auto pb-10 font-sans" dir="rtl">
       
-      {/* الترحيب والتاريخ الديناميكي */}
       <div className="text-center mb-6 md:mb-10 pt-4">
         <h1 className="text-2xl md:text-4xl font-extrabold text-[#1C2C5E] mb-2">
           مرحباً <span className="text-[#2B43A1]">{user?.name || 'نادي الاتحاد'}</span> 👋
@@ -42,7 +43,6 @@ const Home = () => {
         </p>
       </div>
 
-      {/* كروت الإحصائيات السريعة */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 w-full mb-8">
         {stats.map((stat) => (
           <div 
@@ -59,7 +59,6 @@ const Home = () => {
         ))}
       </div>
 
-      {/* جدول المقترحين بالذكاء الاصطناعي */}
       <div className="w-full bg-white rounded-3xl shadow-2xs border border-gray-100 p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-bold text-[#1C2C5E]">اللاعبون المقترحون بالذكاء الاصطناعي</h2>
@@ -86,7 +85,7 @@ const Home = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {players.map((player) => (
+              {playersList.map((player: Player) => (
                 <tr key={player.id} className="hover:bg-gray-50/80 transition-colors">
                   <td className="py-3.5 px-4 flex items-center gap-3 text-right">
                     <Avatar name={player.name} size="sm" />
@@ -94,7 +93,7 @@ const Home = () => {
                   </td>
                   <td className="py-3.5 text-gray-600 font-semibold">{player.position}</td>
                   <td className="py-3.5 text-gray-600 font-medium">{player.age}</td>
-                  <td className="py-3.5 text-amber-500 font-bold">⭐ {player.rating}</td>
+                  <td className="py-3.5 text-amber-500 font-bold">⭐ {player.overall}</td>
                   <td className="py-3.5 text-gray-600 font-medium">{player.country}</td>
                   <td className="py-3.5 text-gray-600 font-medium">{player.club}</td>
                   <td className="py-3.5 text-[#2B43A1] font-extrabold">{player.value}</td>

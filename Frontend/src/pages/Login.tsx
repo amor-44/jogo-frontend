@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth, type User } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
+import type { User } from '../types';
 import { Mail, Lock } from 'lucide-react';
 import loginBg from '../assets/images/ChatGPT Image Jul 24, 2026, 06_14_11 PM 1.png';
 
@@ -17,13 +18,11 @@ const Login = () => {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // 1. السير المباشر للأدمن للوصول لصفحة تسجيل نادي جديد
     if (cleanEmail === 'admin-club@jogo.com' || cleanEmail.includes('admin')) {
       navigate(`/club-register?email=${encodeURIComponent(cleanEmail)}`);
       return;
     }
 
-    // 2. البحث في الأندية المسجلة
     const savedClubsRaw = localStorage.getItem('jogo_clubs_db');
     if (savedClubsRaw) {
       const savedClubs: User[] = JSON.parse(savedClubsRaw);
@@ -36,7 +35,6 @@ const Login = () => {
       }
     }
 
-    // 3. البحث في اللاعبين المسجلين
     const savedUserRaw = localStorage.getItem('jogo_user');
     if (savedUserRaw) {
       const savedUser: User = JSON.parse(savedUserRaw);
@@ -51,7 +49,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B132B] flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-[#0B132B] flex items-center justify-center p-4 font-sans" dir="rtl">
       <div className="bg-white rounded-4xl overflow-hidden flex flex-col md:flex-row w-full max-w-5xl shadow-2xl">
         
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col items-center justify-center">

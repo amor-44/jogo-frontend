@@ -12,7 +12,6 @@ const ResetPassword = () => {
     <div className="min-h-screen bg-[#1C3BB8] flex items-center justify-center p-4" dir="rtl">
       <div className="bg-white rounded-[2.5rem] p-4 flex flex-col md:flex-row w-full max-w-5xl shadow-2xl overflow-hidden min-h-137.5">
         
-        {/* الصورة الجانبية */}
         <div className="w-full md:w-1/2 bg-[#1C3BB8] rounded-4xl p-2 relative hidden md:block overflow-hidden">
           <img 
             src={loginBg} 
@@ -21,7 +20,6 @@ const ResetPassword = () => {
           />
         </div>
 
-        {/* الفورم */}
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col items-center justify-between">
           <div className="w-full flex justify-center mb-4">
             <div className="bg-[#1C3BB8] text-white px-8 py-3 rounded-2xl font-bold text-2xl flex items-center gap-2 shadow-md">

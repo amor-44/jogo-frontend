@@ -22,7 +22,6 @@ const VerifyOTP = () => {
     <div className="min-h-screen bg-[#0B132B] flex items-center justify-center p-4" dir="rtl">
       <div className="bg-white rounded-4xl overflow-hidden flex flex-col md:flex-row w-full max-w-5xl shadow-2xl">
         
-        {/* الفورم (الجانب الأيسر) */}
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col items-center justify-center">
           <div className="bg-[#2B43A1] text-white px-8 py-2.5 rounded-2xl font-bold text-2xl flex items-center gap-2 mb-8 shadow-sm">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +50,6 @@ const VerifyOTP = () => {
           </div>
 
           <div className="text-center mb-8">
-            {/* هنا اللينك اللي بيرجع للصفحة اللي فاتت */}
             <button 
               onClick={() => navigate('/forgot-password')}
               className="text-xs text-[#2B43A1] font-bold hover:underline cursor-pointer"
@@ -68,7 +66,6 @@ const VerifyOTP = () => {
           </button>
         </div>
 
-        {/* الصورة الجانبية (الجانب الأيمن) */}
         <div className="w-full md:w-1/2 bg-[#1d4ed8] p-4 hidden md:flex items-center justify-center">
           <div className="w-full h-full rounded-3xl overflow-hidden relative border-2 border-white/10 shadow-lg">
             <img 
