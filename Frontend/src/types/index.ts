@@ -132,7 +132,7 @@ export interface HomeStatsProps {
 }
 
 export interface HomeSuggestedTableProps {
-  players: Player[];
+  players: PlayerCardDto[];
 }
 
 export interface ProfileSidebarProps {

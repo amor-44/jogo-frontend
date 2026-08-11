@@ -12,13 +12,6 @@ import StrengthsWeaknesses from './components/StrengthsWeaknesses';
 import AIAnalysisBox from './components/AIAnalysisBox';
 import TrainingPlan from './components/TrainingPlan';
 
-const DEFAULT_VIDEOS: VideoHistoryItem[] = [
-  { title: 'مراوغة وتسديد', date: '20 يوليو 2026', duration: '03:18', tag: '74 نقطة', bg: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=300&auto=format&fit=crop' },
-  { title: 'مباراة الشباب vs الاتفاق', date: '18 يوليو 2026', duration: '23:12', tag: '68 نقطة', bg: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=300&auto=format&fit=crop' },
-  { title: 'تدريب في الشارع', date: '15 يوليو 2026', duration: '05:24', tag: '82 نقطة', bg: 'https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?q=80&w=300&auto=format&fit=crop' },
-  { title: 'تدريب اللياقة - صباحي', date: '12 يوليو 2026', duration: '28:45', tag: '61 نقطة', bg: 'https://images.unsplash.com/photo-1526232761682-d26e03ac148e?q=80&w=300&auto=format&fit=crop' },
-];
-
 const Profile = () => {
   const { user, playerProfile: contextProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -35,7 +28,7 @@ const Profile = () => {
       try {
         const [profileRes, videosRes] = await Promise.allSettled([
           playerService.getMe(),
-          videoService.getVideos(),
+          videoService.getVideos(1, 10),
         ]);
 
         if (isMounted) {
@@ -43,7 +36,8 @@ const Profile = () => {
             setProfile(profileRes.value);
           }
           if (videosRes.status === 'fulfilled' && videosRes.value) {
-            setVideos(videosRes.value);
+            // videoService returns a PaginatedResult
+            setVideos(videosRes.value.items || []);
           }
         }
       } catch (err) {
@@ -94,26 +88,23 @@ const Profile = () => {
     fileInputRef.current?.click();
   };
 
-  const displayVideos: VideoHistoryItem[] =
-    videos.length > 0
-      ? videos.map((v) => ({
-          title: v.title,
-          date: new Date(v.uploadedAt).toLocaleDateString('ar-EG', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          }),
-          duration: v.durationSeconds
-            ? `${Math.floor(v.durationSeconds / 60)}:${(v.durationSeconds % 60)
-                .toString()
-                .padStart(2, '0')}`
-            : '02:30',
-          tag: v.status === 'Analyzed' ? 'تم التحليل' : v.status || 'جاهز',
-          bg:
-            v.thumbnailUrl ||
-            'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=300&auto=format&fit=crop',
-        }))
-      : DEFAULT_VIDEOS;
+  const displayVideos: VideoHistoryItem[] = videos.map((v) => ({
+    title: v.title,
+    date: new Date(v.uploadedAt).toLocaleDateString('ar-EG', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }),
+    duration: v.durationSeconds
+      ? `${Math.floor(v.durationSeconds / 60)}:${(v.durationSeconds % 60)
+          .toString()
+          .padStart(2, '0')}`
+      : '00:00',
+    tag: v.status === 'Analyzed' ? 'تم التحليل' : v.status || 'جاهز',
+    bg:
+      v.thumbnailUrl ||
+      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=300&auto=format&fit=crop',
+  }));
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto pb-16 text-right font-sans" dir="rtl">

@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import type { Player, StatItem } from '../../types';
+import type { StatItem, PlayerCardDto } from '../../types';
+import { playerService } from '../../services/playerService';
 import HomeStats from './components/HomeStats';
 import HomeSuggestedTable from './components/HomeSuggestedTable';
 
@@ -11,15 +13,17 @@ const DEFAULT_STATS: StatItem[] = [
   { id: 5, value: "247", label: "الزيارات الحالية" },
 ];
 
-const DEFAULT_PLAYERS: Player[] = [
-  { id: 1, name: "محمد القحطاني", position: "CF", age: 20, overall: 87, country: "مصر", club: "برشلونة", value: "€620K", foot: "يمين", height: "175", aiScore: 87 },
-  { id: 2, name: "عبدالرحمن الغامدي", position: "CM", age: 22, overall: 89, country: "السعودية", club: "الاتفاق", value: "€2.5M", foot: "يمين", height: "180", aiScore: 89 },
-  { id: 3, name: "أحمد الرشيدي", position: "CB", age: 24, overall: 82, country: "مصر", club: "الأهلي", value: "€500K", foot: "يمين", height: "185", aiScore: 82 },
-  { id: 4, name: "رياض محرز", position: "RW", age: 33, overall: 86, country: "الجزائر", club: "الأهلي السعودي", value: "€12M", foot: "يسار", height: "179", aiScore: 86 },
-];
-
 const Home = () => {
-  const { user, players: contextPlayers } = useAuth();
+  const { user } = useAuth();
+  const [suggestedPlayers, setSuggestedPlayers] = useState<PlayerCardDto[]>([]);
+
+  useEffect(() => {
+    playerService.getAllPlayers({ page: 1, pageSize: 5 })
+      .then(res => {
+        setSuggestedPlayers(res.items);
+      })
+      .catch(err => console.error("Error fetching suggested players:", err));
+  }, []);
 
   const currentDate = new Date().toLocaleDateString('ar-EG', {
     weekday: 'long',
@@ -27,10 +31,6 @@ const Home = () => {
     month: 'long',
     day: 'numeric'
   });
-
-  const playersList = contextPlayers && contextPlayers.length > 0 
-    ? contextPlayers 
-    : DEFAULT_PLAYERS;
 
   return (
     <div className="flex flex-col items-center w-full max-w-6xl mx-auto pb-10 font-sans" dir="rtl">
@@ -45,7 +45,7 @@ const Home = () => {
 
       <HomeStats stats={DEFAULT_STATS} />
 
-      <HomeSuggestedTable players={playersList} />
+      <HomeSuggestedTable players={suggestedPlayers} />
     </div>
   );
 };

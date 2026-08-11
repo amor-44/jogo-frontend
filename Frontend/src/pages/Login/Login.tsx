@@ -129,9 +129,14 @@ const Login = () => {
             </button>
           </form>
 
-          <p className="mt-6 text-xs text-gray-500 font-medium">
-            ليس لديك حساب؟ <Link to="/register" className="text-[#2B43A1] font-bold hover:underline mx-1">إنشاء حساب جديد</Link>
-          </p>
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <p className="text-xs text-gray-500 font-medium">
+              ليس لديك حساب؟ <Link to="/register" className="text-[#2B43A1] font-bold hover:underline mx-1">إنشاء حساب لاعب جديد</Link>
+            </p>
+            <p className="text-xs text-gray-500 font-medium">
+              أو <Link to="/club-register" className="text-[#2B43A1] font-bold hover:underline mx-1">إنشاء حساب كشاف / نادي</Link>
+            </p>
+          </div>
         </div>
 
         <div className="w-full md:w-1/2 bg-[#1d4ed8] p-4 hidden md:flex items-center justify-center">

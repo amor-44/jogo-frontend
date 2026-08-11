@@ -3,13 +3,6 @@ import { authService } from '../services/authService';
 import { playerService } from '../services/playerService';
 import type { User, Player, NotificationItem, AuthContextType, PlayerProfileDto } from '../types';
 
-const INITIAL_PLAYERS: Player[] = [
-  { id: 1, name: "عبدالرحمن الغامدي", position: "وسط", age: 22, country: "السعودية", foot: "اليمنى", club: "الاتفاق", height: "178 سم", overall: 82, aiScore: 89, value: "€2.5M" },
-  { id: 2, name: "محمد القحطاني", position: "مهاجم", age: 20, country: "السعودية", foot: "اليسرى", club: "الهلال", height: "175 سم", overall: 85, aiScore: 92, value: "€4.0M" },
-  { id: 3, name: "أحمد الرشيدي", position: "مدافع", age: 12, country: "مصر", foot: "اليمنى", club: "الأهلي (براعم)", height: "150 سم", overall: 70, aiScore: 85, value: "€50K" },
-  { id: 4, name: "رياض محرز", position: "جناح", age: 33, country: "الجزائر", foot: "اليسرى", club: "الأهلي السعودي", height: "179 سم", overall: 86, aiScore: 89, value: "€12M" },
-];
-
 const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   { id: 1, title: "تحليل جديد جاهز", desc: "قام المدرب الذكي بتحديث تقرير أداء اللاعب عبدالرحمن الغامدي.", time: "منذ 10 دقائق", read: false },
   { id: 2, title: "لاعب جديد مضاف", desc: "انضم لاعب جديد بنفس اهتماماتك الرياضية إلى المنصة.", time: "منذ ساعة", read: false },
@@ -26,14 +19,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [playerProfile, setPlayerProfile] = useState<PlayerProfileDto | null>(null);
 
-  const [players, setPlayers] = useState<Player[]>(() => {
-    const saved = localStorage.getItem('jogo_players');
-    return saved ? JSON.parse(saved) : INITIAL_PLAYERS;
-  });
+  const [players, setPlayers] = useState<Player[]>([]);
 
   const [savedPlayerIds, setSavedPlayerIds] = useState<number[]>(() => {
     const saved = localStorage.getItem('jogo_saved_ids');
-    return saved ? JSON.parse(saved) : [1];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
@@ -133,7 +123,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addPlayer = (newPlayer: Player) => {
     const updated = [newPlayer, ...players];
     setPlayers(updated);
-    localStorage.setItem('jogo_players', JSON.stringify(updated));
   };
 
   const toggleSavePlayer = (id: number) => {

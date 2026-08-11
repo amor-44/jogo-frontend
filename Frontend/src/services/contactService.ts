@@ -3,26 +3,31 @@ import type {
   ContactRequestDto,
   CreateContactRequestCommand,
   RespondToContactRequestDto,
+  PaginatedResult,
 } from '../types';
 
 export const contactService = {
   createContactRequest: (data: CreateContactRequestCommand) =>
     apiClient
-      .post<ContactRequestDto>('/contact-requests', data)
+      .post<string>('/contact-requests', data)
       .then((r) => r.data),
 
   respondToContactRequest: (id: string, data: RespondToContactRequestDto) =>
     apiClient
-      .post<ContactRequestDto>(`/contact-requests/${id}/respond`, data)
+      .post<void>(`/contact-requests/${id}/respond`, data)
       .then((r) => r.data),
 
-  getPlayerContactRequests: () =>
+  getPlayerContactRequests: (pageNumber = 1, pageSize = 10) =>
     apiClient
-      .get<ContactRequestDto[]>('/contact-requests/player')
+      .get<PaginatedResult<ContactRequestDto>>('/contact-requests/player', {
+        params: { pageNumber, pageSize },
+      })
       .then((r) => r.data),
 
-  getScoutContactRequests: () =>
+  getScoutContactRequests: (pageNumber = 1, pageSize = 10) =>
     apiClient
-      .get<ContactRequestDto[]>('/contact-requests/scout')
+      .get<PaginatedResult<ContactRequestDto>>('/contact-requests/scout', {
+        params: { pageNumber, pageSize },
+      })
       .then((r) => r.data),
 };

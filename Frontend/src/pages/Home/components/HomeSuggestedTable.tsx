@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import Avatar from '../../../components/Avatar';
-import type { Player, HomeSuggestedTableProps } from '../../../types';
+import type { PlayerCardDto, HomeSuggestedTableProps } from '../../../types';
 
 export const HomeSuggestedTable = ({ players }: HomeSuggestedTableProps) => {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ export const HomeSuggestedTable = ({ players }: HomeSuggestedTableProps) => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-bold text-[#1C2C5E]">اللاعبون المقترحون بالذكاء الاصطناعي</h2>
         <button 
-          onClick={() => navigate('/suggested')}
+          onClick={() => navigate('/search')}
           className="text-[#2B43A1] text-xs font-bold hover:underline cursor-pointer"
         >
           عرض الكل
@@ -32,21 +32,21 @@ export const HomeSuggestedTable = ({ players }: HomeSuggestedTableProps) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {players.map((player: Player) => (
+            {players.map((player: PlayerCardDto) => (
               <tr key={player.id} className="hover:bg-gray-50/80 transition-colors">
                 <td className="py-3.5 px-4 flex items-center gap-3 text-right">
-                  <Avatar name={player.name} size="sm" />
-                  <span className="font-bold text-gray-800">{player.name}</span>
+                  <Avatar name={player.fullName} image={player.profilePictureUrl} size="sm" />
+                  <span className="font-bold text-gray-800">{player.fullName}</span>
                 </td>
                 <td className="py-3.5 text-gray-600 font-semibold">{player.position}</td>
                 <td className="py-3.5 text-gray-600 font-medium">{player.age}</td>
-                <td className="py-3.5 text-amber-500 font-bold">⭐ {player.overall}</td>
-                <td className="py-3.5 text-gray-600 font-medium">{player.country}</td>
-                <td className="py-3.5 text-gray-600 font-medium">{player.club}</td>
-                <td className="py-3.5 text-[#2B43A1] font-extrabold">{player.value}</td>
+                <td className="py-3.5 text-amber-500 font-bold">⭐ {player.overallScore || '--'}</td>
+                <td className="py-3.5 text-gray-600 font-medium">{player.nationality}</td>
+                <td className="py-3.5 text-gray-600 font-medium">{player.currentClub || 'لا يوجد'}</td>
+                <td className="py-3.5 text-[#2B43A1] font-extrabold">---</td>
                 <td className="py-3.5">
                   <button 
-                    onClick={() => navigate('/profile')} 
+                    onClick={() => navigate(`/profile/${player.id}`)} 
                     className="text-[#2B43A1] hover:underline font-bold text-[11px] cursor-pointer"
                   >
                     عرض الملف الشخصي
@@ -54,6 +54,13 @@ export const HomeSuggestedTable = ({ players }: HomeSuggestedTableProps) => {
                 </td>
               </tr>
             ))}
+            {players.length === 0 && (
+              <tr>
+                <td colSpan={8} className="py-8 text-gray-400 text-center">
+                  لا يوجد لاعبين مقترحين حالياً
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

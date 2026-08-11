@@ -1,9 +1,11 @@
 import { apiClient } from './api';
-import type { VideoDto } from '../types';
+import type { VideoDto, PaginatedResult } from '../types';
 
 export const videoService = {
-  getVideos: () =>
-    apiClient.get<VideoDto[]>('/Videos').then((r) => r.data),
+  getVideos: (pageNumber = 1, pageSize = 10) =>
+    apiClient
+      .get<PaginatedResult<VideoDto>>('/Videos', { params: { pageNumber, pageSize } })
+      .then((r) => r.data),
 
   uploadVideo: (formData: FormData) =>
     apiClient
@@ -20,4 +22,7 @@ export const videoService = {
 
   analyzeVideo: (id: string) =>
     apiClient.post<void>(`/Videos/${id}/analysis`).then((r) => r.data),
+
+  retryAnalysis: (id: string) =>
+    apiClient.post<void>(`/Videos/${id}/analysis/retry`).then((r) => r.data),
 };

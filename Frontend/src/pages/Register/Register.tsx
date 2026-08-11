@@ -483,9 +483,14 @@ const Register = () => {
           </form>
         )}
 
-        <p className="mt-8 text-xs text-gray-500 font-medium">
-          لديك حساب بالفعل؟ <Link to="/login" className="text-[#2B43A1] font-bold hover:underline mx-1">تسجيل الدخول</Link>
-        </p>
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <p className="text-xs text-gray-500 font-medium">
+            لديك حساب بالفعل؟ <Link to="/login" className="text-[#2B43A1] font-bold hover:underline mx-1">تسجيل الدخول</Link>
+          </p>
+          <p className="text-xs text-gray-500 font-medium">
+            أو <Link to="/club-register" className="text-[#2B43A1] font-bold hover:underline mx-1">إنشاء حساب كشاف / نادي</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
