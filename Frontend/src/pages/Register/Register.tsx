@@ -52,11 +52,30 @@ const POSITIONS = [
   { label: 'حارس مرمى (GK)', value: 'GK' },
 ];
 
+const POSITION_MAP: Record<string, number> = {
+  GK: 0,
+  CB: 1,
+  RB: 2,
+  LB: 3,
+  CDM: 4,
+  CM: 5,
+  CAM: 6,
+  RW: 7,
+  LW: 8,
+  ST: 9,
+};
+
 const FEET_OPTIONS: { label: string; value: 'Right' | 'Left' | 'Both' }[] = [
   { label: 'اليمنى', value: 'Right' },
   { label: 'اليسرى', value: 'Left' },
   { label: 'كلتاهما', value: 'Both' },
 ];
+
+const FOOT_MAP: Record<string, number> = {
+  Right: 0,
+  Left: 1,
+  Both: 2,
+};
 
 const Register = () => {
   const { register } = useAuth();
@@ -140,14 +159,18 @@ const Register = () => {
       // Format birth date to complete ISO Date-Time string with UTC timezone (e.g. 2000-01-01T00:00:00.000Z)
       const birthDateIso = new Date(dateOfBirth).toISOString();
 
-      // Build registration command payload
+      // Convert enums to explicit numeric values for Backend
+      const numericPosition: number = POSITION_MAP[primaryPosition] ?? 9;
+      const numericFoot: number = FOOT_MAP[preferredFoot] ?? 0;
+
+      // Build registration command payload with explicit numeric enums
       const registerPayload: RegisterPlayerCommand = {
         email: email.trim().toLowerCase(),
         password: password,
         fullName: fullName.trim(),
         dateOfBirth: birthDateIso,
-        primaryPosition: primaryPosition,
-        preferredFoot: preferredFoot,
+        primaryPosition: numericPosition,
+        preferredFoot: numericFoot,
         country: country.trim() || 'مصر',
       };
 
