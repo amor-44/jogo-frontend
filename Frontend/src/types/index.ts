@@ -229,23 +229,13 @@ export interface LoginCommand {
 }
 
 export interface RegisterPlayerCommand {
-  fullName: string;
   email: string;
   password: string;
-  confirmPassword?: string;
+  fullName: string;
   dateOfBirth: string;
-  country?: string;
-  nationality?: string;
-  city?: string;
-  region?: string;
-  primaryPosition?: Position | string;
-  position?: Position | string;
-  preferredFoot?: ApiPreferredFoot | string;
-  height?: number;
-  weight?: number;
-  currentClub?: string;
-  previousClub?: string;
-  age?: number;
+  primaryPosition: Position | string;
+  preferredFoot: ApiPreferredFoot | string;
+  country: string;
 }
 
 export interface RegisterPlayerFormData {
