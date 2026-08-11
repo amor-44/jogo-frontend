@@ -34,29 +34,29 @@ const TopNav = ({ onHamburgerClick }: TopNavProps) => {
   };
 
   return (
-    <header className="h-16 md:h-20 bg-white shadow-sm flex items-center px-4 md:px-8 relative z-30 justify-between" dir="rtl">
-      <div className="flex items-center gap-3">
+    <header className="h-16 md:h-20 bg-white shadow-sm flex items-center px-3 sm:px-4 md:px-8 relative z-30 justify-between gap-2" dir="rtl">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <button
           onClick={onHamburgerClick}
-          className="block lg:hidden p-2 rounded-lg text-gray-600 hover:text-[#2B43A1] hover:bg-gray-100 transition-colors cursor-pointer"
+          className="block lg:hidden p-1.5 sm:p-2 rounded-lg text-gray-600 hover:text-[#2B43A1] hover:bg-gray-100 transition-colors cursor-pointer"
           aria-label="فتح القائمة"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="text-[#2B43A1] font-bold text-base md:text-lg">
+        <div className="text-[#2B43A1] font-bold text-sm sm:text-base md:text-lg whitespace-nowrap">
           الرئيسية
         </div>
       </div>
 
-      <div className="hidden sm:block flex-1 max-w-md mx-4 md:mx-8">
-        <form onSubmit={handleSearchSubmit} className="w-full bg-white border border-gray-200 rounded-full flex items-center px-4 py-2 focus-within:border-[#2B43A1] transition-colors">
+      <div className="hidden sm:block flex-1 max-w-md mx-2 md:mx-8">
+        <form onSubmit={handleSearchSubmit} className="w-full bg-white border border-gray-200 rounded-full flex items-center px-3 md:px-4 py-1.5 md:py-2 focus-within:border-[#2B43A1] transition-colors">
           <input 
             type="text" 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="ابحث عن لاعبين..." 
-            className="w-full bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 text-right pr-2" 
+            className="w-full bg-transparent outline-none text-xs md:text-sm text-gray-700 placeholder-gray-400 text-right pr-2" 
           />
           <button type="submit" className="text-gray-400 hover:text-[#2B43A1] transition-colors cursor-pointer">
             <Search className="w-4 h-4" />
@@ -64,11 +64,11 @@ const TopNav = ({ onHamburgerClick }: TopNavProps) => {
         </form>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4 relative" ref={dropdownRef}>
+      <div className="flex items-center gap-2 md:gap-4 relative shrink-0" ref={dropdownRef}>
         <div className="relative">
           <button 
             onClick={() => setIsOpen(!isOpen)} 
-            className="text-gray-600 hover:text-[#2B43A1] transition relative p-2 rounded-full hover:bg-gray-100 cursor-pointer flex items-center justify-center"
+            className="text-gray-600 hover:text-[#2B43A1] transition relative p-1.5 sm:p-2 rounded-full hover:bg-gray-100 cursor-pointer flex items-center justify-center"
             aria-label="الإشعارات"
           >
             <Bell className="w-5 h-5" />
@@ -120,7 +120,7 @@ const TopNav = ({ onHamburgerClick }: TopNavProps) => {
 
         <div 
           onClick={() => navigate('/profile')}
-          className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity shadow-xs"
+          className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity shadow-xs shrink-0"
         >
           <img 
             src={playerAvatar} 

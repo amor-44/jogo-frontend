@@ -130,16 +130,30 @@ const Profile = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-4 flex flex-col gap-6">
           <ProfileSidebar user={user} playerProfile={profile} />
+          
+          {/* On mobile: VideoUploader renders first here above VideoHistory */}
+          <div className="lg:hidden">
+            <VideoUploader 
+              uploadedVideoUrl={uploadedVideoUrl}
+              videoName={videoName}
+              onClearVideo={handleClearVideo}
+              onTriggerUpload={handleTriggerUpload}
+            />
+          </div>
+
           <VideoHistory videos={displayVideos} onUploadClick={handleTriggerUpload} />
         </div>
 
         <div className="lg:col-span-8 flex flex-col gap-6">
-          <VideoUploader 
-            uploadedVideoUrl={uploadedVideoUrl}
-            videoName={videoName}
-            onClearVideo={handleClearVideo}
-            onTriggerUpload={handleTriggerUpload}
-          />
+          {/* On desktop: VideoUploader renders at top of main area */}
+          <div className="hidden lg:block">
+            <VideoUploader 
+              uploadedVideoUrl={uploadedVideoUrl}
+              videoName={videoName}
+              onClearVideo={handleClearVideo}
+              onTriggerUpload={handleTriggerUpload}
+            />
+          </div>
           <PerformanceSummary />
           <StrengthsWeaknesses />
           <AIAnalysisBox firstName={firstName} />
