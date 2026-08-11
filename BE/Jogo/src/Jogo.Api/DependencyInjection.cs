@@ -29,6 +29,16 @@ public static class DependencyInjection
         services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
         services.Configure<Jogo.Application.Common.Models.VideoSettings>(configuration.GetSection(Jogo.Application.Common.Models.VideoSettings.SectionName));
 
+        services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+        {
+            options.MultipartBodyLengthLimit = 1073741824; // 1 GB
+        });
+
+        services.Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(options =>
+        {
+            options.Limits.MaxRequestBodySize = 1073741824; // 1 GB
+        });
+
         services.AddAntiforgery();
         services
             .AddCustomProblemDetails()

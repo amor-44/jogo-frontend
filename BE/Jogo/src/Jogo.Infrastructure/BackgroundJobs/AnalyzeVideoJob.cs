@@ -57,10 +57,14 @@ public class AnalyzeVideoJob
 
         try
         {
+            _logger.LogInformation("Step 1: Triggering AI analysis for video {VideoId} with StorageUrl={StorageUrl}", videoId, video.StorageUrl);
+
             var analysisId = await _aiAnalysisService.TriggerAnalysisAsync(
                 video.StorageUrl,
                 cancellationToken
             );
+
+            _logger.LogInformation("Step 2: AI analysis triggered. AnalysisId={AnalysisId}. Retrieving report...", analysisId);
 
             var reportDto = await _aiAnalysisService.GetAnalysisStatusAsync(
                 analysisId,
@@ -73,6 +77,11 @@ public class AnalyzeVideoJob
                     $"Failed to retrieve analysis report for AnalysisId: {analysisId}"
                 );
             }
+
+            _logger.LogInformation(
+                "Step 3: Report retrieved for video {VideoId}. OverallScore={OverallScore}, Summary={Summary}, Strengths={StrengthsCount}, Weaknesses={WeaknessesCount}, Recommendations={RecommendationsCount}",
+                videoId, reportDto.OverallScore, reportDto.Summary,
+                reportDto.Strengths.Count, reportDto.Weaknesses.Count, reportDto.Recommendations.Count);
 
             var metrics = PerformanceMetrics.Create(
                 reportDto.Metrics.PositionScore,
@@ -119,8 +128,8 @@ public class AnalyzeVideoJob
             await _cache.RemoveByTagAsync($"player-{video.PlayerProfileId}", CancellationToken.None);
 
             _logger.LogInformation(
-                "Successfully completed AI analysis for video {VideoId}",
-                videoId
+                "Successfully completed AI analysis for video {VideoId}. Report saved with OverallScore={OverallScore}",
+                videoId, reportDto.OverallScore
             );
         }
         catch (Exception ex)

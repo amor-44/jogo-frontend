@@ -122,7 +122,7 @@ public static class DependencyInjection
                           ?? throw new InvalidOperationException("AI Service BaseUrl is not configured.");
 
             client.BaseAddress = new Uri(baseUrl);
-            client.Timeout = TimeSpan.FromSeconds(30);
+            client.Timeout = TimeSpan.FromMinutes(30);
         });
 
         // 🟡 خيار 2: لو عايز تجرّب الـ Fake بدلاً من הـ HttpClient، فك التهميش عن السطر اللي تحت واعمل Comment للـ AddHttpClient فوق

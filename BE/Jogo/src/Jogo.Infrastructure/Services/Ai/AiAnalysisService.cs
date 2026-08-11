@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Application.Features.Analysis.DTOs;
 
+using Microsoft.Extensions.Logging;
+
 namespace Jogo.Infrastructure.Services.Ai;
 
 /// <summary>
@@ -24,6 +26,7 @@ public class AiAnalysisService : IAiAnalysisService
 {
     private readonly HttpClient _httpClient;
     private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
+    private readonly ILogger<AiAnalysisService> _logger;
 
     // JSON options matching Python snake_case keys
     private static readonly JsonSerializerOptions _jsonOptions = new()
@@ -33,10 +36,14 @@ public class AiAnalysisService : IAiAnalysisService
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public AiAnalysisService(HttpClient httpClient, Microsoft.Extensions.Configuration.IConfiguration configuration)
+    public AiAnalysisService(
+        HttpClient httpClient,
+        Microsoft.Extensions.Configuration.IConfiguration configuration,
+        ILogger<AiAnalysisService> logger)
     {
         _httpClient = httpClient;
         _configuration = configuration;
+        _logger = logger;
     }
 
     /// <summary>
@@ -53,23 +60,29 @@ public class AiAnalysisService : IAiAnalysisService
 
         var payload = new { video_url = videoUrl };
 
+        _logger.LogInformation("Triggering AI analysis for video URL: {VideoUrl}", videoUrl);
+
         var response = await _httpClient.PostAsJsonAsync(
             "/analyze-by-url",
             payload,
             _jsonOptions,
             cancellationToken);
 
+        var rawBody = await response.Content.ReadAsStringAsync(cancellationToken);
+        _logger.LogInformation("AI trigger response: Status={StatusCode}, Body={Body}", response.StatusCode, rawBody);
+
         if (!response.IsSuccessStatusCode)
         {
-            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new HttpRequestException($"AI Analysis failed: {response.StatusCode}. Details: {errorContent}");
+            throw new HttpRequestException($"AI Analysis failed: {response.StatusCode}. Details: {rawBody}");
         }
 
-        var result = await response.Content.ReadFromJsonAsync<AnalysisTriggerResponse>(
-            _jsonOptions, cancellationToken: cancellationToken);
+        var result = JsonSerializer.Deserialize<AnalysisTriggerResponse>(rawBody, _jsonOptions);
 
-        return result?.AnalysisId
+        var analysisId = result?.AnalysisId
                ?? throw new InvalidOperationException("AI service did not return an analysis_id.");
+
+        _logger.LogInformation("AI analysis triggered successfully. AnalysisId={AnalysisId}", analysisId);
+        return analysisId;
     }
 
     /// <summary>
@@ -78,17 +91,47 @@ public class AiAnalysisService : IAiAnalysisService
     /// </summary>
     public async Task<AiAnalysisReportDto?> GetAnalysisStatusAsync(string analysisId, CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("Retrieving AI analysis status for AnalysisId={AnalysisId}", analysisId);
+
         var response = await _httpClient.GetAsync($"/analysis/{analysisId}", cancellationToken);
+
+        var rawBody = await response.Content.ReadAsStringAsync(cancellationToken);
+        _logger.LogInformation("AI status response: Status={StatusCode}, Body={Body}", response.StatusCode, rawBody);
+
         if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("AI status request failed with HTTP {StatusCode} for AnalysisId={AnalysisId}", response.StatusCode, analysisId);
             return null;
+        }
 
-        var aiResponse = await response.Content.ReadFromJsonAsync<AiFootballPerformanceResponse>(
-            _jsonOptions, cancellationToken: cancellationToken);
+        var aiResponse = JsonSerializer.Deserialize<AiFootballPerformanceResponse>(rawBody, _jsonOptions);
 
-        if (aiResponse is null || aiResponse.Status == "failed")
+        if (aiResponse is null)
+        {
+            _logger.LogWarning("Failed to deserialize AI response for AnalysisId={AnalysisId}. Raw body: {Body}", analysisId, rawBody);
             return null;
+        }
 
-        return MapToDto(aiResponse);
+        if (aiResponse.Status == "failed")
+        {
+            _logger.LogWarning("AI analysis failed for AnalysisId={AnalysisId}. Error: {Error}", analysisId, aiResponse.Error);
+            return null;
+        }
+
+        _logger.LogInformation(
+            "AI response deserialized. AnalysisId={AnalysisId}, Status={Status}, HasFootballPerformance={HasPerf}, HasScores={HasScores}",
+            aiResponse.AnalysisId,
+            aiResponse.Status,
+            aiResponse.FootballPerformance is not null,
+            aiResponse.FootballPerformance?.Scores is not null);
+
+        var dto = MapToDto(aiResponse);
+
+        _logger.LogInformation(
+            "Mapped AI report: OverallScore={OverallScore}, Strengths={StrengthsCount}, Weaknesses={WeaknessesCount}, Recommendations={RecommendationsCount}",
+            dto.OverallScore, dto.Strengths.Count, dto.Weaknesses.Count, dto.Recommendations.Count);
+
+        return dto;
     }
 
     // -----------------------------------------------------------------------

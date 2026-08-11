@@ -22,6 +22,9 @@ public class VideosController(ISender sender) : ApiController
 {
     [HttpPost]
     [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> UploadVideo(IFormFile file, CancellationToken cancellationToken)
     {
         if (file == null || file.Length == 0)
@@ -41,6 +44,8 @@ public class VideosController(ISender sender) : ApiController
     }
 
     [HttpGet]
+    [ProducesResponseType(typeof(Jogo.Application.Common.Models.PaginatedList<Jogo.Application.Features.Videos.DTOs.VideoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ListVideos([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
         var query = new ListVideosQuery(pageNumber, pageSize);
@@ -53,6 +58,9 @@ public class VideosController(ISender sender) : ApiController
     }
 
     [HttpGet("{id}")]
+    [ProducesResponseType(typeof(Jogo.Application.Features.Videos.DTOs.VideoDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetVideo(Guid id, CancellationToken cancellationToken)
     {
         var query = new GetVideoQuery(id);
@@ -65,6 +73,9 @@ public class VideosController(ISender sender) : ApiController
     }
 
     [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteVideo(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteVideoCommand(id);
@@ -77,6 +88,9 @@ public class VideosController(ISender sender) : ApiController
     }
 
     [HttpPost("{id}/analysis")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RequestAnalysis(Guid id, CancellationToken cancellationToken)
     {
         var command = new RequestAnalysisCommand { VideoId = id };
@@ -89,6 +103,10 @@ public class VideosController(ISender sender) : ApiController
     }
 
     [HttpPost("{id}/analysis/retry")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RetryAnalysis(Guid id, CancellationToken cancellationToken)
     {
         var command = new RetryAnalysisCommand { VideoId = id };
