@@ -233,8 +233,8 @@ export interface RegisterPlayerCommand {
   password: string;
   fullName: string;
   dateOfBirth: string;
-  primaryPosition: Position | string;
-  preferredFoot: ApiPreferredFoot | string;
+  primaryPosition: number | Position | string;
+  preferredFoot: number | ApiPreferredFoot | string;
   country: string;
 }
 

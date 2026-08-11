@@ -40,22 +40,22 @@ const COUNTRIES_LIST = [
 ];
 
 const POSITIONS = [
-  { label: 'مهاجم (Striker / ST)', value: 'Striker' },
-  { label: 'جناح أيسر (Left Winger / LW)', value: 'LeftWinger' },
-  { label: 'جناح أيمن (Right Winger / RW)', value: 'RightWinger' },
-  { label: 'صانع ألعاب / وسط هجومي (CAM)', value: 'AttackingMidfielder' },
-  { label: 'وسط محور (Central Midfielder / CM)', value: 'CentralMidfielder' },
-  { label: 'وسط دفاعي / ارتكاز (CDM)', value: 'DefensiveMidfielder' },
-  { label: 'ظهير أيسر (Left Back / LB)', value: 'LeftBack' },
-  { label: 'ظهير أيمن (Right Back / RB)', value: 'RightBack' },
-  { label: 'قلب دفاع (Center Back / CB)', value: 'CenterBack' },
-  { label: 'حارس مرمى (Goalkeeper / GK)', value: 'Goalkeeper' },
+  { label: 'حارس مرمى (GK)', value: 0 },
+  { label: 'قلب دفاع (CB)', value: 1 },
+  { label: 'ظهير أيمن (RB)', value: 2 },
+  { label: 'ظهير أيسر (LB)', value: 3 },
+  { label: 'وسط دفاعي / ارتكاز (CDM)', value: 4 },
+  { label: 'وسط محور (CM)', value: 5 },
+  { label: 'صانع ألعاب / وسط هجومي (CAM)', value: 6 },
+  { label: 'جناح أيمن (RW)', value: 7 },
+  { label: 'جناح أيسر (LW)', value: 8 },
+  { label: 'مهاجم (ST)', value: 9 },
 ];
 
-const FEET_OPTIONS: { label: string; value: 'Right' | 'Left' | 'Both' }[] = [
-  { label: 'اليمنى', value: 'Right' },
-  { label: 'اليسرى', value: 'Left' },
-  { label: 'كلتاهما', value: 'Both' },
+const FEET_OPTIONS = [
+  { label: 'اليمنى', value: 0 },
+  { label: 'اليسرى', value: 1 },
+  { label: 'كلتاهما', value: 2 },
 ];
 
 const Register = () => {
@@ -64,13 +64,13 @@ const Register = () => {
 
   const [step, setStep] = useState<1 | 2>(1);
 
-  // Form Fields (Aligned strictly with Backend documentation)
+  // Form Fields (Numeric Enum Values for DB Backend)
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [country, setCountry] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('2002-01-01');
-  const [primaryPosition, setPrimaryPosition] = useState('Striker');
-  const [preferredFoot, setPreferredFoot] = useState<'Right' | 'Left' | 'Both'>('Right');
+  const [primaryPosition, setPrimaryPosition] = useState<number>(9);
+  const [preferredFoot, setPreferredFoot] = useState<number>(0);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -140,14 +140,14 @@ const Register = () => {
       // Format birth date to standard ISO Date-Time string
       const birthDateIso = new Date(dateOfBirth).toISOString();
 
-      // Exact payload required by POST /api/v1/auth/register/player
+      // Exact numeric Enum payload required by POST /api/v1/auth/register/player
       const registerPayload: RegisterPlayerCommand = {
         email: email.trim().toLowerCase(),
         password: password,
         fullName: fullName.trim(),
         dateOfBirth: birthDateIso,
-        primaryPosition: primaryPosition,
-        preferredFoot: preferredFoot,
+        primaryPosition: Number(primaryPosition),
+        preferredFoot: Number(preferredFoot),
         country: country.trim() || 'مصر',
       };
 
@@ -397,7 +397,7 @@ const Register = () => {
               </label>
               <select
                 value={primaryPosition}
-                onChange={(e) => setPrimaryPosition(e.target.value)}
+                onChange={(e) => setPrimaryPosition(Number(e.target.value))}
                 required
                 className="w-full bg-gray-50/70 border border-gray-200 text-gray-800 px-4 py-3.5 rounded-xl text-xs outline-none focus:border-[#2B43A1] focus:bg-white text-right shadow-2xs cursor-pointer transition-all font-medium"
               >
@@ -418,7 +418,7 @@ const Register = () => {
                   <button
                     type="button" 
                     key={item.value} 
-                    onClick={() => setPreferredFoot(item.value)}
+                    onClick={() => setPreferredFoot(Number(item.value))}
                     className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                       preferredFoot === item.value 
                         ? 'bg-blue-50/80 border-[#2B43A1] text-[#2B43A1] ring-2 ring-[#2B43A1]/20 shadow-xs' 
