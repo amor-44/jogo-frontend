@@ -1,8 +1,4 @@
-interface AvatarProps {
-  name?: string;
-  image?: string;
-  size?: 'sm' | 'md' | 'lg';
-}
+import type { AvatarProps } from '../types';
 
 const Avatar = ({ name = 'User', image, size = 'md' }: AvatarProps) => {
   const sizeClasses = {

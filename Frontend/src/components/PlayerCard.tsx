@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth, type Player } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
+import type { PlayerCardProps } from '../types';
 
-const PlayerCard = ({ player }: { player: Player }) => {
+const PlayerCard = ({ player }: PlayerCardProps) => {
   const { savedPlayerIds, toggleSavePlayer } = useAuth();
   const navigate = useNavigate();
   const isSaved = savedPlayerIds.includes(player.id);
