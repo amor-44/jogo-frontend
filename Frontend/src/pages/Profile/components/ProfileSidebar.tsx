@@ -2,16 +2,52 @@ import { useNavigate } from 'react-router-dom';
 import { Bot, Trophy, Clock, Star, Activity } from 'lucide-react';
 import type { ProfileSidebarProps } from '../../../types';
 
-export const ProfileSidebar = ({ user }: ProfileSidebarProps) => {
+export const ProfileSidebar = ({ user, playerProfile }: ProfileSidebarProps) => {
   const navigate = useNavigate();
 
+  const displayName = playerProfile?.fullName || user?.name || 'أحمد الرشيدي';
+  const displayAvatar =
+    playerProfile?.profilePictureUrl ||
+    user?.avatar ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2B43A1&color=fff&size=128`;
+  
+  const positionMap: Record<string, string> = {
+    Striker: 'مهاجم',
+    LeftWinger: 'جناح أيسر',
+    RightWinger: 'جناح أيمن',
+    AttackingMidfielder: 'وسط هجومي / صانع ألعاب',
+    CentralMidfielder: 'وسط محور',
+    DefensiveMidfielder: 'وسط دفاعي / ارتكاز',
+    LeftBack: 'ظهير أيسر',
+    RightBack: 'ظهير أيمن',
+    CenterBack: 'قلب دفاع',
+    Goalkeeper: 'حارس مرمى',
+    GK: 'حارس مرمى',
+    CB: 'قلب دفاع',
+    LB: 'ظهير أيسر',
+    RB: 'ظهير أيمن',
+    CDM: 'وسط دفاعي',
+    CM: 'وسط محور',
+    CAM: 'وسط هجومي',
+    LW: 'جناح أيسر',
+    RW: 'جناح أيمن',
+    ST: 'مهاجم',
+  };
+  const rawPos = (playerProfile?.primaryPosition || playerProfile?.position || '') as string;
+  const displayPosition = positionMap[rawPos] || rawPos || 'لاعب كرة قدم';
+  const displayClub = playerProfile?.currentClub || 'بدون نادي';
+  const displayAge = playerProfile?.age ? `${playerProfile.age} عاماً` : '20 عاماً';
+  const displayCountry = playerProfile?.country || playerProfile?.nationality || 'السعودية';
+  const displayCity = playerProfile?.city || playerProfile?.region;
+  const displayLocation = displayCity ? `${displayCountry} (${displayCity})` : displayCountry;
+
   return (
-    <div className="bg-white p-6 rounded-3xl shadow-2xs border border-gray-100 flex flex-col items-center text-center">
+    <div className="bg-white p-6 rounded-3xl shadow-2xs border border-gray-100 flex flex-col items-center text-center font-sans">
       <div className="relative mb-3">
         <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md">
           <img 
-            src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2B43A1&color=fff&size=128`} 
-            alt={user?.name || "اللاعب"} 
+            src={displayAvatar} 
+            alt={displayName} 
             className="w-full h-full object-cover"
           />
         </div>
@@ -24,17 +60,17 @@ export const ProfileSidebar = ({ user }: ProfileSidebarProps) => {
         </button>
       </div>
       
-      <h2 className="text-xl font-bold text-gray-900 mb-1">{user?.name || 'أحمد الرشيدي'}</h2>
-      <p className="text-gray-400 text-xs mb-4 font-medium">مهاجم وسط | الأهلي</p>
+      <h2 className="text-xl font-bold text-gray-900 mb-1">{displayName}</h2>
+      <p className="text-gray-400 text-xs mb-4 font-medium">{displayPosition} | {displayClub}</p>
       
       <div className="grid grid-cols-2 gap-4 w-full py-3 border-t border-b border-gray-100 text-xs my-2">
         <div>
           <span className="block text-gray-400 text-[11px] mb-0.5">العمر</span>
-          <span className="font-bold text-gray-800">24 عاماً</span>
+          <span className="font-bold text-gray-800">{displayAge}</span>
         </div>
         <div className="border-r border-gray-100">
-          <span className="block text-gray-400 text-[11px] mb-0.5">الجنسية</span>
-          <span className="font-bold text-gray-800">السعودية SA</span>
+          <span className="block text-gray-400 text-[11px] mb-0.5">الجنسية والمدينة</span>
+          <span className="font-bold text-gray-800 truncate block px-1" title={displayLocation}>{displayLocation}</span>
         </div>
       </div>
 

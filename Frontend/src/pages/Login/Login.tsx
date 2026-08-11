@@ -1,51 +1,63 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
-import type { User } from '../../types';
-import { Mail, Lock } from 'lucide-react';
+import type { ProblemDetails } from '../../types';
+import { Mail, Lock, Loader2 } from 'lucide-react';
 import loginBg from '../../assets/images/ChatGPT Image Jul 24, 2026, 06_14_11 PM 1.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanEmail = email.trim();
 
-    if (cleanEmail === 'admin-club@jogo.com' || cleanEmail.includes('admin')) {
-      navigate(`/club-register?email=${encodeURIComponent(cleanEmail)}`);
-      return;
-    }
-
-    const savedClubsRaw = localStorage.getItem('jogo_clubs_db');
-    if (savedClubsRaw) {
-      const savedClubs: User[] = JSON.parse(savedClubsRaw);
-      const existingClub = savedClubs.find((c: User) => c.email.toLowerCase() === cleanEmail);
-
-      if (existingClub) {
-        login(existingClub);
+    try {
+      const loggedInUser = await login(cleanEmail, password);
+      if (loggedInUser.role === 'club') {
         navigate('/dashboard');
-        return;
+      } else {
+        navigate('/profile');
       }
-    }
-
-    const savedUserRaw = localStorage.getItem('jogo_user');
-    if (savedUserRaw) {
-      const savedUser: User = JSON.parse(savedUserRaw);
-      if (savedUser.email?.toLowerCase() === cleanEmail) {
-        login(savedUser);
-        navigate(savedUser.role === 'club' ? '/dashboard' : '/profile');
-        return;
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.data) {
+          const data = err.response.data as ProblemDetails & { message?: string };
+          if (data.errors && typeof data.errors === 'object') {
+            const errorMessages = Object.values(data.errors).flat().join(' - ');
+            setError(errorMessages || data.detail || data.title || 'بيانات الاعتماد غير صحيحة');
+          } else {
+            setError(
+              data.detail ||
+              data.title ||
+              data.message ||
+              (err.response.status === 401
+                ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+                : 'حدث خطأ أثناء تسجيل الدخول')
+            );
+          }
+        } else if (err.request && !err.response) {
+          setError('تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.');
+        } else {
+          setError(err.message || 'حدث خطأ أثناء تسجيل الدخول');
+        }
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('حدث خطأ غير متوقع أثناء تسجيل الدخول');
       }
+    } finally {
+      setIsLoading(false);
     }
-
-    setError('هذا البريد غير مسجل لدينا. يرجى إنشاء حساب جديد أولاً.');
   };
 
   return (
@@ -79,6 +91,7 @@ const Login = () => {
                   placeholder="name@example.com" 
                   className="w-full bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm outline-none focus:border-[#2B43A1] text-right pr-10" 
                   required
+                  disabled={isLoading}
                 />
                 <Mail className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               </div>
@@ -94,6 +107,7 @@ const Login = () => {
                   placeholder="••••••••" 
                   className="w-full bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm outline-none focus:border-[#2B43A1] text-right pr-10" 
                   required
+                  disabled={isLoading}
                 />
                 <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               </div>
@@ -101,9 +115,17 @@ const Login = () => {
 
             <button 
               type="submit" 
-              className="w-full bg-[#1C2C5E] text-white text-center py-3.5 rounded-xl font-bold hover:bg-[#2B43A1] transition-colors mt-2 shadow-md cursor-pointer"
+              disabled={isLoading}
+              className="w-full bg-[#1C2C5E] text-white text-center py-3.5 rounded-xl font-bold hover:bg-[#2B43A1] transition-colors mt-2 shadow-md cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              تسجيل الدخول
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>جاري تسجيل الدخول...</span>
+                </>
+              ) : (
+                'تسجيل الدخول'
+              )}
             </button>
           </form>
 

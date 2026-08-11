@@ -1,6 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import type { VideoHistoryItem } from '../../types';
+import { playerService } from '../../services/playerService';
+import { videoService } from '../../services/videoService';
+import type { VideoHistoryItem, PlayerProfileDto, VideoDto } from '../../types';
 import ProfileHeader from './components/ProfileHeader';
 import ProfileSidebar from './components/ProfileSidebar';
 import VideoHistory from './components/VideoHistory';
@@ -18,20 +20,68 @@ const DEFAULT_VIDEOS: VideoHistoryItem[] = [
 ];
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, playerProfile: contextProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [profile, setProfile] = useState<PlayerProfileDto | null>(contextProfile);
+  const [videos, setVideos] = useState<VideoDto[]>([]);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [videoName, setVideoName] = useState<string>('');
 
-  const firstName = user?.name ? user.name.split(' ')[0] : 'أحمد';
+  useEffect(() => {
+    let isMounted = true;
 
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    async function loadData() {
+      try {
+        const [profileRes, videosRes] = await Promise.allSettled([
+          playerService.getMe(),
+          videoService.getVideos(),
+        ]);
+
+        if (isMounted) {
+          if (profileRes.status === 'fulfilled' && profileRes.value) {
+            setProfile(profileRes.value);
+          }
+          if (videosRes.status === 'fulfilled' && videosRes.value) {
+            setVideos(videosRes.value);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load profile/videos:', err);
+      }
+    }
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const firstName = profile?.fullName
+    ? profile.fullName.split(' ')[0]
+    : user?.name
+    ? user.name.split(' ')[0]
+    : 'أحمد';
+
+  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
       setUploadedVideoUrl(url);
       setVideoName(file.name);
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
+        const uploaded = await videoService.uploadVideo(formData);
+        if (uploaded) {
+          setVideos((prev) => [uploaded, ...prev]);
+        }
+      } catch (err) {
+        console.error('Failed to upload video to backend:', err);
+      }
     }
   };
 
@@ -43,6 +93,27 @@ const Profile = () => {
   const handleTriggerUpload = () => {
     fileInputRef.current?.click();
   };
+
+  const displayVideos: VideoHistoryItem[] =
+    videos.length > 0
+      ? videos.map((v) => ({
+          title: v.title,
+          date: new Date(v.uploadedAt).toLocaleDateString('ar-EG', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          }),
+          duration: v.durationSeconds
+            ? `${Math.floor(v.durationSeconds / 60)}:${(v.durationSeconds % 60)
+                .toString()
+                .padStart(2, '0')}`
+            : '02:30',
+          tag: v.status === 'Analyzed' ? 'تم التحليل' : v.status || 'جاهز',
+          bg:
+            v.thumbnailUrl ||
+            'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=300&auto=format&fit=crop',
+        }))
+      : DEFAULT_VIDEOS;
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto pb-16 text-right font-sans" dir="rtl">
@@ -58,17 +129,31 @@ const Profile = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-4 flex flex-col gap-6">
-          <ProfileSidebar user={user} />
-          <VideoHistory videos={DEFAULT_VIDEOS} onUploadClick={handleTriggerUpload} />
+          <ProfileSidebar user={user} playerProfile={profile} />
+          
+          {/* On mobile: VideoUploader renders first here above VideoHistory */}
+          <div className="lg:hidden">
+            <VideoUploader 
+              uploadedVideoUrl={uploadedVideoUrl}
+              videoName={videoName}
+              onClearVideo={handleClearVideo}
+              onTriggerUpload={handleTriggerUpload}
+            />
+          </div>
+
+          <VideoHistory videos={displayVideos} onUploadClick={handleTriggerUpload} />
         </div>
 
         <div className="lg:col-span-8 flex flex-col gap-6">
-          <VideoUploader 
-            uploadedVideoUrl={uploadedVideoUrl}
-            videoName={videoName}
-            onClearVideo={handleClearVideo}
-            onTriggerUpload={handleTriggerUpload}
-          />
+          {/* On desktop: VideoUploader renders at top of main area */}
+          <div className="hidden lg:block">
+            <VideoUploader 
+              uploadedVideoUrl={uploadedVideoUrl}
+              videoName={videoName}
+              onClearVideo={handleClearVideo}
+              onTriggerUpload={handleTriggerUpload}
+            />
+          </div>
           <PerformanceSummary />
           <StrengthsWeaknesses />
           <AIAnalysisBox firstName={firstName} />
