@@ -178,19 +178,30 @@ export interface RequestOptions extends RequestInit {
 // ─── API Enums ────────────────────────────────────────────────────────────────
 
 export const Position = {
-  GK: 'GK',
-  CB: 'CB',
-  LB: 'LB',
-  RB: 'RB',
-  CDM: 'CDM',
-  CM: 'CM',
-  CAM: 'CAM',
-  LM: 'LM',
-  RM: 'RM',
-  LW: 'LW',
-  RW: 'RW',
-  CF: 'CF',
-  ST: 'ST',
+  Goalkeeper: 'Goalkeeper',
+  CenterBack: 'CenterBack',
+  RightBack: 'RightBack',
+  LeftBack: 'LeftBack',
+  DefensiveMidfielder: 'DefensiveMidfielder',
+  CentralMidfielder: 'CentralMidfielder',
+  AttackingMidfielder: 'AttackingMidfielder',
+  LeftWinger: 'LeftWinger',
+  RightWinger: 'RightWinger',
+  Striker: 'Striker',
+  // Short aliases
+  GK: 'Goalkeeper',
+  CB: 'CenterBack',
+  RB: 'RightBack',
+  LB: 'LeftBack',
+  CDM: 'DefensiveMidfielder',
+  CM: 'CentralMidfielder',
+  CAM: 'AttackingMidfielder',
+  LM: 'LeftWinger',
+  RM: 'RightWinger',
+  LW: 'LeftWinger',
+  RW: 'RightWinger',
+  CF: 'Striker',
+  ST: 'Striker',
 } as const;
 export type Position = (typeof Position)[keyof typeof Position];
 

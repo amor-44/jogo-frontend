@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
 import { playerService } from '../../services/playerService';
-import { Position, ProfileVisibility } from '../../types';
+import { ProfileVisibility } from '../../types';
 import type { PreferredFoot, RegisterPlayerCommand, User } from '../../types';
 import { 
   User as UserIcon, 
@@ -61,18 +61,64 @@ const ALL_NATIONALITIES = [
   'الكاميرون',
 ];
 
-const POSITION_OPTIONS: { value: Position; label: string; group: string }[] = [
-  { value: Position.ST, label: 'مهاجم (Striker / ST)', group: 'هجوم' },
-  { value: Position.LW, label: 'جناح أيسر (Left Winger / LW)', group: 'هجوم' },
-  { value: Position.RW, label: 'جناح أيمن (Right Winger / RW)', group: 'هجوم' },
-  { value: Position.CAM, label: 'صانع ألعاب / وسط هجومي (CAM)', group: 'وسط' },
-  { value: Position.CM, label: 'وسط محور (Central Midfielder / CM)', group: 'وسط' },
-  { value: Position.CDM, label: 'وسط دفاعي / ارتكاز (CDM)', group: 'وسط' },
-  { value: Position.LB, label: 'ظهير أيسر (Left Back / LB)', group: 'دفاع' },
-  { value: Position.RB, label: 'ظهير أيمن (Right Back / RB)', group: 'دفاع' },
-  { value: Position.CB, label: 'قلب دفاع (Center Back / CB)', group: 'دفاع' },
-  { value: Position.GK, label: 'حارس مرمى (Goalkeeper / GK)', group: 'حراسة' },
+const POSITION_OPTIONS = [
+  { value: 'Striker', label: 'مهاجم (Striker / ST)', group: 'هجوم' },
+  { value: 'LeftWinger', label: 'جناح أيسر (Left Winger / LW)', group: 'هجوم' },
+  { value: 'RightWinger', label: 'جناح أيمن (Right Winger / RW)', group: 'هجوم' },
+  { value: 'AttackingMidfielder', label: 'صانع ألعاب / وسط هجومي (CAM)', group: 'وسط' },
+  { value: 'CentralMidfielder', label: 'وسط محور (Central Midfielder / CM)', group: 'وسط' },
+  { value: 'DefensiveMidfielder', label: 'وسط دفاعي / ارتكاز (CDM)', group: 'وسط' },
+  { value: 'LeftBack', label: 'ظهير أيسر (Left Back / LB)', group: 'دفاع' },
+  { value: 'RightBack', label: 'ظهير أيمن (Right Back / RB)', group: 'دفاع' },
+  { value: 'CenterBack', label: 'قلب دفاع (Center Back / CB)', group: 'دفاع' },
+  { value: 'Goalkeeper', label: 'حارس مرمى (Goalkeeper / GK)', group: 'حراسة' },
 ];
+
+const mapToBackendPosition = (pos: string): string => {
+  const map: Record<string, string> = {
+    Striker: 'Striker',
+    LeftWinger: 'LeftWinger',
+    RightWinger: 'RightWinger',
+    AttackingMidfielder: 'AttackingMidfielder',
+    CentralMidfielder: 'CentralMidfielder',
+    DefensiveMidfielder: 'DefensiveMidfielder',
+    LeftBack: 'LeftBack',
+    RightBack: 'RightBack',
+    CenterBack: 'CenterBack',
+    Goalkeeper: 'Goalkeeper',
+    ST: 'Striker',
+    CF: 'Striker',
+    LW: 'LeftWinger',
+    RW: 'RightWinger',
+    CAM: 'AttackingMidfielder',
+    CM: 'CentralMidfielder',
+    LM: 'LeftWinger',
+    RM: 'RightWinger',
+    CDM: 'DefensiveMidfielder',
+    DM: 'DefensiveMidfielder',
+    LB: 'LeftBack',
+    RB: 'RightBack',
+    CB: 'CenterBack',
+    GK: 'Goalkeeper',
+    'مهاجم': 'Striker',
+    'رأس حربة': 'Striker',
+    'جناح أيسر': 'LeftWinger',
+    'جناح أيمن': 'RightWinger',
+    'صانع ألعاب': 'AttackingMidfielder',
+    'وسط هجومي': 'AttackingMidfielder',
+    'وسط محور': 'CentralMidfielder',
+    'وسط': 'CentralMidfielder',
+    'وسط دفاعي': 'DefensiveMidfielder',
+    'ارتكاز': 'DefensiveMidfielder',
+    'ظهير أيسر': 'LeftBack',
+    'ظهير أيمن': 'RightBack',
+    'قلب دفاع': 'CenterBack',
+    'مدافع': 'CenterBack',
+    'حارس مرمى': 'Goalkeeper',
+    'حارس': 'Goalkeeper',
+  };
+  return map[pos] || 'Striker';
+};
 
 const Register = () => {
   const { register } = useAuth();
@@ -93,7 +139,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Step 2: Football Info
-  const [mainPosition, setMainPosition] = useState<Position>(Position.ST);
+  const [mainPosition, setMainPosition] = useState<string>('Striker');
   const [prefPosition, setPrefPosition] = useState('');
   const [foot, setFoot] = useState<PreferredFoot>('اليمني');
   const [weight, setWeight] = useState('');
@@ -184,13 +230,16 @@ const Register = () => {
       };
       const mappedFoot = footMapping[foot] || 'Right';
 
-      // 3. Prepare clubs (default to "بدون نادي" if empty)
+      // 3. Prepare position mapping to ensure exact Backend enum value
+      const mappedPosition = mapToBackendPosition(mainPosition);
+
+      // 4. Prepare clubs (default to "بدون نادي" if empty)
       const finalCurrentClub = currentClub.trim() || 'بدون نادي';
       const finalPrevClub = prevClub.trim() || 'بدون نادي';
       const finalNationality = nationality.trim() || 'مصر';
       const finalRegion = region.trim() || 'القاهرة';
 
-      // 4. Build registration command payload
+      // 5. Build registration command payload
       const registerPayload: RegisterPlayerCommand = {
         fullName: fullName.trim(),
         email: email.trim().toLowerCase(),
@@ -201,8 +250,8 @@ const Register = () => {
         nationality: finalNationality,
         city: finalRegion,
         region: finalRegion,
-        primaryPosition: mainPosition,
-        position: mainPosition,
+        primaryPosition: mappedPosition,
+        position: mappedPosition,
         preferredFoot: mappedFoot,
         height: height ? parseFloat(height) : undefined,
         weight: weight ? parseFloat(weight) : undefined,
@@ -211,10 +260,10 @@ const Register = () => {
         age: calculatedAge,
       };
 
-      // 5. Send registration request to Backend API
+      // 6. Send registration request to Backend API
       const authRes = await authService.registerPlayer(registerPayload);
 
-      // 6. Save authentication tokens
+      // 7. Save authentication tokens
       if (authRes.accessToken) {
         localStorage.setItem('accessToken', authRes.accessToken);
       }
@@ -222,7 +271,7 @@ const Register = () => {
         localStorage.setItem('refreshToken', authRes.refreshToken);
       }
 
-      // 7. Update additional profile details (city, club, bio, height, weight)
+      // 8. Update additional profile details (city, club, bio, height, weight)
       try {
         await playerService.updateMe({
           city: finalRegion,
@@ -237,7 +286,7 @@ const Register = () => {
         console.warn('Update extra profile info warning:', updateErr);
       }
 
-      // 8. Fetch complete created profile
+      // 9. Fetch complete created profile
       let userProfile = null;
       try {
         userProfile = await playerService.getMe();
@@ -245,7 +294,7 @@ const Register = () => {
         // Continue with basic user info
       }
 
-      // 9. Store logged in player in AuthContext and localStorage
+      // 10. Store logged in player in AuthContext and localStorage
       const loggedInUser: User = {
         id: authRes.user?.id || 'new-player',
         name: userProfile?.fullName || authRes.user?.fullName || fullName,
@@ -259,7 +308,7 @@ const Register = () => {
 
       register(loggedInUser);
 
-      // 10. Redirect to profile
+      // 11. Redirect to profile
       navigate('/profile');
     } catch (err: unknown) {
       console.error('Registration error:', err);
@@ -515,9 +564,9 @@ const Register = () => {
               </label>
               <select
                 value={mainPosition}
-                onChange={(e) => setMainPosition(e.target.value as Position)}
+                onChange={(e) => setMainPosition(e.target.value)}
                 required
-                className="w-full bg-gray-50/70 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl text-xs outline-none focus:border-[#2B43A1] focus:bg-white text-right shadow-2xs cursor-pointer transition-all"
+                className="w-full bg-gray-50/70 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl text-xs outline-none focus:border-[#2B43A1] focus:bg-white text-right shadow-2xs cursor-pointer transition-all font-medium"
               >
                 {POSITION_OPTIONS.map((pos) => (
                   <option key={pos.value} value={pos.value}>
