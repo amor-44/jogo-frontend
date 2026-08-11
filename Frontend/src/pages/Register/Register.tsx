@@ -40,22 +40,22 @@ const COUNTRIES_LIST = [
 ];
 
 const POSITIONS = [
-  { label: 'حارس مرمى (GK)', value: 0 },
-  { label: 'قلب دفاع (CB)', value: 1 },
-  { label: 'ظهير أيمن (RB)', value: 2 },
-  { label: 'ظهير أيسر (LB)', value: 3 },
-  { label: 'وسط دفاعي / ارتكاز (CDM)', value: 4 },
-  { label: 'وسط محور (CM)', value: 5 },
-  { label: 'صانع ألعاب / وسط هجومي (CAM)', value: 6 },
-  { label: 'جناح أيمن (RW)', value: 7 },
-  { label: 'جناح أيسر (LW)', value: 8 },
-  { label: 'مهاجم (ST)', value: 9 },
+  { label: 'مهاجم (ST)', value: 'ST' },
+  { label: 'جناح أيسر (LW)', value: 'LW' },
+  { label: 'جناح أيمن (RW)', value: 'RW' },
+  { label: 'صانع ألعاب / وسط هجومي (CAM)', value: 'CAM' },
+  { label: 'وسط محور (CM)', value: 'CM' },
+  { label: 'وسط دفاعي / ارتكاز (CDM)', value: 'CDM' },
+  { label: 'ظهير أيسر (LB)', value: 'LB' },
+  { label: 'ظهير أيمن (RB)', value: 'RB' },
+  { label: 'قلب دفاع (CB)', value: 'CB' },
+  { label: 'حارس مرمى (GK)', value: 'GK' },
 ];
 
-const FEET_OPTIONS = [
-  { label: 'اليمنى', value: 0 },
-  { label: 'اليسرى', value: 1 },
-  { label: 'كلتاهما', value: 2 },
+const FEET_OPTIONS: { label: string; value: 'Right' | 'Left' | 'Both' }[] = [
+  { label: 'اليمنى', value: 'Right' },
+  { label: 'اليسرى', value: 'Left' },
+  { label: 'كلتاهما', value: 'Both' },
 ];
 
 const Register = () => {
@@ -64,13 +64,13 @@ const Register = () => {
 
   const [step, setStep] = useState<1 | 2>(1);
 
-  // Form Fields (Numeric Enum Values for DB Backend)
+  // Form Fields
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [country, setCountry] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('2002-01-01');
-  const [primaryPosition, setPrimaryPosition] = useState<number>(9);
-  const [preferredFoot, setPreferredFoot] = useState<number>(0);
+  const [primaryPosition, setPrimaryPosition] = useState<string>('ST');
+  const [preferredFoot, setPreferredFoot] = useState<'Right' | 'Left' | 'Both'>('Right');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -137,19 +137,21 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      // Format birth date to standard ISO Date-Time string
+      // Format birth date to complete ISO Date-Time string with UTC timezone (e.g. 2000-01-01T00:00:00.000Z)
       const birthDateIso = new Date(dateOfBirth).toISOString();
 
-      // Exact numeric Enum payload required by POST /api/v1/auth/register/player
+      // Build registration command payload
       const registerPayload: RegisterPlayerCommand = {
         email: email.trim().toLowerCase(),
         password: password,
         fullName: fullName.trim(),
         dateOfBirth: birthDateIso,
-        primaryPosition: Number(primaryPosition),
-        preferredFoot: Number(preferredFoot),
+        primaryPosition: primaryPosition,
+        preferredFoot: preferredFoot,
         country: country.trim() || 'مصر',
       };
+
+      console.log('Register Payload:', registerPayload);
 
       // Send registration request to backend API
       const authRes = await authService.registerPlayer(registerPayload);
@@ -393,11 +395,11 @@ const Register = () => {
           <form onSubmit={handleSubmitFinal} className="w-full flex flex-col gap-5 bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100">
             <div>
               <label className="block text-gray-700 text-xs font-bold mb-1.5 text-right">
-                المركز الأساسي (Position) <span className="text-red-500">*</span>
+                المركز الأساسي (Primary Position) <span className="text-red-500">*</span>
               </label>
               <select
                 value={primaryPosition}
-                onChange={(e) => setPrimaryPosition(Number(e.target.value))}
+                onChange={(e) => setPrimaryPosition(e.target.value)}
                 required
                 className="w-full bg-gray-50/70 border border-gray-200 text-gray-800 px-4 py-3.5 rounded-xl text-xs outline-none focus:border-[#2B43A1] focus:bg-white text-right shadow-2xs cursor-pointer transition-all font-medium"
               >
@@ -418,7 +420,7 @@ const Register = () => {
                   <button
                     type="button" 
                     key={item.value} 
-                    onClick={() => setPreferredFoot(Number(item.value))}
+                    onClick={() => setPreferredFoot(item.value)}
                     className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                       preferredFoot === item.value 
                         ? 'bg-blue-50/80 border-[#2B43A1] text-[#2B43A1] ring-2 ring-[#2B43A1]/20 shadow-xs' 

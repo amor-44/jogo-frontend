@@ -12,8 +12,10 @@ export const authService = {
   login: (data: LoginCommand) =>
     apiClient.post<AuthResponseDto>('/auth/login', data).then((r) => r.data),
 
-  registerPlayer: (data: RegisterPlayerCommand) =>
-    apiClient.post<AuthResponseDto>('/auth/register/player', data).then((r) => r.data),
+  registerPlayer: (data: RegisterPlayerCommand) => {
+    console.log('Register Payload:', data);
+    return apiClient.post<AuthResponseDto>('/auth/register/player', data).then((r) => r.data);
+  },
 
   registerScout: (data: RegisterScoutCommand) =>
     apiClient.post<AuthResponseDto>('/auth/register/scout', data).then((r) => r.data),
