@@ -7,9 +7,12 @@ export const videoService = {
   },
 
   uploadVideo: (formData: FormData) => {
-    return apiClient.post<{ id: string }>('/Videos', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }).then((r) => r.data);
+    // Don't set Content-Type manually — multipart/form-data needs a boundary
+    // parameter that only the browser/axios can generate from the actual
+    // FormData contents. Forcing the header without one makes every upload
+    // fail server-side with "Missing content-type boundary." Let axios set
+    // it automatically by omitting the header entirely.
+    return apiClient.post<{ id: string }>('/Videos', formData).then((r) => r.data);
   },
 
   getVideoById: (id: string) => {
