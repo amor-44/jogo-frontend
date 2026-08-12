@@ -198,15 +198,16 @@ const ClubRegister = () => {
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1 text-right">الدولة <span className="text-red-500">*</span></label>
               <div className="relative">
-                <input 
-                  type="text" list="scout-countries" required value={country} onChange={e => setCountry(e.target.value)}
-                  placeholder="مثال: السعودية"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-[#2B43A1] focus:bg-white pr-10 text-right"
-                />
-                <Globe className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <datalist id="scout-countries">
-                  {COUNTRIES_LIST.map(c => <option key={c} value={c} />)}
-                </datalist>
+                <select 
+                  required 
+                  value={country} 
+                  onChange={e => setCountry(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-[#2B43A1] focus:bg-white pr-10 text-right cursor-pointer appearance-none font-medium text-gray-800"
+                >
+                  <option value="" disabled>اختر الدولة...</option>
+                  {COUNTRIES_LIST.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <Globe className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
               </div>
             </div>
 

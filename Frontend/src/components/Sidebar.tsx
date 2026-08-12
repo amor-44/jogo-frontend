@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import type { SidebarProps } from '../types';
 import { getFullImageUrl } from '../utils/url';
 
@@ -99,13 +99,6 @@ const Sidebar = ({ isMobileOpen = false, onMobileClose }: SidebarProps) => {
       </div>
 
       <div className="p-4 border-t border-gray-100 flex flex-col gap-2">
-        <Link 
-          onClick={handleLinkClick}
-          to="/settings" 
-          className="flex items-center gap-3 px-4 py-2 text-gray-500 hover:text-gray-800 text-xs font-semibold hover:bg-gray-50 rounded-xl transition-colors"
-        >
-          <Settings className="w-4 h-4 text-gray-400" /> الإعدادات
-        </Link>
         
         <button 
           onClick={handleLogout}

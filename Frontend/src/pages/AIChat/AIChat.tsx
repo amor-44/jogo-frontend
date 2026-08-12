@@ -120,14 +120,14 @@ const AIChat = () => {
           <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs flex items-center gap-3">
             <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-gray-200">
               <img 
-                src={getFullImageUrl(user?.avatar) || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"} 
+                src={getFullImageUrl(user?.avatar) || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2B43A1&color=fff`} 
                 alt="User" 
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-[#1C2C5E] truncate">{user?.name || 'أحمد الرشيدي'}</p>
-              <p className="text-[10px] text-gray-400 font-medium">لاعب نشط • باقة Pro</p>
+              <p className="text-xs font-bold text-[#1C2C5E] truncate">{user?.name || user?.email || 'مستخدم Jogo'}</p>
+              <p className="text-[10px] text-gray-400 font-medium">{user?.role === 'scout' ? 'حساب كشاف' : 'حساب لاعب'}</p>
             </div>
           </div>
         </div>

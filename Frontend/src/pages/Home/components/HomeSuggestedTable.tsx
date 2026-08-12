@@ -46,7 +46,7 @@ export const HomeSuggestedTable = ({ players }: HomeSuggestedTableProps) => {
                 <td className="py-3.5 text-[#2B43A1] font-extrabold">---</td>
                 <td className="py-3.5">
                   <button 
-                    onClick={() => navigate(`/profile/${player.id}`)} 
+                    onClick={() => navigate(`/player/${player.id}`)} 
                     className="text-[#2B43A1] hover:underline font-bold text-[11px] cursor-pointer"
                   >
                     عرض الملف الشخصي

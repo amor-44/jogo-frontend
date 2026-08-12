@@ -3,12 +3,6 @@ import { authService } from '../services/authService';
 import { playerService } from '../services/playerService';
 import type { User, Player, NotificationItem, AuthContextType, PlayerProfileDto } from '../types';
 
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  { id: 1, title: "تحليل جديد جاهز", desc: "قام المدرب الذكي بتحديث تقرير أداء اللاعب عبدالرحمن الغامدي.", time: "منذ 10 دقائق", read: false },
-  { id: 2, title: "لاعب جديد مضاف", desc: "انضم لاعب جديد بنفس اهتماماتك الرياضية إلى المنصة.", time: "منذ ساعة", read: false },
-  { id: 3, title: "ترشيح ذكي", desc: "الذكاء الاصطناعي يوصي بمشاهدة ملف اللاعب رياض محرز.", time: "منذ 3 ساعات", read: false },
-];
-
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -21,12 +15,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [players, setPlayers] = useState<Player[]>([]);
 
-  const [savedPlayerIds, setSavedPlayerIds] = useState<number[]>(() => {
+  const [savedPlayerIds, setSavedPlayerIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('jogo_saved_ids');
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -121,12 +115,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setPlayers(updated);
   };
 
-  const toggleSavePlayer = (id: number) => {
-    let updated: number[];
-    if (savedPlayerIds.includes(id)) {
-      updated = savedPlayerIds.filter(favId => favId !== id);
+  const toggleSavePlayer = (id: string | number) => {
+    const strId = String(id);
+    let updated: string[];
+    if (savedPlayerIds.includes(strId)) {
+      updated = savedPlayerIds.filter(favId => favId !== strId);
     } else {
-      updated = [...savedPlayerIds, id];
+      updated = [...savedPlayerIds, strId];
     }
     setSavedPlayerIds(updated);
     localStorage.setItem('jogo_saved_ids', JSON.stringify(updated));

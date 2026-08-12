@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { playerService } from '../../services/playerService';
 import { videoService } from '../../services/videoService';
+import { reportService } from '../../services/reportService';
 import { getFullImageUrl } from '../../utils/url';
-import type { VideoHistoryItem, PlayerProfileDto, VideoDto } from '../../types';
+import type { VideoHistoryItem, PlayerProfileDto, VideoDto, AnalysisReportDto } from '../../types';
 import ProfileHeader from './components/ProfileHeader';
 import ProfileSidebar from './components/ProfileSidebar';
 import VideoHistory from './components/VideoHistory';
@@ -20,6 +21,7 @@ const Profile = () => {
 
   const [profile, setProfile] = useState<PlayerProfileDto | null>(contextProfile);
   const [videos, setVideos] = useState<VideoDto[]>([]);
+  const [reports, setReports] = useState<AnalysisReportDto[]>([]);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [videoName, setVideoName] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
@@ -38,9 +40,10 @@ const Profile = () => {
 
     async function loadData() {
       try {
-        const [profileRes, videosRes] = await Promise.allSettled([
+        const [profileRes, videosRes, reportsRes] = await Promise.allSettled([
           playerService.getMe(),
-          videoService.getVideos(1, 10),
+          videoService.getVideos(1, 20),
+          reportService.getReports({ page: 1, pageSize: 20 }),
         ]);
 
         if (isMounted) {
@@ -48,12 +51,14 @@ const Profile = () => {
             setProfile(profileRes.value);
           }
           if (videosRes.status === 'fulfilled' && videosRes.value) {
-            // videoService returns a PaginatedResult
             setVideos(videosRes.value.items || []);
+          }
+          if (reportsRes.status === 'fulfilled' && reportsRes.value) {
+            setReports(reportsRes.value.items || []);
           }
         }
       } catch (err) {
-        console.error('Failed to load profile/videos:', err);
+        console.error('Failed to load profile/videos/reports:', err);
       }
     }
 
@@ -64,11 +69,13 @@ const Profile = () => {
     };
   }, []);
 
+  const latestReport = reports.length > 0 ? reports[0] : null;
+
   const firstName = profile?.fullName
     ? profile.fullName.split(' ')[0]
     : user?.name
     ? user.name.split(' ')[0]
-    : 'أحمد';
+    : 'اللاعب';
 
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -107,13 +114,11 @@ const Profile = () => {
   };
 
   const handleDeleteVideo = async (id: string) => {
-    // Optimistic UI update
     const previousVideos = [...videos];
     const videoToDelete = videos.find(v => v.id === id);
     
     setVideos((prev) => prev.filter(v => v.id !== id));
     
-    // Check if the deleted video is currently playing
     if (
       videoToDelete && 
       (getFullImageUrl(videoToDelete.storageUrl) === uploadedVideoUrl || videoToDelete.originalFileName === videoName)
@@ -125,19 +130,16 @@ const Profile = () => {
       await videoService.deleteVideo(id);
     } catch (err) {
       console.error('Failed to delete video:', err);
-      // Revert if API fails
       setVideos(previousVideos);
     }
   };
 
   const handleAnalyzeVideo = async (id: string) => {
-    // Optimistic UI update
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: 'Processing' } : v));
     try {
       await videoService.analyzeVideo(id);
     } catch (err) {
       console.error('Failed to request analysis:', err);
-      // Let's assume it failed, revert to pending
       setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: 'Pending' } : v));
     }
   };
@@ -164,7 +166,6 @@ const Profile = () => {
     if (!ts) return '00:00';
     const parts = ts.split(':');
     if (parts.length >= 2) {
-      // e.g. "00:01:23.456" -> ["00", "01", "23.456"]
       return `${parts[1]}:${parts[2].split('.')[0]}`;
     }
     return ts;
@@ -208,7 +209,6 @@ const Profile = () => {
             onAvatarUploaded={handleAvatarUploaded}
           />
           
-          {/* On mobile: VideoUploader renders first here above VideoHistory */}
           <div className="lg:hidden">
             <VideoUploader 
               uploadedVideoUrl={uploadedVideoUrl}
@@ -230,7 +230,6 @@ const Profile = () => {
         </div>
 
         <div className="lg:col-span-8 flex flex-col gap-6">
-          {/* On desktop: VideoUploader renders at top of main area */}
           <div className="hidden lg:block">
             <VideoUploader 
               uploadedVideoUrl={uploadedVideoUrl}
@@ -240,10 +239,10 @@ const Profile = () => {
               onTriggerUpload={handleTriggerUpload}
             />
           </div>
-          <PerformanceSummary />
-          <StrengthsWeaknesses />
-          <AIAnalysisBox firstName={firstName} />
-          <TrainingPlan />
+          <PerformanceSummary report={latestReport} />
+          <StrengthsWeaknesses report={latestReport} />
+          <AIAnalysisBox firstName={firstName} report={latestReport} />
+          <TrainingPlan report={latestReport} />
         </div>
       </div>
 
