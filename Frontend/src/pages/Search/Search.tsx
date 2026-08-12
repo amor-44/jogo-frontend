@@ -10,6 +10,19 @@ const ARAB_COUNTRIES = [
   'العراق', 'فلسطين', 'السودان', 'ليبيا', 'اليمن', 'موريتانيا'
 ];
 
+const POSITION_VALUE_MAP: Record<string, string> = {
+  'مهاجم': 'Striker',
+  'جناح أيسر': 'LeftWinger',
+  'جناح أيمن': 'RightWinger',
+  'وسط هجومي': 'AttackingMidfielder',
+  'وسط': 'CentralMidfielder',
+  'وسط دفاعي': 'DefensiveMidfielder',
+  'ظهير أيسر': 'LeftBack',
+  'ظهير أيمن': 'RightBack',
+  'قلب دفاع': 'CenterBack',
+  'حارس': 'Goalkeeper',
+};
+
 const Search = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPosition, setSelectedPosition] = useState('الكل');
@@ -22,26 +35,27 @@ const Search = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [totalPlayers, setTotalPlayers] = useState(0);
 
-  const positions = ['الكل', 'حارس', 'مدافع', 'وسط', 'مهاجم', 'جناح'];
+  const positions = ['الكل', 'مهاجم', 'جناح أيمن', 'جناح أيسر', 'وسط', 'وسط دفاعي', 'وسط هجومي', 'قلب دفاع', 'ظهير أيمن', 'ظهير أيسر', 'حارس'];
   const feet = ['الكل', 'اليمنى', 'اليسرى', 'كلاهما'];
 
   const fetchPlayers = async () => {
     setIsLoading(true);
     try {
+      const backendPosition = selectedPosition !== 'الكل' ? (POSITION_VALUE_MAP[selectedPosition] || selectedPosition) : undefined;
       const response = await playerService.getAllPlayers({
         page: 1,
         pageSize: 50,
         minAge: minAge,
         maxAge: maxAge,
-        position: selectedPosition !== 'الكل' ? selectedPosition : undefined,
-        nationality: selectedCountry !== 'الكل' ? selectedCountry : undefined,
+        position: backendPosition,
+        country: selectedCountry !== 'الكل' ? selectedCountry : undefined,
       });
 
-      let filtered = response.items;
+      let filtered = response.items || [];
       
-      // Client-side filtering for search term and foot if not fully supported by backend
+      // Client-side filtering for search term and foot if needed
       if (searchTerm) {
-        filtered = filtered.filter(p => p.fullName.toLowerCase().includes(searchTerm.toLowerCase().trim()));
+        filtered = filtered.filter(p => p.fullName?.toLowerCase().includes(searchTerm.toLowerCase().trim()));
       }
       
       if (selectedFoot !== 'الكل') {
@@ -52,7 +66,7 @@ const Search = () => {
         };
         const mappedFoot = footMap[selectedFoot];
         if (mappedFoot) {
-          filtered = filtered.filter(p => p.preferredFoot === mappedFoot);
+          filtered = filtered.filter(p => p.preferredFoot?.toLowerCase() === mappedFoot.toLowerCase());
         }
       }
 

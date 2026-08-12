@@ -21,8 +21,8 @@ import ForgotPassword from './pages/ForgotPassword';
 import VerifyOTP from './pages/VerifyOTP';
 import ResetPassword from './pages/ResetPassword';
 import Notifications from './pages/Notifications';
-import Settings from './pages/Settings';
 import Welcome from './pages/Welcome';
+import PlayerPublicProfile from './pages/PlayerPublicProfile/PlayerPublicProfile';
 
 const ClubLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -158,7 +158,7 @@ const router = createBrowserRouter([
           { path: 'chat', element: <AIChat /> },
           { path: 'profile', element: <Profile /> },
           { path: 'notifications', element: <Notifications /> },
-          { path: 'settings', element: <Settings /> },
+          { path: 'player/:id', element: <PlayerPublicProfile /> },
         ],
       },
     ],

@@ -319,21 +319,20 @@ const Register = () => {
                   الدولة <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <input
-                    type="text"
-                    list="countries-list"
+                  <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    placeholder="مثال: مصر"
                     required
-                    className="w-full bg-gray-50/70 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl text-xs outline-none focus:border-[#2B43A1] focus:bg-white text-right pr-10 shadow-2xs transition-all"
-                  />
-                  <Globe className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <datalist id="countries-list">
+                    className="w-full bg-gray-50/70 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl text-xs outline-none focus:border-[#2B43A1] focus:bg-white text-right pr-10 shadow-2xs transition-all cursor-pointer font-medium appearance-none"
+                  >
+                    <option value="" disabled>اختر الدولة...</option>
                     {COUNTRIES_LIST.map((c) => (
-                      <option key={c} value={c} />
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
+                  <Globe className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                 </div>
               </div>
 

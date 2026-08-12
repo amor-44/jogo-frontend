@@ -29,9 +29,10 @@ export const playerService = {
       if (params.minAge !== undefined) queryParams.MinAge = params.minAge;
       if (params.maxAge !== undefined) queryParams.MaxAge = params.maxAge;
       if (params.position !== undefined && params.position !== 'الكل') queryParams.Position = params.position;
-      if (params.nationality !== undefined && params.nationality !== 'الكل') queryParams.Country = params.nationality;
-      // Note: Backend might not support preferredFoot, but keeping it if needed
-      // minOverallScore and maxOverallScore can be added if needed
+      const targetCountry = params.country || params.nationality;
+      if (targetCountry !== undefined && targetCountry !== 'الكل') queryParams.Country = targetCountry;
+      if (params.minOverallScore !== undefined) queryParams.MinOverallScore = params.minOverallScore;
+      if (params.maxOverallScore !== undefined) queryParams.MaxOverallScore = params.maxOverallScore;
     }
 
     return apiClient

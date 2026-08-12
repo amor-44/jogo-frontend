@@ -169,14 +169,14 @@ export interface AuthContextType {
   user: User | null;
   playerProfile: PlayerProfileDto | null;
   players: Player[];
-  savedPlayerIds: number[];
+  savedPlayerIds: string[];
   notifications: NotificationItem[];
   unreadCount: number;
   login: (emailOrUser: string | User, password?: string) => Promise<User>;
   register: (userData: User) => void;
   logout: () => Promise<void>;
   addPlayer: (player: Player) => void;
-  toggleSavePlayer: (id: number) => void;
+  toggleSavePlayer: (id: string | number) => void;
   markAllAsRead: () => void;
 }
 
@@ -354,10 +354,13 @@ export interface PlayerCardDto {
 }
 
 export interface PlayersQueryParams {
-  position?: Position;
+  position?: Position | string;
   nationality?: string;
+  country?: string;
   minAge?: number;
   maxAge?: number;
+  minOverallScore?: number;
+  maxOverallScore?: number;
   preferredFoot?: ApiPreferredFoot;
   page?: number;
   pageSize?: number;
@@ -389,23 +392,34 @@ export type VideoStatus = (typeof VideoStatus)[keyof typeof VideoStatus];
 export interface AnalysisReportDto {
   id: string;
   videoId: string;
-  videoTitle: string;
-  generatedAt: string;
+  videoTitle?: string;
+  generatedAt?: string;
+  completedAt?: string;
   overallScore: number;
   summary: string;
   strengths: string[];
   weaknesses: string[];
   recommendations: string[];
-  performanceMetrics: PerformanceMetricsDto;
+  aiModelVersion?: string;
+  metrics?: PerformanceMetricsDto;
+  performanceMetrics?: PerformanceMetricsDto;
 }
 
 export interface PerformanceMetricsDto {
-  passing: number;
-  shooting: number;
-  dribbling: number;
-  speed: number;
-  stamina: number;
-  positioning: number;
+  positionScore?: number;
+  passingAccuracy?: number;
+  ballControl?: number;
+  positioningScore?: number;
+  movementEfficiency?: number;
+  defensiveActions?: number;
+  attackingImpact?: number;
+  decisionMaking?: number;
+  passing?: number;
+  shooting?: number;
+  dribbling?: number;
+  speed?: number;
+  stamina?: number;
+  positioning?: number;
   defending?: number;
   heading?: number;
 }

@@ -1,14 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Bell, Search, Menu } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 import playerAvatar from '../assets/images/ChatGPT Image Jul 24, 2026, 06_14_11 PM 1.png';
 import type { TopNavProps } from '../types';
 
 const TopNav = ({ onHamburgerClick }: TopNavProps) => {
   const { user, notifications, unreadCount, markAllAsRead } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -26,13 +25,6 @@ const TopNav = ({ onHamburgerClick }: TopNavProps) => {
     };
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate('/search');
-    }
-  };
-
   return (
     <header className="h-16 md:h-20 bg-white shadow-sm flex items-center px-3 sm:px-4 md:px-8 relative z-30 justify-between gap-2" dir="rtl">
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -47,21 +39,6 @@ const TopNav = ({ onHamburgerClick }: TopNavProps) => {
         <div className="text-[#2B43A1] font-bold text-sm sm:text-base md:text-lg whitespace-nowrap">
           الرئيسية
         </div>
-      </div>
-
-      <div className="hidden sm:block flex-1 max-w-md mx-2 md:mx-8">
-        <form onSubmit={handleSearchSubmit} className="w-full bg-white border border-gray-200 rounded-full flex items-center px-3 md:px-4 py-1.5 md:py-2 focus-within:border-[#2B43A1] transition-colors">
-          <input 
-            type="text" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="ابحث عن لاعبين..." 
-            className="w-full bg-transparent outline-none text-xs md:text-sm text-gray-700 placeholder-gray-400 text-right pr-2" 
-          />
-          <button type="submit" className="text-gray-400 hover:text-[#2B43A1] transition-colors cursor-pointer">
-            <Search className="w-4 h-4" />
-          </button>
-        </form>
       </div>
 
       <div className="flex items-center gap-2 md:gap-4 relative shrink-0" ref={dropdownRef}>
