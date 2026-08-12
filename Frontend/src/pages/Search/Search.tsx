@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PlayerCard from '../../components/PlayerCard';
 import { playerService } from '../../services/playerService';
 import type { PlayerCardDto } from '../../types';
@@ -29,16 +29,14 @@ const Search = () => {
   const [selectedCountry, setSelectedCountry] = useState('الكل');
   const [minAge, setMinAge] = useState(6);
   const [maxAge, setMaxAge] = useState(45);
-  const [selectedFoot, setSelectedFoot] = useState('الكل');
   
   const [players, setPlayers] = useState<PlayerCardDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [totalPlayers, setTotalPlayers] = useState(0);
 
   const positions = ['الكل', 'مهاجم', 'جناح أيمن', 'جناح أيسر', 'وسط', 'وسط دفاعي', 'وسط هجومي', 'قلب دفاع', 'ظهير أيمن', 'ظهير أيسر', 'حارس'];
-  const feet = ['الكل', 'اليمنى', 'اليسرى', 'كلاهما'];
 
-  const fetchPlayers = async () => {
+  const fetchPlayers = useCallback(async () => {
     setIsLoading(true);
     try {
       const backendPosition = selectedPosition !== 'الكل' ? (POSITION_VALUE_MAP[selectedPosition] || selectedPosition) : undefined;
@@ -65,21 +63,6 @@ const Search = () => {
           );
         });
       }
-      
-      // Client-side filtering for Preferred Foot
-      if (selectedFoot !== 'الكل') {
-        const footTargets: Record<string, string[]> = {
-          'اليمنى': ['right', '0', 'يمين', 'اليمنى', 'يمنى'],
-          'اليسرى': ['left', '1', 'يسار', 'اليسرى', 'يسرى'],
-          'كلاهما': ['both', '2', 'كلاهما', 'كلتاهما']
-        };
-        const allowed = footTargets[selectedFoot] || [];
-        filtered = filtered.filter(p => {
-          const footVal = String(p.preferredFoot ?? p.foot ?? '').toLowerCase().trim();
-          if (!footVal) return true; // Keep player if foot is not explicitly specified in brief card
-          return allowed.some(a => footVal === a || footVal.includes(a));
-        });
-      }
 
       setPlayers(filtered);
       setTotalPlayers(filtered.length);
@@ -88,14 +71,14 @@ const Search = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchTerm, selectedPosition, selectedCountry, minAge, maxAge]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchPlayers();
     }, 400);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, selectedPosition, selectedCountry, minAge, maxAge, selectedFoot]);
+  }, [fetchPlayers]);
 
   const handleReset = () => {
     setSearchTerm('');
@@ -103,7 +86,6 @@ const Search = () => {
     setSelectedCountry('الكل');
     setMinAge(6);
     setMaxAge(45);
-    setSelectedFoot('الكل');
   };
 
   return (
@@ -137,7 +119,7 @@ const Search = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="block text-xs font-bold text-gray-600 mb-2">المركز</label>
             <div className="flex flex-wrap gap-1.5">
@@ -186,25 +168,6 @@ const Search = () => {
                 onChange={(e) => setMaxAge(Math.max(Number(e.target.value), minAge + 1))}
                 className="w-full accent-[#2B43A1] cursor-pointer"
               />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-600 mb-2">القدم المفضلة</label>
-            <div className="flex flex-wrap gap-1.5">
-              {feet.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setSelectedFoot(f)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    selectedFoot === f 
-                      ? 'bg-[#2B43A1] text-white shadow-xs' 
-                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
             </div>
           </div>
         </div>

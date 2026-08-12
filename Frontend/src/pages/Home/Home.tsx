@@ -9,7 +9,6 @@ const Home = () => {
   const { user, playerProfile, savedPlayerIds } = useAuth();
   const [suggestedPlayers, setSuggestedPlayers] = useState<PlayerCardDto[]>([]);
   const [totalPlayersCount, setTotalPlayersCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -20,10 +19,7 @@ const Home = () => {
           setTotalPlayersCount(res.totalCount || res.items?.length || 0);
         }
       })
-      .catch(err => console.error("Error fetching suggested players:", err))
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
+      .catch(err => console.error("Error fetching suggested players:", err));
 
     return () => { isMounted = false; };
   }, []);

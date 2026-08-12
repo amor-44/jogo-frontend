@@ -4,7 +4,7 @@ import { playerService } from '../../services/playerService';
 import { contactService } from '../../services/contactService';
 import { useAuth } from '../../hooks/useAuth';
 import type { PlayerProfileDto } from '../../types';
-import { Loader2, ArrowRight, Send, Heart, MapPin, Calendar, Footprints, Shield, User, Building2 } from 'lucide-react';
+import { Loader2, ArrowRight, Send, MapPin, Calendar, Shield, User, Heart, Building2 } from 'lucide-react';
 
 const PlayerPublicProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,20 +17,31 @@ const PlayerPublicProfile = () => {
   const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [contactMessage, setContactMessage] = useState('');
 
-  const isSaved = id ? savedPlayerIds.map(String).includes(String(id)) : false;
-
   useEffect(() => {
+    let isMounted = true;
     if (!id) return;
-    setIsLoading(true);
+    
     playerService.getPlayerById(id)
       .then((data) => {
-        setPlayer(data);
+        if (isMounted) {
+          setPlayer(data);
+        }
       })
       .catch((err) => {
         console.error('Failed to load player profile:', err);
-        setError('تعذر تحميل بيانات اللاعب. تأكد من صحة الرابط.');
+        if (isMounted) {
+          setError('تعذر تحميل بيانات اللاعب. تأكد من صحة الرابط.');
+        }
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const handleSendContactRequest = async () => {
@@ -43,16 +54,6 @@ const PlayerPublicProfile = () => {
       console.error('Failed to send contact request:', err);
       setContactStatus('error');
     }
-  };
-
-  const footLabel = (foot?: string) => {
-    if (!foot) return '--';
-    const map: Record<string, string> = {
-      'Right': 'يمنى', 'Left': 'يسرى', 'Both': 'كلاهما',
-      'right': 'يمنى', 'left': 'يسرى', 'both': 'كلاهما',
-      'اليمني': 'يمنى', 'اليسري': 'يسرى', 'كلتاهما': 'كلاهما',
-    };
-    return map[foot] || foot;
   };
 
   const positionLabel = (pos?: string) => {
@@ -90,7 +91,9 @@ const PlayerPublicProfile = () => {
   }
 
   const primaryPos = player.primaryPosition || player.position;
-  const age = player.age || (player.dateOfBirth ? Math.floor((Date.now() - new Date(player.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null);
+  const birthYear = player.dateOfBirth ? new Date(player.dateOfBirth).getFullYear() : null;
+  const age = player.age || (birthYear ? (2026 - birthYear) : null);
+  const isSaved = id ? savedPlayerIds.map(String).includes(String(id)) : false;
 
   return (
     <div className="w-full max-w-4xl mx-auto pb-12 pt-2 font-sans" dir="rtl">
@@ -104,11 +107,11 @@ const PlayerPublicProfile = () => {
 
       {/* Profile Header Card */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-6">
-        <div className="h-2 bg-gradient-to-l from-[#2B43A1] to-[#4F6BDB]" />
+        <div className="h-2 bg-linear-to-lrom-[#2B43A1] to-[#4F6BDB]" />
         <div className="p-6 md:p-8">
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2B43A1] to-[#4F6BDB] flex items-center justify-center text-white font-bold text-2xl shadow-md">
+              <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-[#2B43A1] to-[#4F6BDB] flex items-center justify-center text-white font-bold text-2xl shadow-md">
                 {player.fullName ? player.fullName.charAt(0).toUpperCase() : '?'}
               </div>
               <div>
@@ -164,10 +167,6 @@ const PlayerPublicProfile = () => {
                 <span className="font-bold text-gray-700">{player.city}</span>
               </div>
             )}
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-400 flex items-center gap-1.5"><Footprints className="w-3.5 h-3.5" /> القدم المفضلة</span>
-              <span className="font-bold text-gray-700">{footLabel(player.preferredFoot)}</span>
-            </div>
           </div>
         </div>
 
@@ -244,7 +243,7 @@ const PlayerPublicProfile = () => {
               <button 
                 onClick={handleSendContactRequest}
                 disabled={contactStatus === 'sending'}
-                className="bg-gradient-to-l from-[#2B43A1] to-[#3D5BC9] text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                className="bg-linear-to-l from-[#2B43A1] to-[#3D5BC9] text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-2"
               >
                 {contactStatus === 'sending' ? (
                   <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جاري الإرسال...</>

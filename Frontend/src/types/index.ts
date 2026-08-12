@@ -157,8 +157,13 @@ export interface VideoUploaderProps {
   uploadedVideoUrl: string | null;
   videoName: string;
   isUploading?: boolean;
+  isAnalyzing?: boolean;
+  currentVideoId?: string | null;
+  currentVideoStatus?: VideoStatus | string;
   onClearVideo: () => void;
   onTriggerUpload: () => void;
+  onAnalyze?: (id: string) => void;
+  onRetry?: (id: string) => void;
 }
 
 export interface AIAnalysisBoxProps {

@@ -7,7 +7,7 @@ export interface DecodedToken {
   email?: string;
   unique_name?: string;
   exp?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export function parseJwt(token: string): DecodedToken | null {

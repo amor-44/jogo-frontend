@@ -23,6 +23,7 @@ const PlayerProfileView = () => {
   const [profile, setProfile] = useState<PlayerProfileDto | null>(contextProfile);
   const [videos, setVideos] = useState<VideoDto[]>([]);
   const [reports, setReports] = useState<AnalysisReportDto[]>([]);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [videoName, setVideoName] = useState<string>('');
@@ -71,7 +72,13 @@ const PlayerProfileView = () => {
             setProfile(profileRes.value);
           }
           if (videosRes.status === 'fulfilled' && videosRes.value) {
-            setVideos(videosRes.value.items || []);
+            const videoList = videosRes.value.items || [];
+            setVideos(videoList);
+            if (videoList.length > 0) {
+              setSelectedVideoId((prev) => prev || videoList[0].id);
+              setUploadedVideoUrl((prev) => prev || getFullImageUrl(videoList[0].storageUrl));
+              setVideoName((prev) => prev || videoList[0].originalFileName);
+            }
           }
           if (reportsRes.status === 'fulfilled' && reportsRes.value) {
             setReports(reportsRes.value.items || []);
@@ -104,9 +111,13 @@ const PlayerProfileView = () => {
     return () => clearInterval(intervalId);
   }, [videos, fetchVideosAndReports]);
 
-  // Selected report or latest report fallback
+  // Selected active video and active report
+  const activeVideo = videos.find((v) => v.id === selectedVideoId) || (videos.length > 0 ? videos[0] : null);
+  
   const activeReport = selectedReportId
-    ? reports.find((r) => r.id === selectedReportId) || (reports.length > 0 ? reports[0] : null)
+    ? reports.find((r) => r.id === selectedReportId)
+    : selectedVideoId
+    ? reports.find((r) => r.videoId === selectedVideoId) || (reports.length > 0 ? reports[0] : null)
     : reports.length > 0 ? reports[0] : null;
 
   const firstName = profile?.fullName
@@ -114,65 +125,6 @@ const PlayerProfileView = () => {
     : user?.name
     ? user.name.split(' ')[0]
     : 'اللاعب';
-
-  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setUploadedVideoUrl(url);
-      setVideoName(file.name);
-      setIsUploading(true);
-
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
-        const uploadResult = await videoService.uploadVideo(formData);
-        if (uploadResult && uploadResult.id) {
-          const newVideo = await videoService.getVideoById(uploadResult.id);
-          if (newVideo) {
-            setVideos((prev) => [newVideo, ...prev]);
-          } else {
-            await fetchVideosAndReports();
-          }
-        }
-      } catch (err) {
-        console.error('Failed to upload video to backend:', err);
-      } finally {
-        setIsUploading(false);
-      }
-    }
-  };
-
-  const handleClearVideo = () => {
-    setUploadedVideoUrl(null);
-    setVideoName('');
-  };
-
-  const handleTriggerUpload = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleDeleteVideo = async (id: string) => {
-    const previousVideos = [...videos];
-    const videoToDelete = videos.find(v => v.id === id);
-    
-    setVideos((prev) => prev.filter(v => v.id !== id));
-    
-    if (
-      videoToDelete && 
-      (getFullImageUrl(videoToDelete.storageUrl) === uploadedVideoUrl || videoToDelete.originalFileName === videoName)
-    ) {
-      handleClearVideo();
-    }
-
-    try {
-      await videoService.deleteVideo(id);
-    } catch (err) {
-      console.error('Failed to delete video:', err);
-      setVideos(previousVideos);
-    }
-  };
 
   const handleAnalyzeVideo = async (id: string) => {
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: 'Processing' } : v));
@@ -200,9 +152,73 @@ const PlayerProfileView = () => {
     }
   };
 
+  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setUploadedVideoUrl(url);
+      setVideoName(file.name);
+      setIsUploading(true);
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
+        const uploadResult = await videoService.uploadVideo(formData);
+        if (uploadResult && uploadResult.id) {
+          const newVideo = await videoService.getVideoById(uploadResult.id);
+          if (newVideo) {
+            setVideos((prev) => [newVideo, ...prev]);
+            setSelectedVideoId(newVideo.id);
+            // Automatically trigger analysis on upload!
+            await handleAnalyzeVideo(newVideo.id);
+          } else {
+            await fetchVideosAndReports();
+          }
+        }
+      } catch (err) {
+        console.error('Failed to upload video to backend:', err);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  };
+
+  const handleClearVideo = () => {
+    setUploadedVideoUrl(null);
+    setVideoName('');
+    setSelectedVideoId(null);
+  };
+
+  const handleTriggerUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDeleteVideo = async (id: string) => {
+    const previousVideos = [...videos];
+    const videoToDelete = videos.find(v => v.id === id);
+    
+    setVideos((prev) => prev.filter(v => v.id !== id));
+    
+    if (
+      videoToDelete && 
+      (getFullImageUrl(videoToDelete.storageUrl) === uploadedVideoUrl || videoToDelete.originalFileName === videoName)
+    ) {
+      handleClearVideo();
+    }
+
+    try {
+      await videoService.deleteVideo(id);
+    } catch (err) {
+      console.error('Failed to delete video:', err);
+      setVideos(previousVideos);
+    }
+  };
+
   const handleVideoClick = (id: string) => {
     const video = videos.find(v => v.id === id);
     if (video) {
+      setSelectedVideoId(video.id);
       setUploadedVideoUrl(getFullImageUrl(video.storageUrl));
       setVideoName(video.originalFileName);
 
@@ -265,8 +281,12 @@ const PlayerProfileView = () => {
               uploadedVideoUrl={uploadedVideoUrl}
               videoName={videoName}
               isUploading={isUploading}
+              currentVideoId={activeVideo?.id || selectedVideoId}
+              currentVideoStatus={activeVideo?.status}
               onClearVideo={handleClearVideo}
               onTriggerUpload={handleTriggerUpload}
+              onAnalyze={handleAnalyzeVideo}
+              onRetry={handleRetryAnalysis}
             />
           </div>
 
@@ -286,8 +306,12 @@ const PlayerProfileView = () => {
               uploadedVideoUrl={uploadedVideoUrl}
               videoName={videoName}
               isUploading={isUploading}
+              currentVideoId={activeVideo?.id || selectedVideoId}
+              currentVideoStatus={activeVideo?.status}
               onClearVideo={handleClearVideo}
               onTriggerUpload={handleTriggerUpload}
+              onAnalyze={handleAnalyzeVideo}
+              onRetry={handleRetryAnalysis}
             />
           </div>
           <PerformanceSummary report={activeReport} />

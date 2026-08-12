@@ -12,16 +12,6 @@ const PlayerCard = ({ player }: Props) => {
   const navigate = useNavigate();
   const isSaved = savedPlayerIds.map(String).includes(String(player.id));
 
-  // Map foot values (string, enum or number) to Arabic
-  const footLabel = (footVal?: string | number) => {
-    if (footVal === undefined || footVal === null || footVal === '') return '--';
-    const str = String(footVal).toLowerCase();
-    if (str === '0' || str === 'right' || str === 'اليمنى' || str === 'يمين' || str === 'يمنى') return 'يمنى';
-    if (str === '1' || str === 'left' || str === 'اليسرى' || str === 'يسار' || str === 'يسرى') return 'يسرى';
-    if (str === '2' || str === 'both' || str === 'كلاهما' || str === 'كلتاهما') return 'كلاهما';
-    return String(footVal);
-  };
-
   // Map English position values to Arabic
   const positionLabel = (pos?: string) => {
     if (!pos) return 'غير محدد';
@@ -51,9 +41,8 @@ const PlayerCard = ({ player }: Props) => {
   };
 
   const rawPosition = player.primaryPosition ? String(player.primaryPosition) : (player.position ? String(player.position) : '');
-  const rawCountry = player.country || player.nationality || '';
+  const rawCountry = player.country || player.nationality || 'غير محدد';
   const rawScore = player.latestOverallScore ?? player.overallScore;
-  const rawFoot = player.preferredFoot ?? player.foot;
   const avatarUrl = getFullImageUrl(player.profilePictureUrl);
 
   return (
@@ -102,22 +91,18 @@ const PlayerCard = ({ player }: Props) => {
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 gap-2.5 mb-4">
+        <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="bg-gray-50/80 rounded-xl p-2.5 text-center">
             <span className="block text-[10px] text-gray-400 font-medium mb-0.5">العمر</span>
-            <span className="font-bold text-gray-800 text-sm">{player.age || '--'} <span className="text-[10px] text-gray-400 font-normal">سنة</span></span>
-          </div>
-          <div className="bg-gray-50/80 rounded-xl p-2.5 text-center">
-            <span className="block text-[10px] text-gray-400 font-medium mb-0.5">القدم</span>
-            <span className="font-bold text-gray-800 text-sm">{footLabel(rawFoot)}</span>
+            <span className="font-bold text-gray-800 text-xs">{player.age || '--'} <span className="text-[9px] text-gray-400 font-normal">سنة</span></span>
           </div>
           <div className="bg-gray-50/80 rounded-xl p-2.5 text-center">
             <span className="block text-[10px] text-gray-400 font-medium mb-0.5">الدولة</span>
-            <span className="font-bold text-gray-800 text-sm truncate block">{rawCountry || '--'}</span>
+            <span className="font-bold text-gray-800 text-xs truncate block">{rawCountry}</span>
           </div>
           <div className="bg-gray-50/80 rounded-xl p-2.5 text-center">
             <span className="block text-[10px] text-gray-400 font-medium mb-0.5">التقييم</span>
-            <span className="font-extrabold text-[#2B43A1] text-sm">{rawScore ? `${rawScore}` : '--'}</span>
+            <span className="font-extrabold text-[#2B43A1] text-xs">⭐ {rawScore ? `${rawScore}` : '--'}</span>
           </div>
         </div>
 

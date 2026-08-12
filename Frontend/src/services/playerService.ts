@@ -22,7 +22,7 @@ export const playerService = {
       .then((r) => r.data),
 
   getAllPlayers: (params?: PlayersQueryParams) => {
-    const queryParams: Record<string, any> = {};
+    const queryParams: Record<string, string | number | boolean | undefined> = {};
     if (params) {
       if (params.page !== undefined) queryParams.PageNumber = params.page;
       if (params.pageSize !== undefined) queryParams.PageSize = params.pageSize;

@@ -1,41 +1,37 @@
-import { useState, useEffect } from 'react';
-import { X, Loader2, Save } from 'lucide-react';
+import { useState } from 'react';
+import { X, Loader2 } from 'lucide-react';
+import type { PlayerProfileDto, Position, ProfileVisibility, UpdateProfileCommand } from '../../../types';
 import { playerService } from '../../../services/playerService';
-import type { PlayerProfileDto, UpdateProfileCommand, ProfileVisibility } from '../../../types';
-import { Position } from '../../../types';
 
 interface EditProfileModalProps {
   profile: PlayerProfileDto | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: (updatedProfile: PlayerProfileDto) => void;
+  onUpdate: (profile: PlayerProfileDto) => void;
 }
 
-const VISIBILITY_OPTIONS: { label: string; value: ProfileVisibility }[] = [
-  { label: 'عام (للجميع)', value: 'Public' },
-  { label: 'كشافين فقط', value: 'ScoutsOnly' },
-  { label: 'خاص', value: 'Private' },
+const POSITIONS: { value: Position; label: string }[] = [
+  { value: 'Striker', label: 'مهاجم (Striker)' },
+  { value: 'LeftWinger', label: 'جناح أيسر (Left Winger)' },
+  { value: 'RightWinger', label: 'جناح أيمن (Right Winger)' },
+  { value: 'AttackingMidfielder', label: 'وسط هجومي (CAM)' },
+  { value: 'CentralMidfielder', label: 'وسط محور (CM)' },
+  { value: 'DefensiveMidfielder', label: 'وسط دفاعي (CDM)' },
+  { value: 'LeftBack', label: 'ظهير أيسر (LB)' },
+  { value: 'RightBack', label: 'ظهير أيمن (RB)' },
+  { value: 'CenterBack', label: 'قلب دفاع (CB)' },
+  { value: 'Goalkeeper', label: 'حارس مرمى (GK)' },
 ];
 
-const POSITIONS = [
-  { label: 'بدون مركز إضافي', value: '' },
-  { label: 'مهاجم (ST)', value: Position.ST },
-  { label: 'جناح أيسر (LW)', value: Position.LW },
-  { label: 'جناح أيمن (RW)', value: Position.RW },
-  { label: 'صانع ألعاب (CAM)', value: Position.CAM },
-  { label: 'وسط محور (CM)', value: Position.CM },
-  { label: 'وسط دفاعي (CDM)', value: Position.CDM },
-  { label: 'ظهير أيسر (LB)', value: Position.LB },
-  { label: 'ظهير أيمن (RB)', value: Position.RB },
-  { label: 'قلب دفاع (CB)', value: Position.CB },
-  { label: 'حارس مرمى (GK)', value: Position.GK },
-];
-
-export const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }: EditProfileModalProps) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Form State
+const EditProfileForm = ({
+  profile,
+  onClose,
+  onUpdate,
+}: {
+  profile: PlayerProfileDto | null;
+  onClose: () => void;
+  onUpdate: (profile: PlayerProfileDto) => void;
+}) => {
   const [city, setCity] = useState(profile?.city || profile?.region || '');
   const [height, setHeight] = useState<number | ''>(profile?.height || '');
   const [weight, setWeight] = useState<number | ''>(profile?.weight || '');
@@ -46,21 +42,8 @@ export const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }: EditPro
   const [marketValue, setMarketValue] = useState<number | ''>(profile?.marketValue || '');
   const [visibility, setVisibility] = useState<ProfileVisibility>(profile?.visibility || profile?.profileVisibility || 'Public');
 
-  useEffect(() => {
-    if (isOpen && profile) {
-      setCity(profile.city || profile.region || '');
-      setHeight(profile.height || '');
-      setWeight(profile.weight || '');
-      setSecondaryPosition(profile.secondaryPosition || '');
-      setCurrentClub(profile.currentClub || '');
-      setBiography(profile.biography || profile.bio || '');
-      setFootballExperience(profile.footballExperience || '');
-      setMarketValue(profile.marketValue || '');
-      setVisibility(profile.visibility || profile.profileVisibility || 'Public');
-    }
-  }, [isOpen, profile]);
-
-  if (!isOpen) return null;
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,13 +64,13 @@ export const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }: EditPro
       };
 
       await playerService.updateMe(payload);
-      // Fetch the latest profile data from the server since updateMe returns void
       const updatedProfile = await playerService.getMe();
       onUpdate(updatedProfile);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Update profile error:', err);
-      setError(err.response?.data?.detail || err.response?.data?.title || err.message || 'حدث خطأ أثناء حفظ البيانات.');
+      const axiosErr = err as { response?: { data?: { detail?: string; title?: string } }; message?: string };
+      setError(axiosErr.response?.data?.detail || axiosErr.response?.data?.title || axiosErr.message || 'حدث خطأ أثناء حفظ البيانات.');
     } finally {
       setIsLoading(false);
     }
@@ -98,166 +81,192 @@ export const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }: EditPro
       <div className="bg-white rounded-3xl w-full max-w-3xl my-8 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50/50 shrink-0">
-          <h2 className="text-xl font-bold text-[#1C2C5E]">تعديل الملف الشخصي</h2>
+          <h3 className="font-bold text-lg text-[#1C2C5E]">تعديل بيانات الملف الشخصي</h3>
           <button 
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-200 transition-colors text-gray-500 cursor-pointer"
+            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto grow">
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-6 text-sm font-medium">
+            <div className="p-3.5 bg-red-50 border border-red-200 text-red-600 text-xs font-bold rounded-2xl">
               {error}
             </div>
           )}
 
-          <form id="edit-profile-form" onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">المدينة / المنطقة</label>
-                <input 
-                  type="text" 
-                  value={city} 
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="مثال: الرياض" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-[#2B43A1] focus:bg-white outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">النادي الحالي</label>
-                <input 
-                  type="text" 
-                  value={currentClub} 
-                  onChange={(e) => setCurrentClub(e.target.value)}
-                  placeholder="مثال: نادي الهلال أو بدون نادي" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-[#2B43A1] focus:bg-white outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">الطول (سم)</label>
-                <input 
-                  type="number" 
-                  min="100" max="250"
-                  value={height} 
-                  onChange={(e) => setHeight(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="مثال: 180" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-[#2B43A1] focus:bg-white outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">الوزن (كجم)</label>
-                <input 
-                  type="number" 
-                  min="30" max="150"
-                  value={weight} 
-                  onChange={(e) => setWeight(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="مثال: 75" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-[#2B43A1] focus:bg-white outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">المركز الإضافي</label>
-                <select 
-                  value={secondaryPosition} 
-                  onChange={(e) => setSecondaryPosition(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-[#2B43A1] focus:bg-white outline-none transition-colors cursor-pointer"
-                >
-                  {POSITIONS.map(p => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">القيمة السوقية (تقديرية)</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={marketValue} 
-                  onChange={(e) => setMarketValue(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="مثال: 50000" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-[#2B43A1] focus:bg-white outline-none transition-colors"
-                />
-              </div>
-
-            </div>
-
+          {/* Current Club & City */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">رؤية الملف الشخصي</label>
-              <div className="flex flex-wrap gap-4">
-                {VISIBILITY_OPTIONS.map(opt => (
-                  <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="visibility" 
-                      value={opt.value}
-                      checked={visibility === opt.value}
-                      onChange={(e) => setVisibility(e.target.value as ProfileVisibility)}
-                      className="w-4 h-4 text-[#2B43A1] focus:ring-[#2B43A1] border-gray-300"
-                    />
-                    <span className="text-sm text-gray-700">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">نبذة عن اللاعب (Biography)</label>
-              <textarea 
-                value={biography} 
-                onChange={(e) => setBiography(e.target.value)}
-                placeholder="تحدث عن نفسك، أهدافك وطموحاتك..." 
-                rows={3}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-[#2B43A1] focus:bg-white outline-none transition-colors resize-none"
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">النادي الحالي</label>
+              <input 
+                type="text"
+                value={currentClub}
+                onChange={(e) => setCurrentClub(e.target.value)}
+                placeholder="مثال: نادي الهلال / بدون نادي"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 outline-none focus:border-[#2B43A1] transition"
               />
             </div>
-
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">الخبرة الكروية (Football Experience)</label>
-              <textarea 
-                value={footballExperience} 
-                onChange={(e) => setFootballExperience(e.target.value)}
-                placeholder="الأندية التي لعبت لها، البطولات والمشاركات السابقة..." 
-                rows={3}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-[#2B43A1] focus:bg-white outline-none transition-colors resize-none"
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">المدينة</label>
+              <input 
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="مثال: الرياض"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 outline-none focus:border-[#2B43A1] transition"
               />
             </div>
-          </form>
-        </div>
+          </div>
 
-        {/* Footer */}
-        <div className="p-5 border-t border-gray-100 bg-white flex justify-end gap-3 shrink-0">
-          <button 
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-60"
-          >
-            إلغاء
-          </button>
-          <button 
-            type="submit"
-            form="edit-profile-form"
-            disabled={isLoading}
-            className="px-6 py-2.5 rounded-xl bg-[#2B43A1] text-white font-bold text-sm hover:bg-blue-900 transition-colors shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-60"
-          >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            حفظ التغييرات
-          </button>
-        </div>
+          {/* Physical Stats: Height & Weight */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">الطول (سم)</label>
+              <input 
+                type="number"
+                value={height}
+                onChange={(e) => setHeight(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="مثال: 178"
+                min="100"
+                max="230"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 outline-none focus:border-[#2B43A1] transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">الوزن (كجم)</label>
+              <input 
+                type="number"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="مثال: 72"
+                min="30"
+                max="150"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 outline-none focus:border-[#2B43A1] transition"
+              />
+            </div>
+          </div>
 
+          {/* Secondary Position */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">المركز الثانوي (اختياري)</label>
+            <select
+              value={secondaryPosition}
+              onChange={(e) => setSecondaryPosition(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 outline-none focus:border-[#2B43A1] transition cursor-pointer"
+            >
+              <option value="">-- بدون مركز ثانوي --</option>
+              {POSITIONS.map((pos) => (
+                <option key={pos.value} value={pos.value}>
+                  {pos.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Market Value */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">القيمة السوقية التقديرية ($)</label>
+            <input 
+              type="number"
+              value={marketValue}
+              onChange={(e) => setMarketValue(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="مثال: 25000"
+              min="0"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 outline-none focus:border-[#2B43A1] transition"
+            />
+          </div>
+
+          {/* Football Experience */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">الخبرة الكروية والمسيرة</label>
+            <textarea 
+              value={footballExperience}
+              onChange={(e) => setFootballExperience(e.target.value)}
+              placeholder="اذكر الأندية السابقة، البطولات المشارك بها، والإنجازات..."
+              rows={3}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-xs text-gray-800 outline-none focus:border-[#2B43A1] transition resize-none"
+            />
+          </div>
+
+          {/* Biography */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">نبذة تعريفية (Bio)</label>
+            <textarea 
+              value={biography}
+              onChange={(e) => setBiography(e.target.value)}
+              placeholder="اكتب نبذة مختصرة عن أسلوب لعبك وطموحاتك..."
+              rows={3}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-xs text-gray-800 outline-none focus:border-[#2B43A1] transition resize-none"
+            />
+          </div>
+
+          {/* Visibility */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">خصوصية الملف الشخصي</label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="visibility" 
+                  value="Public" 
+                  checked={visibility === 'Public'}
+                  onChange={() => setVisibility('Public')}
+                  className="accent-[#2B43A1]"
+                />
+                عام (مرئي لجميع الكشافين والأندية)
+              </label>
+              <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="visibility" 
+                  value="Private" 
+                  checked={visibility === 'Private'}
+                  onChange={() => setVisibility('Private')}
+                  className="accent-[#2B43A1]"
+                />
+                خاص (مخفي من نتائج البحث)
+              </label>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4 border-t border-gray-100">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1 bg-[#2B43A1] text-white font-bold text-xs py-3 rounded-xl hover:bg-blue-900 transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>جاري الحفظ...</span>
+                </>
+              ) : (
+                <span>حفظ التعديلات</span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-6 py-3 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-200 transition cursor-pointer"
+            >
+              إلغاء
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
+};
+
+export const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }: EditProfileModalProps) => {
+  if (!isOpen) return null;
+  return <EditProfileForm profile={profile} onClose={onClose} onUpdate={onUpdate} />;
 };
 
 export default EditProfileModal;

@@ -3,6 +3,7 @@ import { authService } from '../services/authService';
 import { playerService } from '../services/playerService';
 import { scoutService } from '../services/scoutService';
 import { extractUserFromToken } from '../utils/jwt';
+import { getFullImageUrl } from '../utils/url';
 import type { 
   User, 
   Player, 
@@ -91,11 +92,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user?.role]);
 
   useEffect(() => {
+    let isMounted = true;
     const token = localStorage.getItem('accessToken');
-    if (token) {
-      refreshUser();
-    }
-  }, [refreshUser]);
+    if (!token) return;
+
+    const syncUser = async () => {
+      const claims = extractUserFromToken(token);
+      if (!claims) return;
+      
+      const role = claims.role;
+      if (role === 'scout') {
+        try {
+          const profile = await scoutService.getMe();
+          if (isMounted && profile) {
+            setScoutProfile(profile);
+            setUser((prev) => {
+              const updated: User = {
+                id: prev?.id || claims.id || profile.id || 'scout-me',
+                name: profile.organization || prev?.name || 'Club Scout',
+                email: claims.email || prev?.email || 'club@jogo.com',
+                role: 'scout',
+                avatar: prev?.avatar,
+              };
+              localStorage.setItem('jogo_user', JSON.stringify(updated));
+              return updated;
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load scout profile on refresh:', err);
+        }
+      } else {
+        try {
+          const profile = await playerService.getMe();
+          if (isMounted && profile) {
+            setPlayerProfile(profile);
+            setUser((prev) => {
+              const updated: User = {
+                id: prev?.id || claims.id || profile.id || 'player-me',
+                name: profile.fullName || prev?.name || 'Player',
+                email: claims.email || prev?.email || profile.email || 'player@jogo.com',
+                role: 'player',
+                avatar:
+                  getFullImageUrl(profile.profilePictureUrl) ||
+                  prev?.avatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName || 'User')}&background=2B43A1&color=fff`,
+              };
+              localStorage.setItem('jogo_user', JSON.stringify(updated));
+              return updated;
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load player profile on refresh:', err);
+        }
+      }
+    };
+
+    syncUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const login = async (emailOrUser: string | User, password?: string): Promise<User> => {
     if (typeof emailOrUser === 'string') {

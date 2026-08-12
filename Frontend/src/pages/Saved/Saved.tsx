@@ -8,13 +8,11 @@ import { Loader2 } from 'lucide-react';
 const Saved = () => {
   const { savedPlayerIds } = useAuth();
   const [savedPlayers, setSavedPlayers] = useState<PlayerCardDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
     if (savedPlayerIds.length === 0) {
-      setSavedPlayers([]);
-      setIsLoading(false);
       return;
     }
 
@@ -33,12 +31,14 @@ const Saved = () => {
     return () => { isMounted = false; };
   }, [savedPlayerIds]);
 
+  const displayedPlayers = savedPlayers.filter(p => savedPlayerIds.includes(String(p.id)));
+
   return (
     <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto pb-10 pt-2 font-sans" dir="rtl">
       <div className="text-right mb-4">
         <h1 className="text-2xl md:text-3xl font-extrabold text-[#1C2C5E] mb-1">اللاعبون المحفوظون 🔖</h1>
         <p className="text-gray-400 text-xs font-medium">
-          قائمة اللاعبين الذين قمت بحفظهم للرجوع إليهم لاحقاً ({savedPlayers.length})
+          قائمة اللاعبين الذين قمت بحفظهم للرجوع إليهم لاحقاً ({displayedPlayers.length})
         </p>
       </div>
 
@@ -46,9 +46,9 @@ const Saved = () => {
         <div className="flex justify-center items-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-[#2B43A1]" />
         </div>
-      ) : savedPlayers.length > 0 ? (
+      ) : displayedPlayers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {savedPlayers.map((player) => (
+          {displayedPlayers.map((player) => (
             <PlayerCard key={player.id} player={player} />
           ))}
         </div>
