@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Trophy, Clock, Star, Activity, Camera, Loader2, Edit3 } from 'lucide-react';
+import { Bot, Trophy, Star, Activity, Camera, Loader2, Edit3 } from 'lucide-react';
 import type { ProfileSidebarProps } from '../../../types';
 import { playerService } from '../../../services/playerService';
 import { getFullImageUrl } from '../../../utils/url';
