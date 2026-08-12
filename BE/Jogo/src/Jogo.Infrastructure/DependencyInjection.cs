@@ -135,7 +135,15 @@ public static class DependencyInjection
                           ?? throw new InvalidOperationException("AI Service BaseUrl is not configured.");
 
             client.BaseAddress = new Uri(baseUrl);
-            client.Timeout = TimeSpan.FromMinutes(30);
+
+            // /analyze-by-url blocks until the whole CV pipeline finishes before
+            // responding, so this has to comfortably cover worst-case processing
+            // time, not just typical requests. Configurable via
+            // AiService:TimeoutSeconds (appsettings.json) instead of hardcoded,
+            // so it can be tuned without a recompile. Default matches current
+            // production value (30 min).
+            var timeoutSeconds = configuration.GetValue<int?>("AiService:TimeoutSeconds") ?? 1800;
+            client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
         });
 
         // 🟡 خيار 2: لو عايز تجرّب الـ Fake بدلاً من הـ HttpClient، فك التهميش عن السطر اللي تحت واعمل Comment للـ AddHttpClient فوق
