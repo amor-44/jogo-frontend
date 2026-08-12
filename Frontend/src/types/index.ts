@@ -165,9 +165,29 @@ export interface AIAnalysisBoxProps {
   firstName: string;
 }
 
+export interface ScoutProfileDto {
+  id?: string;
+  organization?: string;
+  country?: string;
+  experienceYears?: number;
+  city?: string;
+  biography?: string;
+  email?: string;
+  avatar?: string;
+}
+
+export interface UpdateScoutProfileCommand {
+  organization: string;
+  country: string;
+  experienceYears: number;
+  city?: string;
+  biography?: string;
+}
+
 export interface AuthContextType {
   user: User | null;
   playerProfile: PlayerProfileDto | null;
+  scoutProfile: ScoutProfileDto | null;
   players: Player[];
   savedPlayerIds: string[];
   notifications: NotificationItem[];
@@ -178,6 +198,7 @@ export interface AuthContextType {
   addPlayer: (player: Player) => void;
   toggleSavePlayer: (id: string | number) => void;
   markAllAsRead: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export interface RequestOptions extends RequestInit {
@@ -344,13 +365,22 @@ export interface UpdateProfileCommand {
 export interface PlayerCardDto {
   id: string;
   fullName: string;
-  nationality: string;
-  position: Position;
-  preferredFoot: ApiPreferredFoot;
+  nationality?: string;
+  country?: string;
+  position?: Position | string;
+  primaryPosition?: Position | string;
+  secondaryPosition?: Position | string | null;
+  preferredFoot?: ApiPreferredFoot | string | number;
+  foot?: string | number;
   age: number;
   currentClub?: string;
+  footballExperience?: string;
+  marketValue?: number;
   profilePictureUrl?: string;
   overallScore?: number;
+  latestOverallScore?: number;
+  videoCount?: number;
+  reports?: AnalysisReportDto[];
 }
 
 export interface PlayersQueryParams {

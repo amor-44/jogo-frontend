@@ -53,21 +53,32 @@ const Search = () => {
 
       let filtered = response.items || [];
       
-      // Client-side filtering for search term and foot if needed
-      if (searchTerm) {
-        filtered = filtered.filter(p => p.fullName?.toLowerCase().includes(searchTerm.toLowerCase().trim()));
+      // Client-side filtering for search term
+      if (searchTerm.trim()) {
+        const query = searchTerm.toLowerCase().trim();
+        filtered = filtered.filter(p => {
+          return (
+            (p.fullName && p.fullName.toLowerCase().includes(query)) ||
+            (p.currentClub && p.currentClub.toLowerCase().includes(query)) ||
+            (p.country && p.country.toLowerCase().includes(query)) ||
+            (p.nationality && p.nationality.toLowerCase().includes(query))
+          );
+        });
       }
       
+      // Client-side filtering for Preferred Foot
       if (selectedFoot !== 'الكل') {
-        const footMap: Record<string, string> = {
-          'اليمنى': 'Right',
-          'اليسرى': 'Left',
-          'كلاهما': 'Both'
+        const footTargets: Record<string, string[]> = {
+          'اليمنى': ['right', '0', 'يمين', 'اليمنى', 'يمنى'],
+          'اليسرى': ['left', '1', 'يسار', 'اليسرى', 'يسرى'],
+          'كلاهما': ['both', '2', 'كلاهما', 'كلتاهما']
         };
-        const mappedFoot = footMap[selectedFoot];
-        if (mappedFoot) {
-          filtered = filtered.filter(p => p.preferredFoot?.toLowerCase() === mappedFoot.toLowerCase());
-        }
+        const allowed = footTargets[selectedFoot] || [];
+        filtered = filtered.filter(p => {
+          const footVal = String(p.preferredFoot ?? p.foot ?? '').toLowerCase().trim();
+          if (!footVal) return true; // Keep player if foot is not explicitly specified in brief card
+          return allowed.some(a => footVal === a || footVal.includes(a));
+        });
       }
 
       setPlayers(filtered);
@@ -82,7 +93,7 @@ const Search = () => {
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchPlayers();
-    }, 500);
+    }, 400);
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, selectedPosition, selectedCountry, minAge, maxAge, selectedFoot]);
 
@@ -96,12 +107,12 @@ const Search = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto pb-10 pt-2" dir="rtl">
+    <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto pb-10 pt-2 font-sans" dir="rtl">
       <div className="w-full bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
         <span className="text-gray-400 text-lg mr-2">🔍</span>
         <input 
           type="text" 
-          placeholder="ابحث بالاسم أو النادي أو الجنسية..." 
+          placeholder="ابحث بالاسم أو النادي أو الدولة..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 text-right"
@@ -147,7 +158,7 @@ const Search = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-600 mb-2">الجنسية</label>
+            <label className="block text-xs font-bold text-gray-600 mb-2">الجنسية / الدولة</label>
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}

@@ -2,6 +2,29 @@ import { useNavigate } from 'react-router-dom';
 import Avatar from '../../../components/Avatar';
 import type { PlayerCardDto, HomeSuggestedTableProps } from '../../../types';
 
+const POSITION_ARABIC: Record<string, string> = {
+  'Goalkeeper': 'حارس',
+  'GK': 'حارس',
+  'CenterBack': 'قلب دفاع',
+  'CB': 'قلب دفاع',
+  'RightBack': 'ظهير أيمن',
+  'RB': 'ظهير أيمن',
+  'LeftBack': 'ظهير أيسر',
+  'LB': 'ظهير أيسر',
+  'DefensiveMidfielder': 'وسط دفاعي',
+  'CDM': 'وسط دفاعي',
+  'CentralMidfielder': 'وسط',
+  'CM': 'وسط',
+  'AttackingMidfielder': 'وسط هجومي',
+  'CAM': 'وسط هجومي',
+  'LeftWinger': 'جناح أيسر',
+  'LW': 'جناح أيسر',
+  'RightWinger': 'جناح أيمن',
+  'RW': 'جناح أيمن',
+  'Striker': 'مهاجم',
+  'ST': 'مهاجم',
+};
+
 export const HomeSuggestedTable = ({ players }: HomeSuggestedTableProps) => {
   const navigate = useNavigate();
 
@@ -32,28 +55,36 @@ export const HomeSuggestedTable = ({ players }: HomeSuggestedTableProps) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {players.map((player: PlayerCardDto) => (
-              <tr key={player.id} className="hover:bg-gray-50/80 transition-colors">
-                <td className="py-3.5 px-4 flex items-center gap-3 text-right">
-                  <Avatar name={player.fullName} image={player.profilePictureUrl} size="sm" />
-                  <span className="font-bold text-gray-800">{player.fullName}</span>
-                </td>
-                <td className="py-3.5 text-gray-600 font-semibold">{player.position}</td>
-                <td className="py-3.5 text-gray-600 font-medium">{player.age}</td>
-                <td className="py-3.5 text-amber-500 font-bold">⭐ {player.overallScore || '--'}</td>
-                <td className="py-3.5 text-gray-600 font-medium">{player.nationality}</td>
-                <td className="py-3.5 text-gray-600 font-medium">{player.currentClub || 'لا يوجد'}</td>
-                <td className="py-3.5 text-[#2B43A1] font-extrabold">---</td>
-                <td className="py-3.5">
-                  <button 
-                    onClick={() => navigate(`/player/${player.id}`)} 
-                    className="text-[#2B43A1] hover:underline font-bold text-[11px] cursor-pointer"
-                  >
-                    عرض الملف الشخصي
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {players.map((player: PlayerCardDto) => {
+              const pos = player.primaryPosition ? String(player.primaryPosition) : (player.position ? String(player.position) : 'غير محدد');
+              const arabicPos = POSITION_ARABIC[pos] || pos;
+              const country = player.country || player.nationality || '--';
+              const score = player.latestOverallScore ?? player.overallScore;
+              const marketVal = player.marketValue ? `$${Number(player.marketValue).toLocaleString()}` : '---';
+
+              return (
+                <tr key={player.id} className="hover:bg-gray-50/80 transition-colors">
+                  <td className="py-3.5 px-4 flex items-center gap-3 text-right">
+                    <Avatar name={player.fullName} image={player.profilePictureUrl} size="sm" />
+                    <span className="font-bold text-gray-800">{player.fullName}</span>
+                  </td>
+                  <td className="py-3.5 text-gray-600 font-semibold">{arabicPos}</td>
+                  <td className="py-3.5 text-gray-600 font-medium">{player.age || '--'}</td>
+                  <td className="py-3.5 text-amber-500 font-bold">⭐ {score !== undefined && score !== null ? score : '--'}</td>
+                  <td className="py-3.5 text-gray-600 font-medium">{country}</td>
+                  <td className="py-3.5 text-gray-600 font-medium">{player.currentClub || 'بدون نادي'}</td>
+                  <td className="py-3.5 text-[#2B43A1] font-extrabold">{marketVal}</td>
+                  <td className="py-3.5">
+                    <button 
+                      onClick={() => navigate(`/player/${player.id}`)} 
+                      className="text-[#2B43A1] hover:underline font-bold text-[11px] cursor-pointer"
+                    >
+                      عرض الملف الشخصي
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
             {players.length === 0 && (
               <tr>
                 <td colSpan={8} className="py-8 text-gray-400 text-center">

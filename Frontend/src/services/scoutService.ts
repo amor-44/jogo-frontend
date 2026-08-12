@@ -1,22 +1,11 @@
 import { apiClient } from './api';
-import type { UpdateProfileCommand } from '../types';
-
-export interface ScoutProfileDto {
-  id?: string;
-  organization?: string;
-  country?: string;
-  experienceYears?: number;
-  city?: string;
-  height?: number;
-  weight?: number;
-  currentClub?: string;
-  biography?: string;
-}
+import type { ScoutProfileDto, UpdateScoutProfileCommand } from '../types';
 
 export const scoutService = {
   getMe: () =>
     apiClient.get<ScoutProfileDto>('/scout/me').then((r) => r.data),
 
-  updateMe: (data: UpdateProfileCommand) =>
+  updateMe: (data: UpdateScoutProfileCommand) =>
     apiClient.put<void>('/scout/me', data).then((r) => r.data),
 };
+export type { ScoutProfileDto };

@@ -1,14 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Bell, Menu } from 'lucide-react';
-import playerAvatar from '../assets/images/ChatGPT Image Jul 24, 2026, 06_14_11 PM 1.png';
+import { getFullImageUrl } from '../utils/url';
 import type { TopNavProps } from '../types';
+
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'الرئيسية',
+  '/search': 'البحث عن اللاعبين',
+  '/suggested': 'اللاعبون المقترحون',
+  '/saved': 'اللاعبون المحفوظون',
+  '/notifications': 'الإشعارات',
+  '/profile': 'الملف الشخصي',
+  '/settings': 'الإعدادات',
+};
 
 const TopNav = ({ onHamburgerClick }: TopNavProps) => {
   const { user, notifications, unreadCount, markAllAsRead } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -25,8 +36,16 @@ const TopNav = ({ onHamburgerClick }: TopNavProps) => {
     };
   }, []);
 
+  const pageTitle = PAGE_TITLES[location.pathname] || 'الرئيسية';
+  const isClub = user?.role === 'scout';
+  const defaultAvatar = isClub
+    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Club')}&background=2B43A1&color=fff`
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2B43A1&color=fff`;
+
+  const avatarSrc = getFullImageUrl(user?.avatar) || defaultAvatar;
+
   return (
-    <header className="h-16 md:h-20 bg-white shadow-sm flex items-center px-3 sm:px-4 md:px-8 relative z-30 justify-between gap-2" dir="rtl">
+    <header className="h-16 md:h-20 bg-white shadow-sm flex items-center px-3 sm:px-4 md:px-8 relative z-30 justify-between gap-2 font-sans" dir="rtl">
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <button
           onClick={onHamburgerClick}
@@ -37,7 +56,7 @@ const TopNav = ({ onHamburgerClick }: TopNavProps) => {
         </button>
 
         <div className="text-[#2B43A1] font-bold text-sm sm:text-base md:text-lg whitespace-nowrap">
-          الرئيسية
+          {pageTitle}
         </div>
       </div>
 
@@ -97,16 +116,22 @@ const TopNav = ({ onHamburgerClick }: TopNavProps) => {
 
         <div 
           onClick={() => navigate('/profile')}
-          className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity shadow-xs shrink-0"
+          className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity"
         >
-          <img 
-            src={playerAvatar} 
-            alt={user?.name || "المستخدم"} 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop";
-            }}
-          />
+          <div className="hidden sm:flex flex-col text-left">
+            <span className="text-xs font-bold text-gray-800 truncate max-w-30">{user?.name || 'حسابي'}</span>
+            <span className="text-[10px] text-gray-400">{isClub ? 'نادي / كشاف' : 'لاعب'}</span>
+          </div>
+          <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 shadow-xs shrink-0 bg-white">
+            <img 
+              src={avatarSrc} 
+              alt={user?.name || "المستخدم"} 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = defaultAvatar;
+              }}
+            />
+          </div>
         </div>
       </div>
     </header>

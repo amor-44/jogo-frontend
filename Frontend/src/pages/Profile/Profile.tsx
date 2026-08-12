@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { playerService } from '../../services/playerService';
 import { videoService } from '../../services/videoService';
@@ -14,14 +14,16 @@ import StrengthsWeaknesses from './components/StrengthsWeaknesses';
 import AIAnalysisBox from './components/AIAnalysisBox';
 import TrainingPlan from './components/TrainingPlan';
 import EditProfileModal from './components/EditProfileModal';
+import ClubProfile from './ClubProfile';
 
-const Profile = () => {
+const PlayerProfileView = () => {
   const { user, playerProfile: contextProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<PlayerProfileDto | null>(contextProfile);
   const [videos, setVideos] = useState<VideoDto[]>([]);
   const [reports, setReports] = useState<AnalysisReportDto[]>([]);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [videoName, setVideoName] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
@@ -34,6 +36,24 @@ const Profile = () => {
   const handleAvatarUploaded = (newAvatarUrl: string) => {
     setProfile((prev) => prev ? { ...prev, profilePictureUrl: newAvatarUrl } : prev);
   };
+
+  const fetchVideosAndReports = useCallback(async () => {
+    try {
+      const [videosRes, reportsRes] = await Promise.allSettled([
+        videoService.getVideos(1, 20),
+        reportService.getReports({ page: 1, pageSize: 20 }),
+      ]);
+
+      if (videosRes.status === 'fulfilled' && videosRes.value) {
+        setVideos(videosRes.value.items || []);
+      }
+      if (reportsRes.status === 'fulfilled' && reportsRes.value) {
+        setReports(reportsRes.value.items || []);
+      }
+    } catch (err) {
+      console.error('Error fetching videos & reports:', err);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -69,7 +89,25 @@ const Profile = () => {
     };
   }, []);
 
-  const latestReport = reports.length > 0 ? reports[0] : null;
+  // Auto-polling for video analysis status changes
+  useEffect(() => {
+    const hasProcessingVideos = videos.some(
+      (v) => v.status === 'Processing'
+    );
+
+    if (!hasProcessingVideos) return;
+
+    const intervalId = setInterval(() => {
+      fetchVideosAndReports();
+    }, 3500);
+
+    return () => clearInterval(intervalId);
+  }, [videos, fetchVideosAndReports]);
+
+  // Selected report or latest report fallback
+  const activeReport = selectedReportId
+    ? reports.find((r) => r.id === selectedReportId) || (reports.length > 0 ? reports[0] : null)
+    : reports.length > 0 ? reports[0] : null;
 
   const firstName = profile?.fullName
     ? profile.fullName.split(' ')[0]
@@ -94,6 +132,8 @@ const Profile = () => {
           const newVideo = await videoService.getVideoById(uploadResult.id);
           if (newVideo) {
             setVideos((prev) => [newVideo, ...prev]);
+          } else {
+            await fetchVideosAndReports();
           }
         }
       } catch (err) {
@@ -138,6 +178,9 @@ const Profile = () => {
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: 'Processing' } : v));
     try {
       await videoService.analyzeVideo(id);
+      setTimeout(() => {
+        fetchVideosAndReports();
+      }, 1200);
     } catch (err) {
       console.error('Failed to request analysis:', err);
       setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: 'Pending' } : v));
@@ -148,6 +191,9 @@ const Profile = () => {
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: 'Processing' } : v));
     try {
       await videoService.retryAnalysis(id);
+      setTimeout(() => {
+        fetchVideosAndReports();
+      }, 1200);
     } catch (err) {
       console.error('Failed to retry analysis:', err);
       setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: 'Failed' } : v));
@@ -159,10 +205,15 @@ const Profile = () => {
     if (video) {
       setUploadedVideoUrl(getFullImageUrl(video.storageUrl));
       setVideoName(video.originalFileName);
+
+      const matchingReport = reports.find(r => r.videoId === id);
+      if (matchingReport) {
+        setSelectedReportId(matchingReport.id);
+      }
     }
   };
 
-  const formatTimeSpan = (ts: string) => {
+  const formatTimeSpan = (ts?: string) => {
     if (!ts) return '00:00';
     const parts = ts.split(':');
     if (parts.length >= 2) {
@@ -239,10 +290,10 @@ const Profile = () => {
               onTriggerUpload={handleTriggerUpload}
             />
           </div>
-          <PerformanceSummary report={latestReport} />
-          <StrengthsWeaknesses report={latestReport} />
-          <AIAnalysisBox firstName={firstName} report={latestReport} />
-          <TrainingPlan report={latestReport} />
+          <PerformanceSummary report={activeReport} />
+          <StrengthsWeaknesses report={activeReport} />
+          <AIAnalysisBox firstName={firstName} report={activeReport} />
+          <TrainingPlan report={activeReport} />
         </div>
       </div>
 
@@ -254,6 +305,16 @@ const Profile = () => {
       />
     </div>
   );
+};
+
+const Profile = () => {
+  const { user } = useAuth();
+  
+  if (user?.role === 'scout') {
+    return <ClubProfile />;
+  }
+
+  return <PlayerProfileView />;
 };
 
 export default Profile;

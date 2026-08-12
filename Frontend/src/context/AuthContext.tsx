@@ -1,7 +1,16 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
 import { playerService } from '../services/playerService';
-import type { User, Player, NotificationItem, AuthContextType, PlayerProfileDto } from '../types';
+import { scoutService } from '../services/scoutService';
+import { extractUserFromToken } from '../utils/jwt';
+import type { 
+  User, 
+  Player, 
+  NotificationItem, 
+  AuthContextType, 
+  PlayerProfileDto,
+  ScoutProfileDto 
+} from '../types';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -12,6 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [playerProfile, setPlayerProfile] = useState<PlayerProfileDto | null>(null);
+  const [scoutProfile, setScoutProfile] = useState<ScoutProfileDto | null>(null);
 
   const [players, setPlayers] = useState<Player[]>([]);
 
@@ -24,27 +34,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+
+    const tokenClaims = extractUserFromToken(token);
+    const role = tokenClaims?.role || user?.role || 'player';
+
+    if (role === 'scout') {
+      try {
+        const scoutData = await scoutService.getMe();
+        if (scoutData) {
+          setScoutProfile(scoutData);
+          setUser((prev) => {
+            const updated: User = {
+              id: scoutData.id || tokenClaims?.id || prev?.id || '',
+              name: scoutData.organization || prev?.name || 'حساب النادي',
+              email: scoutData.email || tokenClaims?.email || prev?.email || '',
+              role: 'scout',
+              avatar:
+                scoutData.avatar ||
+                prev?.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(scoutData.organization || 'Scout')}&background=2B43A1&color=fff`,
+            };
+            localStorage.setItem('jogo_user', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load scout profile on refresh:', err);
+      }
+    } else {
+      try {
+        const profile = await playerService.getMe();
+        if (profile) {
+          setPlayerProfile(profile);
+          setUser((prev) => {
+            const updated: User = {
+              id: profile.id || tokenClaims?.id || prev?.id || '',
+              name: profile.fullName || prev?.name || 'اللاعب',
+              email: profile.email || tokenClaims?.email || prev?.email || '',
+              role: 'player',
+              avatar:
+                profile.profilePictureUrl ||
+                prev?.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName || 'User')}&background=2B43A1&color=fff`,
+            };
+            localStorage.setItem('jogo_user', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load player profile on refresh:', err);
+      }
+    }
+  }, [user?.role]);
+
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (token) {
-      playerService.getMe()
-        .then((profile) => {
-          if (profile) {
-            setPlayerProfile(profile);
-            setUser((prev) => ({
-              id: profile.id,
-              name: profile.fullName || prev?.name || '',
-              email: profile.email || prev?.email || '',
-              role: prev?.role || 'player',
-              avatar: profile.profilePictureUrl || prev?.avatar,
-            }));
-          }
-        })
-        .catch(() => {
-          // Token could be for scout or expired
-        });
+      refreshUser();
     }
-  }, []);
+  }, [refreshUser]);
 
   const login = async (emailOrUser: string | User, password?: string): Promise<User> => {
     if (typeof emailOrUser === 'string') {
@@ -56,17 +107,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('accessToken', authRes.accessToken);
       localStorage.setItem('refreshToken', authRes.refreshToken);
 
-      const isScout = authRes.role?.toLowerCase() === 'scout';
+      // Extract user claims from JWT token
+      const tokenClaims = extractUserFromToken(authRes.accessToken);
+      const isScout = (authRes.role?.toLowerCase() === 'scout') || (tokenClaims?.role === 'scout');
+      const resolvedRole: 'scout' | 'player' = isScout ? 'scout' : 'player';
+      const resolvedId = tokenClaims?.id || authRes.userId || '';
+      const resolvedEmail = emailOrUser || tokenClaims?.email || '';
 
       let loggedInUser: User = {
-        id: authRes.userId,
-        name: emailOrUser, // Fallback, will be updated by getMe() for players
-        email: emailOrUser,
-        role: isScout ? 'scout' : 'player',
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent('User')}&background=2B43A1&color=fff`,
+        id: resolvedId,
+        name: resolvedEmail,
+        email: resolvedEmail,
+        role: resolvedRole,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(resolvedEmail)}&background=2B43A1&color=fff`,
       };
 
-      if (!isScout) {
+      if (resolvedRole === 'scout') {
+        try {
+          const scoutData = await scoutService.getMe();
+          if (scoutData) {
+            setScoutProfile(scoutData);
+            loggedInUser = {
+              ...loggedInUser,
+              name: scoutData.organization || loggedInUser.name,
+              avatar: scoutData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(scoutData.organization || 'Scout')}&background=2B43A1&color=fff`,
+            };
+          }
+        } catch {
+          // Continue if getMe is not yet available
+        }
+      } else {
         try {
           const profile = await playerService.getMe();
           if (profile) {
@@ -93,6 +163,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = (userData: User) => {
+    // If token exists, parse it to ensure correct role & id
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      const claims = extractUserFromToken(token);
+      if (claims) {
+        userData = {
+          ...userData,
+          id: userData.id || claims.id,
+          role: claims.role || userData.role,
+        };
+      }
+    }
     setUser(userData);
     localStorage.setItem('jogo_user', JSON.stringify(userData));
   };
@@ -108,6 +190,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('jogo_user');
     setUser(null);
     setPlayerProfile(null);
+    setScoutProfile(null);
   };
 
   const addPlayer = (newPlayer: Player) => {
@@ -135,6 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{ 
       user, 
       playerProfile,
+      scoutProfile,
       players, 
       savedPlayerIds, 
       notifications, 
@@ -144,7 +228,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout, 
       addPlayer, 
       toggleSavePlayer, 
-      markAllAsRead 
+      markAllAsRead,
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>
