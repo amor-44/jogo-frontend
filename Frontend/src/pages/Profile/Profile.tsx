@@ -278,8 +278,13 @@ const PlayerProfileView = () => {
   const formatTimeSpan = (ts?: string) => {
     if (!ts) return '00:00';
     const parts = ts.split(':');
-    if (parts.length >= 2) {
+    if (parts.length >= 3) {
+      // hh:mm:ss[.fffffff] -> mm:ss
       return `${parts[1]}:${parts[2].split('.')[0]}`;
+    }
+    if (parts.length === 2) {
+      // already mm:ss[.fffffff] -> mm:ss
+      return `${parts[0]}:${parts[1].split('.')[0]}`;
     }
     return ts;
   };
