@@ -7,7 +7,7 @@ _PLAYERS: dict[str, PlayerData] = {
     "player_001": PlayerData(
         profile=PlayerProfile(
             player_id="player_001",
-            name="Ahmed osman",
+            name="Karim Youssef",
             age=19,
             position="Central Midfielder",
             location="Mansoura, Egypt",
