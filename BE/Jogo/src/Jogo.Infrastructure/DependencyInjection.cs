@@ -9,6 +9,7 @@ using Jogo.Infrastructure.Data.Interceptors;
 using Jogo.Infrastructure.Identity;
 using Jogo.Infrastructure.Services;
 using Jogo.Infrastructure.Services.Ai; // ✅ السطر المطلوب لمنع CS0246
+using Jogo.Infrastructure.Services.Ai.AiAnalysis;
 using Jogo.Infrastructure.Settings;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;

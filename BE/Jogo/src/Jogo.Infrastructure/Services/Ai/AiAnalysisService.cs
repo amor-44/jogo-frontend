@@ -10,25 +10,19 @@ using System.Threading.Tasks;
 
 using Jogo.Application.Common.Interfaces;
 using Jogo.Application.Features.Analysis.DTOs;
+using Jogo.Infrastructure.Services.Ai.Performance;
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Jogo.Infrastructure.Services.Ai;
+namespace Jogo.Infrastructure.Services.Ai.AiAnalysis;
 
-/// <summary>
-/// Calls the football_performance_analysis FastAPI service.
-///
-/// Flow:
-///   1. TriggerAnalysisAsync  – POST /analyze-by-url  → returns analysis_id
-///   2. GetAnalysisStatusAsync – GET /analysis/{id}    → maps report → AiAnalysisReportDto
-/// </summary>
 public class AiAnalysisService : IAiAnalysisService
 {
     private readonly HttpClient _httpClient;
-    private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<AiAnalysisService> _logger;
 
-    // JSON options matching Python snake_case keys
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -38,18 +32,25 @@ public class AiAnalysisService : IAiAnalysisService
 
     public AiAnalysisService(
         HttpClient httpClient,
-        Microsoft.Extensions.Configuration.IConfiguration configuration,
+        IConfiguration configuration,
         ILogger<AiAnalysisService> logger)
     {
         _httpClient = httpClient;
         _configuration = configuration;
         _logger = logger;
+
+        var baseUrl = _configuration["AiService:BaseUrl"];
+        if (!string.IsNullOrEmpty(baseUrl) && _httpClient.BaseAddress == null)
+        {
+            _httpClient.BaseAddress = new Uri(baseUrl);
+        }
+
+        if (int.TryParse(_configuration["AiService:TimeoutSeconds"], out var timeoutSeconds))
+        {
+            _httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+        }
     }
 
-    /// <summary>
-    /// Sends the video URL to the AI service, which downloads the file and runs analysis.
-    /// Returns the analysis_id to poll with.
-    /// </summary>
     public async Task<string> TriggerAnalysisAsync(string videoUrl, CancellationToken cancellationToken = default)
     {
         try
@@ -94,10 +95,6 @@ public class AiAnalysisService : IAiAnalysisService
         }
     }
 
-    /// <summary>
-    /// Retrieves the completed report and maps it to AiAnalysisReportDto.
-    /// Returns null if the analysis is not found or failed.
-    /// </summary>
     public async Task<AiAnalysisReportDto?> GetAnalysisStatusAsync(string analysisId, CancellationToken cancellationToken = default)
     {
         if (analysisId.StartsWith("fallback-"))
@@ -118,7 +115,7 @@ public class AiAnalysisService : IAiAnalysisService
 
             return new AiAnalysisReportDto(
                 overall,
-                "تم تحليل مقطع الفيديو بنجاح واستخراج مؤشرات الأداء الفني والبدني بالذكاء الاصطناعي.",
+                "تم تحليل مقطع الفيديو بنجاح واستخرجت مؤشرات الأداء الفني والبدني بالذكاء الاصطناعي.",
                 new List<string> { "دقة التمرير وصناعة اللعب", "التحكم بالكرة تحت الضغط", "التمركز التكتيكي السليم" },
                 new List<string> { "سرعة اتخاذ القرار في الثلث الهجومي", "كفاءة الحركة بدون كرة" },
                 new List<string> {
@@ -159,19 +156,7 @@ public class AiAnalysisService : IAiAnalysisService
                 return null;
             }
 
-            _logger.LogInformation(
-                "AI response deserialized. AnalysisId={AnalysisId}, Status={Status}, HasFootballPerformance={HasPerf}, HasScores={HasScores}",
-                aiResponse.AnalysisId,
-                aiResponse.Status,
-                aiResponse.FootballPerformance is not null,
-                aiResponse.FootballPerformance?.Scores is not null);
-
             var dto = MapToDto(aiResponse);
-
-            _logger.LogInformation(
-                "Mapped AI report: OverallScore={OverallScore}, Strengths={StrengthsCount}, Weaknesses={WeaknessesCount}, Recommendations={RecommendationsCount}",
-                dto.OverallScore, dto.Strengths.Count, dto.Weaknesses.Count, dto.Recommendations.Count);
-
             return dto;
         }
         catch (Exception ex)
@@ -181,20 +166,13 @@ public class AiAnalysisService : IAiAnalysisService
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Mapping: FootballPerformanceReport.to_dict() → AiAnalysisReportDto
-    // -----------------------------------------------------------------------
     private static AiAnalysisReportDto MapToDto(AiFootballPerformanceResponse ai)
     {
         var perf = ai.FootballPerformance;
-
-        // overall_score is 0-100 float from the AI; cast to int for the DTO.
-        // Fallback to 0 if the pipeline had insufficient evidence.
         var overallScore = perf?.Scores?.OverallScore is float s ? (int)Math.Round(s) : 0;
-
-        // Build a human-readable summary from analysis_quality + limitations
         var quality = perf?.AnalysisQuality ?? "unknown";
         var firstLimitation = perf?.Limitations?.FirstOrDefault();
+
         var summary = firstLimitation is not null
             ? $"Analysis quality: {quality}. {firstLimitation}"
             : $"Football performance analysis completed. Quality: {quality}.";
@@ -226,8 +204,6 @@ public class AiAnalysisService : IAiAnalysisService
     }
 }
 
-/// <summary>Shape of the /analyze-by-url response body.</summary>
 public record AnalysisTriggerResponse(
     [property: JsonPropertyName("analysis_id")] string AnalysisId,
-    string Status
-);
+    string Status);
