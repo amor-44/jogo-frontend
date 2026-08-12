@@ -9,6 +9,7 @@ from typing import Dict, Any
 try:
     from fastapi import FastAPI, UploadFile, File, HTTPException
     from fastapi.responses import JSONResponse
+    from fastapi.concurrency import run_in_threadpool
     from pydantic import BaseModel
 except ImportError as e:  # pragma: no cover
     raise ImportError(
@@ -60,7 +61,11 @@ async def analyze_football_performance(video: UploadFile = File(...)):
         with open(tmp_path, "wb") as f:
             shutil.copyfileobj(video.file, f)
 
-        report = analyze_video(tmp_path)
+        # analyze_video() is CPU-bound and can run for minutes on a real match
+        # clip. Running it inline would block this single-worker event loop —
+        # including /health — for the whole duration. Push it to a worker thread
+        # so the loop stays responsive while analysis runs.
+        report = await run_in_threadpool(analyze_video, tmp_path)
         return JSONResponse(content=report.to_dict())
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {e}")
@@ -97,7 +102,9 @@ async def analyze_by_url(request: AnalyzeByUrlRequest):
             with open(tmp_path, "wb") as f:
                 f.write(response.content)
 
-        report = analyze_video(tmp_path)
+        # Same reasoning as /analyze/football-performance: keep the event loop
+        # free (health checks, other requests) while the pipeline runs.
+        report = await run_in_threadpool(analyze_video, tmp_path)
         result = report.to_dict()
 
         with _store_lock:
