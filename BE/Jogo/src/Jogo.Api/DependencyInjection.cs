@@ -1,20 +1,15 @@
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-
 using Asp.Versioning;
-
 using Jogo.Api.Infrastructure;
 using Jogo.Api.OpenApi.Transformers;
 using Jogo.Api.Services;
 using Jogo.Application.Common.Interfaces;
 using Jogo.Infrastructure.Settings;
-
 using Microsoft.AspNetCore.RateLimiting;
-
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-
 using Serilog;
 
 namespace Jogo.Api.Extensions.DependencyInjection;
@@ -27,7 +22,19 @@ public static class DependencyInjection
     )
     {
         services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
-        services.Configure<Jogo.Application.Common.Models.VideoSettings>(configuration.GetSection(Jogo.Application.Common.Models.VideoSettings.SectionName));
+        services.Configure<Application.Common.Models.VideoSettings>(
+            configuration.GetSection(Application.Common.Models.VideoSettings.SectionName)
+        );
+
+        services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+        {
+            options.MultipartBodyLengthLimit = 1024 * 1024 * 200; // 200 MB
+        });
+
+        services.Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(options =>
+        {
+            options.Limits.MaxRequestBodySize = 1 * 1024 * 1024 * 200; // 200 MB
+        });
 
         services.AddAntiforgery();
         services
@@ -41,7 +48,7 @@ public static class DependencyInjection
             .AddIdentityInfrastructure()
             .AddAppRateLimiting()
             .AddAppOutputCaching()
-            .AddAppOpenTelemetry()
+            .AddAppOpenTelemetry(configuration)
             .AddSignalR();
 
         return services;
@@ -58,22 +65,33 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddAppOpenTelemetry(this IServiceCollection services)
+    public static IServiceCollection AddAppOpenTelemetry(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
+        var enabled = configuration.GetValue<bool>("OpenTelemetry:Enabled");
+
+        if (!enabled)
+            return services;
+
         services
             .AddOpenTelemetry()
-            .ConfigureResource(res => res.AddService("overservice"))
+            .ConfigureResource(resource => resource.AddService("jogo-api"))
             .WithTracing(tracing =>
             {
-                tracing.AddAspNetCoreInstrumentation().AddHttpClientInstrumentation();
-
-                tracing.AddOtlpExporter();
+                tracing
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddOtlpExporter();
             })
             .WithMetrics(metrics =>
             {
-                metrics.AddAspNetCoreInstrumentation().AddHttpClientInstrumentation();
-
-                metrics.AddOtlpExporter().AddPrometheusExporter(); // /metrics
+                metrics
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddOtlpExporter()
+                    .AddPrometheusExporter();
             });
 
         return services;
@@ -184,8 +202,7 @@ public static class DependencyInjection
                 options.JsonSerializerOptions.DefaultIgnoreCondition =
                     JsonIgnoreCondition.WhenWritingNull;
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-            }
-            );
+            });
 
         return services;
     }
@@ -217,7 +234,6 @@ public static class DependencyInjection
                         .WithOrigins(appSettings.AllowedOrigins!)
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .AllowCredentials()
             )
         );
 

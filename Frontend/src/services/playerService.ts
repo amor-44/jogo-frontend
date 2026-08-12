@@ -1,0 +1,45 @@
+import { apiClient } from './api';
+import type {
+  PaginatedResult,
+  PlayerCardDto,
+  PlayerProfileDto,
+  PlayersQueryParams,
+  UpdateProfileCommand,
+} from '../types';
+
+export const playerService = {
+  getMe: () =>
+    apiClient.get<PlayerProfileDto>('/player/me').then((r) => r.data),
+
+  updateMe: (data: UpdateProfileCommand) =>
+    apiClient.put<void>('/player/me', data).then((r) => r.data),
+
+  uploadProfilePicture: (formData: FormData) =>
+    apiClient
+      .post<string>('/player/profile/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data),
+
+  getAllPlayers: (params?: PlayersQueryParams) => {
+    const queryParams: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.page !== undefined) queryParams.PageNumber = params.page;
+      if (params.pageSize !== undefined) queryParams.PageSize = params.pageSize;
+      if (params.minAge !== undefined) queryParams.MinAge = params.minAge;
+      if (params.maxAge !== undefined) queryParams.MaxAge = params.maxAge;
+      if (params.position !== undefined && params.position !== 'الكل') queryParams.Position = params.position;
+      const targetCountry = params.country || params.nationality;
+      if (targetCountry !== undefined && targetCountry !== 'الكل') queryParams.Country = targetCountry;
+      if (params.minOverallScore !== undefined) queryParams.MinOverallScore = params.minOverallScore;
+      if (params.maxOverallScore !== undefined) queryParams.MaxOverallScore = params.maxOverallScore;
+    }
+
+    return apiClient
+      .get<PaginatedResult<PlayerCardDto>>('/players', { params: queryParams })
+      .then((r) => r.data);
+  },
+
+  getPlayerById: (id: string) =>
+    apiClient.get<PlayerProfileDto>(`/players/${id}`).then((r) => r.data),
+};

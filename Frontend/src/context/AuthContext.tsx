@@ -1,61 +1,17 @@
-import React, { createContext, useContext, useState } from 'react';
-
-export interface Player {
-  id: number;
-  name: string;
-  position: string;
-  age: number;
-  country: string;
-  foot: string;
-  club: string;
-  height: string;
-  overall: number;
-  aiScore: number;
-  value: string;
-  image?: string;
-}
-
-export interface NotificationItem {
-  id: number;
-  title: string;
-  desc: string;
-  time: string;
-  read: boolean;
-}
-
-export interface User {
-  avatar?: string;
-  name: string;
-  email: string;
-  role: 'player' | 'club';
-}
-
-interface AuthContextType {
-  user: User | null;
-  players: Player[];
-  savedPlayerIds: number[];
-  notifications: NotificationItem[];
-  unreadCount: number;
-  login: (userData: User) => void;
-  register: (userData: User) => void;
-  logout: () => void;
-  addPlayer: (player: Player) => void;
-  toggleSavePlayer: (id: number) => void;
-  markAllAsRead: () => void;
-}
-
-const INITIAL_PLAYERS: Player[] = [
-  { id: 1, name: "عبدالرحمن الغامدي", position: "وسط", age: 22, country: "السعودية", foot: "اليمنى", club: "الاتفاق", height: "178 سم", overall: 82, aiScore: 89, value: "€2.5M" },
-  { id: 2, name: "محمد القحطاني", position: "مهاجم", age: 20, country: "السعودية", foot: "اليسرى", club: "الهلال", height: "175 سم", overall: 85, aiScore: 92, value: "€4.0M" },
-  { id: 3, name: "أحمد الرشيدي", position: "مدافع", age: 12, country: "مصر", foot: "اليمنى", club: "الأهلي (براعم)", height: "150 سم", overall: 70, aiScore: 85, value: "€50K" },
-  { id: 4, name: "رياض محرز", position: "جناح", age: 33, country: "الجزائر", foot: "اليسرى", club: "الأهلي السعودي", height: "179 سم", overall: 86, aiScore: 89, value: "€12M" },
-];
-
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  { id: 1, title: "تحليل جديد جاهز", desc: "قام المدرب الذكي بتحديث تقرير أداء اللاعب عبدالرحمن الغامدي.", time: "منذ 10 دقائق", read: false },
-  { id: 2, title: "لاعب جديد مضاف", desc: "انضم لاعب جديد بنفس اهتماماتك الرياضية إلى المنصة.", time: "منذ ساعة", read: false },
-  { id: 3, title: "ترشيح ذكي", desc: "الذكاء الاصطناعي يوصي بمشاهدة ملف اللاعب رياض محرز.", time: "منذ 3 ساعات", read: false },
-];
+import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { authService } from '../services/authService';
+import { playerService } from '../services/playerService';
+import { scoutService } from '../services/scoutService';
+import { extractUserFromToken } from '../utils/jwt';
+import { getFullImageUrl } from '../utils/url';
+import type { 
+  User, 
+  Player, 
+  NotificationItem, 
+  AuthContextType, 
+  PlayerProfileDto,
+  ScoutProfileDto 
+} from '../types';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -65,47 +21,247 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const [players, setPlayers] = useState<Player[]>(() => {
-    const saved = localStorage.getItem('jogo_players');
-    return saved ? JSON.parse(saved) : INITIAL_PLAYERS;
-  });
+  const [playerProfile, setPlayerProfile] = useState<PlayerProfileDto | null>(null);
+  const [scoutProfile, setScoutProfile] = useState<ScoutProfileDto | null>(null);
 
-  const [savedPlayerIds, setSavedPlayerIds] = useState<number[]>(() => {
+  const [players, setPlayers] = useState<Player[]>([]);
+
+  const [savedPlayerIds, setSavedPlayerIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('jogo_saved_ids');
-    return saved ? JSON.parse(saved) : [1];
+    return saved ? JSON.parse(saved) : [];
   });
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem('jogo_user', JSON.stringify(userData));
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+
+    const tokenClaims = extractUserFromToken(token);
+    const role = tokenClaims?.role || user?.role || 'player';
+
+    if (role === 'scout') {
+      try {
+        const scoutData = await scoutService.getMe();
+        if (scoutData) {
+          setScoutProfile(scoutData);
+          setUser((prev) => {
+            const updated: User = {
+              id: scoutData.id || tokenClaims?.id || prev?.id || '',
+              name: scoutData.organization || prev?.name || 'حساب النادي',
+              email: scoutData.email || tokenClaims?.email || prev?.email || '',
+              role: 'scout',
+              avatar:
+                scoutData.avatar ||
+                prev?.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(scoutData.organization || 'Scout')}&background=2B43A1&color=fff`,
+            };
+            localStorage.setItem('jogo_user', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load scout profile on refresh:', err);
+      }
+    } else {
+      try {
+        const profile = await playerService.getMe();
+        if (profile) {
+          setPlayerProfile(profile);
+          setUser((prev) => {
+            const updated: User = {
+              id: profile.id || tokenClaims?.id || prev?.id || '',
+              name: profile.fullName || prev?.name || 'اللاعب',
+              email: profile.email || tokenClaims?.email || prev?.email || '',
+              role: 'player',
+              avatar:
+                profile.profilePictureUrl ||
+                prev?.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName || 'User')}&background=2B43A1&color=fff`,
+            };
+            localStorage.setItem('jogo_user', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load player profile on refresh:', err);
+      }
+    }
+  }, [user?.role]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+
+    const syncUser = async () => {
+      const claims = extractUserFromToken(token);
+      if (!claims) return;
+      
+      const role = claims.role;
+      if (role === 'scout') {
+        try {
+          const profile = await scoutService.getMe();
+          if (isMounted && profile) {
+            setScoutProfile(profile);
+            setUser((prev) => {
+              const updated: User = {
+                id: prev?.id || claims.id || profile.id || 'scout-me',
+                name: profile.organization || prev?.name || 'Club Scout',
+                email: claims.email || prev?.email || 'club@jogo.com',
+                role: 'scout',
+                avatar: prev?.avatar,
+              };
+              localStorage.setItem('jogo_user', JSON.stringify(updated));
+              return updated;
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load scout profile on refresh:', err);
+        }
+      } else {
+        try {
+          const profile = await playerService.getMe();
+          if (isMounted && profile) {
+            setPlayerProfile(profile);
+            setUser((prev) => {
+              const updated: User = {
+                id: prev?.id || claims.id || profile.id || 'player-me',
+                name: profile.fullName || prev?.name || 'Player',
+                email: claims.email || prev?.email || profile.email || 'player@jogo.com',
+                role: 'player',
+                avatar:
+                  getFullImageUrl(profile.profilePictureUrl) ||
+                  prev?.avatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName || 'User')}&background=2B43A1&color=fff`,
+              };
+              localStorage.setItem('jogo_user', JSON.stringify(updated));
+              return updated;
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load player profile on refresh:', err);
+        }
+      }
+    };
+
+    syncUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const login = async (emailOrUser: string | User, password?: string): Promise<User> => {
+    if (typeof emailOrUser === 'string') {
+      const authRes = await authService.login({
+        email: emailOrUser,
+        password: password || '',
+      });
+
+      localStorage.setItem('accessToken', authRes.accessToken);
+      localStorage.setItem('refreshToken', authRes.refreshToken);
+
+      // Extract user claims from JWT token
+      const tokenClaims = extractUserFromToken(authRes.accessToken);
+      const isScout = (authRes.role?.toLowerCase() === 'scout') || (tokenClaims?.role === 'scout');
+      const resolvedRole: 'scout' | 'player' = isScout ? 'scout' : 'player';
+      const resolvedId = tokenClaims?.id || authRes.userId || '';
+      const resolvedEmail = emailOrUser || tokenClaims?.email || '';
+
+      let loggedInUser: User = {
+        id: resolvedId,
+        name: resolvedEmail,
+        email: resolvedEmail,
+        role: resolvedRole,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(resolvedEmail)}&background=2B43A1&color=fff`,
+      };
+
+      if (resolvedRole === 'scout') {
+        try {
+          const scoutData = await scoutService.getMe();
+          if (scoutData) {
+            setScoutProfile(scoutData);
+            loggedInUser = {
+              ...loggedInUser,
+              name: scoutData.organization || loggedInUser.name,
+              avatar: scoutData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(scoutData.organization || 'Scout')}&background=2B43A1&color=fff`,
+            };
+          }
+        } catch {
+          // Continue if getMe is not yet available
+        }
+      } else {
+        try {
+          const profile = await playerService.getMe();
+          if (profile) {
+            setPlayerProfile(profile);
+            loggedInUser = {
+              ...loggedInUser,
+              name: profile.fullName || loggedInUser.name,
+              avatar: profile.profilePictureUrl || loggedInUser.avatar,
+            };
+          }
+        } catch {
+          // Continue if getMe is not available
+        }
+      }
+
+      setUser(loggedInUser);
+      localStorage.setItem('jogo_user', JSON.stringify(loggedInUser));
+      return loggedInUser;
+    } else {
+      setUser(emailOrUser);
+      localStorage.setItem('jogo_user', JSON.stringify(emailOrUser));
+      return emailOrUser;
+    }
   };
 
   const register = (userData: User) => {
+    // If token exists, parse it to ensure correct role & id
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      const claims = extractUserFromToken(token);
+      if (claims) {
+        userData = {
+          ...userData,
+          id: userData.id || claims.id,
+          role: claims.role || userData.role,
+        };
+      }
+    }
     setUser(userData);
     localStorage.setItem('jogo_user', JSON.stringify(userData));
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async (): Promise<void> => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) {
+      await authService.logout({ refreshToken }).catch(() => {});
+    }
+
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('jogo_user');
+    setUser(null);
+    setPlayerProfile(null);
+    setScoutProfile(null);
   };
 
   const addPlayer = (newPlayer: Player) => {
     const updated = [newPlayer, ...players];
     setPlayers(updated);
-    localStorage.setItem('jogo_players', JSON.stringify(updated));
   };
 
-  const toggleSavePlayer = (id: number) => {
-    let updated: number[];
-    if (savedPlayerIds.includes(id)) {
-      updated = savedPlayerIds.filter(favId => favId !== id);
+  const toggleSavePlayer = (id: string | number) => {
+    const strId = String(id);
+    let updated: string[];
+    if (savedPlayerIds.includes(strId)) {
+      updated = savedPlayerIds.filter(favId => favId !== strId);
     } else {
-      updated = [...savedPlayerIds, id];
+      updated = [...savedPlayerIds, strId];
     }
     setSavedPlayerIds(updated);
     localStorage.setItem('jogo_saved_ids', JSON.stringify(updated));
@@ -118,6 +274,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={{ 
       user, 
+      playerProfile,
+      scoutProfile,
       players, 
       savedPlayerIds, 
       notifications, 
@@ -127,15 +285,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout, 
       addPlayer, 
       toggleSavePlayer, 
-      markAllAsRead 
+      markAllAsRead,
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
 };

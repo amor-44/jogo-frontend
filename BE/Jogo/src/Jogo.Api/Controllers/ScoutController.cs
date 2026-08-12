@@ -30,6 +30,8 @@ public class ScoutController : ApiController
     /// Get current scout profile.
     /// </summary>
     [HttpGet("me")]
+    [ProducesResponseType(typeof(ScoutProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetProfileQuery(), cancellationToken);
@@ -46,8 +48,11 @@ public class ScoutController : ApiController
     /// Update current scout profile.
     /// </summary>
     [HttpPut("me")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateProfile(
-        [FromBody] UpdateProfileCommand command,
+        [FromBody] UpdateScoutProfileCommand command,
         CancellationToken cancellationToken)
     {
         var result = await _sender.Send(command, cancellationToken);

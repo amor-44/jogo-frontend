@@ -16,7 +16,7 @@ public class AuthController(IMediator mediator) : ApiController
 {
     [HttpPost("login")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Jogo.Application.Features.Authentication.DTOs.AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -31,7 +31,7 @@ public class AuthController(IMediator mediator) : ApiController
 
     [HttpPost("register/player")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Jogo.Application.Features.Authentication.DTOs.AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RegisterPlayer(RegisterPlayerCommand command, CancellationToken cancellationToken)
@@ -45,7 +45,7 @@ public class AuthController(IMediator mediator) : ApiController
 
     [HttpPost("register/scout")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Jogo.Application.Features.Authentication.DTOs.AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RegisterScout(RegisterScoutCommand command, CancellationToken cancellationToken)
@@ -59,7 +59,7 @@ public class AuthController(IMediator mediator) : ApiController
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Jogo.Application.Features.Authentication.DTOs.AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

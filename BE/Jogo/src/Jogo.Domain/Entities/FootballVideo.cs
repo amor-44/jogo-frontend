@@ -80,10 +80,10 @@ public class FootballVideo : AuditableEntity
 
     public Result<Success> MarkProcessing()
     {
-        if (Status != VideoAnalysisStatus.Queued)
+        if (Status != VideoAnalysisStatus.Queued && Status != VideoAnalysisStatus.Failed)
             return Error.Conflict(
                 "FootballVideo.InvalidTransition",
-                "Can only process a queued video."
+                "Can only process a queued or failed video."
             );
 
         Status = VideoAnalysisStatus.Processing;

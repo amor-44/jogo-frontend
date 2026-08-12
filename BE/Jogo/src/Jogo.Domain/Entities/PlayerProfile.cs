@@ -65,7 +65,7 @@ public class PlayerProfile : AuditableEntity
         PrimaryPosition = primaryPosition;
         PreferredFoot = preferredFoot;
         Country = country;
-        Visibility = ProfileVisibility.Hidden;
+        Visibility = ProfileVisibility.Public;
     }
 
     public static Result<PlayerProfile> Create(

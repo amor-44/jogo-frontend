@@ -1,18 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { Bell, Search, Menu } from 'lucide-react';
-import playerAvatar from '../assets/images/ChatGPT Image Jul 24, 2026, 06_14_11 PM 1.png';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { Bell, Menu } from 'lucide-react';
+import { getFullImageUrl } from '../utils/url';
+import type { TopNavProps } from '../types';
 
-interface TopNavProps {
-  onHamburgerClick?: () => void;
-}
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'الرئيسية',
+  '/search': 'البحث عن اللاعبين',
+  '/suggested': 'اللاعبون المقترحون',
+  '/saved': 'اللاعبون المحفوظون',
+  '/notifications': 'الإشعارات',
+  '/profile': 'الملف الشخصي',
+  '/settings': 'الإعدادات',
+};
 
 const TopNav = ({ onHamburgerClick }: TopNavProps) => {
   const { user, notifications, unreadCount, markAllAsRead } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -29,49 +36,35 @@ const TopNav = ({ onHamburgerClick }: TopNavProps) => {
     };
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate('/search');
-    }
-  };
+  const pageTitle = PAGE_TITLES[location.pathname] || 'الرئيسية';
+  const isClub = user?.role === 'scout';
+  const defaultAvatar = isClub
+    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Club')}&background=2B43A1&color=fff`
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2B43A1&color=fff`;
+
+  const avatarSrc = getFullImageUrl(user?.avatar) || defaultAvatar;
 
   return (
-    <header className="h-16 md:h-20 bg-white shadow-sm flex items-center px-4 md:px-8 relative z-30 justify-between" dir="rtl">
-      <div className="flex items-center gap-3">
+    <header className="h-16 md:h-20 bg-white shadow-sm flex items-center px-3 sm:px-4 md:px-8 relative z-30 justify-between gap-2 font-sans" dir="rtl">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <button
           onClick={onHamburgerClick}
-          className="block lg:hidden p-2 rounded-lg text-gray-600 hover:text-[#2B43A1] hover:bg-gray-100 transition-colors cursor-pointer"
+          className="block lg:hidden p-1.5 sm:p-2 rounded-lg text-gray-600 hover:text-[#2B43A1] hover:bg-gray-100 transition-colors cursor-pointer"
           aria-label="فتح القائمة"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="text-[#2B43A1] font-bold text-base md:text-lg">
-          الرئيسية
+        <div className="text-[#2B43A1] font-bold text-sm sm:text-base md:text-lg whitespace-nowrap">
+          {pageTitle}
         </div>
       </div>
 
-      <div className="hidden sm:block flex-1 max-w-md mx-4 md:mx-8">
-        <form onSubmit={handleSearchSubmit} className="w-full bg-white border border-gray-200 rounded-full flex items-center px-4 py-2 focus-within:border-[#2B43A1] transition-colors">
-          <input 
-            type="text" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="ابحث عن لاعبين..." 
-            className="w-full bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 text-right pr-2" 
-          />
-          <button type="submit" className="text-gray-400 hover:text-[#2B43A1] transition-colors cursor-pointer">
-            <Search className="w-4 h-4" />
-          </button>
-        </form>
-      </div>
-
-      <div className="flex items-center gap-2 md:gap-4 relative" ref={dropdownRef}>
+      <div className="flex items-center gap-2 md:gap-4 relative shrink-0" ref={dropdownRef}>
         <div className="relative">
           <button 
             onClick={() => setIsOpen(!isOpen)} 
-            className="text-gray-600 hover:text-[#2B43A1] transition relative p-2 rounded-full hover:bg-gray-100 cursor-pointer flex items-center justify-center"
+            className="text-gray-600 hover:text-[#2B43A1] transition relative p-1.5 sm:p-2 rounded-full hover:bg-gray-100 cursor-pointer flex items-center justify-center"
             aria-label="الإشعارات"
           >
             <Bell className="w-5 h-5" />
@@ -123,16 +116,22 @@ const TopNav = ({ onHamburgerClick }: TopNavProps) => {
 
         <div 
           onClick={() => navigate('/profile')}
-          className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity shadow-xs"
+          className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity"
         >
-          <img 
-            src={playerAvatar} 
-            alt={user?.name || "المستخدم"} 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop";
-            }}
-          />
+          <div className="hidden sm:flex flex-col text-left">
+            <span className="text-xs font-bold text-gray-800 truncate max-w-30">{user?.name || 'حسابي'}</span>
+            <span className="text-[10px] text-gray-400">{isClub ? 'نادي / كشاف' : 'لاعب'}</span>
+          </div>
+          <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 shadow-xs shrink-0 bg-white">
+            <img 
+              src={avatarSrc} 
+              alt={user?.name || "المستخدم"} 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = defaultAvatar;
+              }}
+            />
+          </div>
         </div>
       </div>
     </header>

@@ -9,22 +9,36 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddDistributedMemoryCache();
+// 1️⃣ إضافة خدمة الـ CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+                  "http://localhost:5174",
+                  "http://localhost:5173",
+                  "http://localhost:3000",
+                  "https://jogo-frontend-ghcq.vercel.app"
+              )
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
+// Add services to the container.
 builder
     .Services.AddPresentation(builder.Configuration)
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
 
 builder.Host.UseSerilog(
-    (context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration)
-);
-
-
-
+    (context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
 
 var app = builder.Build();
+
+// 2️⃣ تفعيل الـ CORS في بداية الـ Pipeline
+app.UseCors("AllowFrontend");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -49,14 +63,11 @@ else
     app.UseHsts();
 }
 
-app.UseHangfireDashboard();
-
 app.UseCoreMiddlewares(builder.Configuration);
-
-app.MapControllers();
-
 app.UseAntiforgery();
-
+app.UseHangfireDashboard();
+app.MapPrometheusScrapingEndpoint();
+app.MapControllers();
 app.MapStaticAssets();
 
 app.Run();

@@ -23,8 +23,12 @@ class Detection:
 
 class PersonDetector:
     def __init__(self):
-        self._hog = cv2.HOGDescriptor()
-        self._hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+        if hasattr(cv2, 'HOGDescriptor'):
+            self._hog = cv2.HOGDescriptor()
+            self._hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+        else:
+            self._hog = cv2.objdetect.HOGDescriptor()
+            self._hog.setSVMDetector(cv2.objdetect.HOGDescriptor_getDefaultPeopleDetector())
 
     def detect(self, frame: np.ndarray) -> List[Detection]:
         # Downscale for speed/stability; HOG is expensive at full broadcast resolution.

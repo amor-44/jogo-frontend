@@ -1,76 +1,115 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth, type Player } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
+import { getFullImageUrl } from '../utils/url';
+import type { PlayerCardDto } from '../types';
 
-const PlayerCard = ({ player }: { player: Player }) => {
+interface Props {
+  player: PlayerCardDto;
+}
+
+const PlayerCard = ({ player }: Props) => {
   const { savedPlayerIds, toggleSavePlayer } = useAuth();
   const navigate = useNavigate();
-  const isSaved = savedPlayerIds.includes(player.id);
+  const isSaved = savedPlayerIds.map(String).includes(String(player.id));
 
-  const fallbackImage = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop";
+  // Map English position values to Arabic
+  const positionLabel = (pos?: string) => {
+    if (!pos) return 'غير محدد';
+    const map: Record<string, string> = {
+      'Goalkeeper': 'حارس',
+      'GK': 'حارس',
+      'CenterBack': 'قلب دفاع',
+      'CB': 'قلب دفاع',
+      'RightBack': 'ظهير أيمن',
+      'RB': 'ظهير أيمن',
+      'LeftBack': 'ظهير أيسر',
+      'LB': 'ظهير أيسر',
+      'DefensiveMidfielder': 'وسط دفاعي',
+      'CDM': 'وسط دفاعي',
+      'CentralMidfielder': 'وسط',
+      'CM': 'وسط',
+      'AttackingMidfielder': 'وسط هجومي',
+      'CAM': 'وسط هجومي',
+      'LeftWinger': 'جناح أيسر',
+      'LW': 'جناح أيسر',
+      'RightWinger': 'جناح أيمن',
+      'RW': 'جناح أيمن',
+      'Striker': 'مهاجم',
+      'ST': 'مهاجم',
+    };
+    return map[String(pos)] || String(pos);
+  };
+
+  const rawPosition = player.primaryPosition ? String(player.primaryPosition) : (player.position ? String(player.position) : '');
+  const rawCountry = player.country || player.nationality || 'غير محدد';
+  const rawScore = player.latestOverallScore ?? player.overallScore;
+  const avatarUrl = getFullImageUrl(player.profilePictureUrl);
 
   return (
-    <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all relative" dir="rtl">
-      <div className="bg-[#1C2C5E] p-4 text-white relative h-28 flex justify-between items-start">
-        <span className="bg-blue-600/80 text-white text-[10px] font-bold px-3 py-1 rounded-full">
-          {player.position}
-        </span>
-        <button 
-          onClick={() => toggleSavePlayer(player.id)}
-          className={`text-lg transition-transform active:scale-125 cursor-pointer ${isSaved ? 'text-red-500' : 'text-white/80 hover:text-red-400'}`}
-        >
-          {isSaved ? '♥' : '♡'}
-        </button>
-      </div>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group font-sans" dir="rtl">
+      {/* Top accent bar */}
+      <div className="h-1.5 bg-linear-to-l from-[#2B43A1] to-[#4F6BDB]" />
 
-      <div className="px-6 pb-6 pt-0 text-center relative -mt-12">
-        <div className="w-20 h-20 mx-auto mb-3 relative rounded-full overflow-hidden border-4 border-white shadow-md bg-white">
-          <img 
-            src={player.image || fallbackImage} 
-            alt={player.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = fallbackImage;
-            }}
-          />
-        </div>
-
-        <h3 className="font-bold text-[#1C2C5E] text-base mb-1">{player.name}</h3>
-        <p className="text-gray-400 text-xs mb-4">{player.club} - {player.age} سنة - {player.height}</p>
-
-        <div className="flex justify-center gap-6 mb-6">
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full border-2 border-gray-800 flex items-center justify-center font-bold text-gray-800 text-sm">
-              {player.overall}
+      <div className="p-5">
+        {/* Header: Name + Position + Save */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-9 h-9 rounded-xl bg-linear-to-br from-[#2B43A1] to-[#4F6BDB] flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm overflow-hidden bg-[#2B43A1]">
+                {avatarUrl ? (
+                  <img 
+                    src={avatarUrl} 
+                    alt={player.fullName} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <span>{player.fullName ? player.fullName.charAt(0).toUpperCase() : '?'}</span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-[#1C2C5E] text-sm truncate">{player.fullName}</h3>
+                <span className="text-[10px] text-gray-400 font-medium">{player.currentClub || 'بدون نادي'}</span>
+              </div>
             </div>
-            <span className="text-[9px] font-bold text-gray-400 mt-1">OVERALL</span>
           </div>
+          <button 
+            onClick={(e) => { e.stopPropagation(); toggleSavePlayer(String(player.id)); }}
+            className={`p-1.5 rounded-lg transition-all cursor-pointer ${isSaved ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-400 hover:text-red-400 hover:bg-red-50'}`}
+          >
+            {isSaved ? '♥' : '♡'}
+          </button>
+        </div>
 
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full border-2 border-blue-600 text-blue-600 flex items-center justify-center font-bold text-sm">
-              {player.aiScore}
-            </div>
-            <span className="text-[9px] font-bold text-blue-600 mt-1">AI SCORE</span>
+        {/* Position badge */}
+        <div className="mb-4">
+          <span className="inline-block bg-[#EBF1FF] text-[#2B43A1] text-[10px] font-bold px-3 py-1 rounded-lg">
+            {positionLabel(rawPosition)}
+          </span>
+        </div>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-gray-50/80 rounded-xl p-2.5 text-center">
+            <span className="block text-[10px] text-gray-400 font-medium mb-0.5">العمر</span>
+            <span className="font-bold text-gray-800 text-xs">{player.age || '--'} <span className="text-[9px] text-gray-400 font-normal">سنة</span></span>
+          </div>
+          <div className="bg-gray-50/80 rounded-xl p-2.5 text-center">
+            <span className="block text-[10px] text-gray-400 font-medium mb-0.5">الدولة</span>
+            <span className="font-bold text-gray-800 text-xs truncate block">{rawCountry}</span>
+          </div>
+          <div className="bg-gray-50/80 rounded-xl p-2.5 text-center">
+            <span className="block text-[10px] text-gray-400 font-medium mb-0.5">التقييم</span>
+            <span className="font-extrabold text-[#2B43A1] text-xs">⭐ {rawScore ? `${rawScore}` : '--'}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-2xl mb-5 text-center text-xs">
-          <div>
-            <span className="block text-gray-400 text-[10px]">القيمة</span>
-            <span className="font-bold text-green-600">{player.value}</span>
-          </div>
-          <div>
-            <span className="block text-gray-400 text-[10px]">القدم</span>
-            <span className="font-bold text-gray-700">{player.foot}</span>
-          </div>
-          <div>
-            <span className="block text-gray-400 text-[10px]">الدولة</span>
-            <span className="font-bold text-gray-700">{player.country}</span>
-          </div>
-        </div>
-
+        {/* View profile button */}
         <button 
-          onClick={() => navigate('/profile')} 
-          className="w-full border-2 border-blue-600 text-blue-600 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
+          onClick={() => navigate(`/player/${player.id}`)} 
+          className="w-full bg-linear-to-l from-[#2B43A1] to-[#3D5BC9] text-white py-2.5 rounded-xl text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-sm"
         >
           عرض الملف الشخصي
         </button>

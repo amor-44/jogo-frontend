@@ -1,5 +1,5 @@
 # Core pipeline
-# opencv-python-headless>=4.8,<5.0.0
+opencv-python>=4.8,<5.0.0
 numpy>=1.24
 scipy>=1.10
 

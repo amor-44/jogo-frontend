@@ -18,4 +18,6 @@ public record PlayerProfileDto(
     string? Biography,
     string? ProfilePictureUrl,
     ProfileVisibility Visibility,
+    string? FootballExperience,
+    decimal? MarketValue,
     bool IsComplete);

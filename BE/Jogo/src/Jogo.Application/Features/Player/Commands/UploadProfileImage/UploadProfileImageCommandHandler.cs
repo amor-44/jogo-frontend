@@ -52,6 +52,8 @@ public class UploadProfileImageCommandHandler : IRequestHandler<UploadProfileIma
             request.ContentType,
             cancellationToken);
 
+        var oldImageUrl = profile.ProfilePictureUrl;
+
         var updateResult = profile.UpdateProfilePicture(imageUrl);
 
         if (updateResult.IsError)
@@ -60,6 +62,11 @@ public class UploadProfileImageCommandHandler : IRequestHandler<UploadProfileIma
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(oldImageUrl))
+        {
+            await _fileStorageService.DeleteFileAsync(oldImageUrl, cancellationToken);
+        }
 
         await _hybridCache.RemoveByTagAsync("players", cancellationToken);
         await _hybridCache.RemoveByTagAsync($"player-{profile.Id}", cancellationToken);

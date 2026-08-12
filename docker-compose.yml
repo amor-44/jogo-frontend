@@ -28,6 +28,7 @@ services:
         TrustServerCertificate=True;MultipleActiveResultSets=True
       # Override AiService:BaseUrl to reach the AI container on the internal network
       AiService__BaseUrl: http://jogo-ai:8000
+      ApiBaseUrl: http://jogo-api:8080
       Serilog__WriteTo__1__Args__serverUrl: http://seq:5341
     depends_on:
       sqlserver:
