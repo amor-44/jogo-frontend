@@ -485,10 +485,13 @@ export interface RespondToContactRequestDto {
 
 export interface ContactRequestDto {
   id: string;
-  playerId: string;
-  playerName: string;
-  scoutId: string;
-  scoutName: string;
+  scoutCountry?: string;
+  playerClub?: string;
+  scoutOrganization?: string;
+  playerId?: string;
+  playerName?: string;
+  scoutId?: string;
+  scoutName?: string;
   clubName?: string;
   message?: string;
   status: ContactRequestStatus;

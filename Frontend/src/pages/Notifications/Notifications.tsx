@@ -113,7 +113,7 @@ const Notifications = () => {
                 </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                  {req.status === 'Pending' || req.status === 0 ? (
+                  {req.status === ContactRequestStatus.Pending ? (
                     !isScout ? (
                       <>
                         <button
@@ -136,7 +136,7 @@ const Notifications = () => {
                         قيد الانتظار
                       </span>
                     )
-                  ) : req.status === 'Accepted' || req.status === 1 ? (
+                  ) : req.status === ContactRequestStatus.Accepted ? (
                     <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1">
                       <Check className="w-3.5 h-3.5" /> تم القبول
                     </span>

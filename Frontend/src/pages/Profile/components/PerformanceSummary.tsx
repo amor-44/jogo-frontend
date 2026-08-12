@@ -23,8 +23,9 @@ export const PerformanceSummary = ({ report }: PerformanceSummaryProps) => {
   const metrics = report.metrics || report.performanceMetrics || {};
   const overall = report.overallScore || 0;
   
-  const formattedDate = report.completedAt || report.generatedAt
-    ? new Date(report.completedAt || report.generatedAt).toLocaleDateString('ar-EG', {
+  const dateStr = report.completedAt || report.generatedAt;
+  const formattedDate = dateStr
+    ? new Date(dateStr).toLocaleDateString('ar-EG', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',

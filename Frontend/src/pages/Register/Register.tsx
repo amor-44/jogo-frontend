@@ -189,13 +189,11 @@ const Register = () => {
 
       // Store user in context and storage
       const loggedInUser: User = {
-        id: authRes.user?.id || 'new-player',
-        name: authRes.user?.fullName || fullName,
-        email: authRes.user?.email || email,
+        id: authRes.userId || 'new-player',
+        name: fullName,
+        email: email,
         role: 'player',
-        avatar:
-          authRes.user?.profilePictureUrl ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=2B43A1&color=fff`,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=2B43A1&color=fff`,
       };
 
       register(loggedInUser);
