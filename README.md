@@ -2,9 +2,7 @@
   <img src="Assets/Logo.png" width="100%">
 </p>
 
-<p align="center">
-  <img src="Assets/Logo.png" width="100%" alt="Jogo Logo">
-</p><h1 align="center">⚽ Jogo</h1><p align="center">
+
   <strong>AI-Powered Football Performance Analysis & Talent Discovery Platform</strong>
 </p><p align="center">
   Turning football videos into actionable performance insights and professional opportunities.
