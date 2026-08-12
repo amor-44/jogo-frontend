@@ -132,10 +132,10 @@ const PlayerProfileView = () => {
     ? reports.find((r) => r.videoId === selectedVideoId) || (reports.length > 0 ? reports[0] : null)
     : reports.length > 0 ? reports[0] : (activeVideo ? getFallbackAnalysisReport(activeVideo.id) : null);
 
-  const firstName = profile?.fullName
-    ? profile.fullName.split(' ')[0]
-    : user?.name
-    ? user.name.split(' ')[0]
+  const firstName = profile?.fullName?.trim()
+    ? profile.fullName.trim().split(' ')[0]
+    : user?.name?.trim()
+    ? user.name.trim().split(' ')[0]
     : 'اللاعب';
 
   const handleAnalyzeVideo = async (id: string) => {
@@ -276,15 +276,17 @@ const PlayerProfileView = () => {
   };
 
   const formatTimeSpan = (ts?: string) => {
-    if (!ts) return '00:00';
+    if (!ts || typeof ts !== 'string') return '00:30';
     const parts = ts.split(':');
-    if (parts.length >= 3) {
-      // hh:mm:ss[.fffffff] -> mm:ss
-      return `${parts[1]}:${parts[2].split('.')[0]}`;
+    if (parts.length === 3) {
+      const min = parts[1]?.padStart(2, '0') || '00';
+      const sec = parts[2]?.split('.')[0]?.padStart(2, '0') || '00';
+      return `${min}:${sec}`;
     }
     if (parts.length === 2) {
-      // already mm:ss[.fffffff] -> mm:ss
-      return `${parts[0]}:${parts[1].split('.')[0]}`;
+      const min = parts[0]?.padStart(2, '0') || '00';
+      const sec = parts[1]?.split('.')[0]?.padStart(2, '0') || '00';
+      return `${min}:${sec}`;
     }
     return ts;
   };
