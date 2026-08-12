@@ -6,6 +6,7 @@ import { useAuth } from './hooks/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar'; 
 import TopNav from './components/TopNav'; 
+import { getFullImageUrl } from './utils/url';
 
 import Home from './pages/Home'; 
 import Saved from './pages/Saved'; 
@@ -53,7 +54,7 @@ const PlayerLayout = () => {
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link to="/profile" className="shrink-0 group">
             <img 
-              src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2B43A1&color=fff`} 
+              src={getFullImageUrl(user?.avatar) || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2B43A1&color=fff`} 
               alt="Profile" 
               className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full object-cover border-2 border-[#2B43A1] shadow-xs group-hover:opacity-90 transition-opacity"
             />
@@ -101,13 +102,13 @@ const PlayerLayout = () => {
 
 const AdaptiveLayout = () => {
   const { user } = useAuth();
-  return user?.role === 'club' ? <ClubLayout /> : <PlayerLayout />;
+  return user?.role === 'scout' ? <ClubLayout /> : <PlayerLayout />;
 };
 
 const RootRedirect = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/welcome" replace />;
-  return user.role === 'club' ? <Navigate to="/dashboard" replace /> : <Navigate to="/profile" replace />;
+  return user.role === 'scout' ? <Navigate to="/dashboard" replace /> : <Navigate to="/profile" replace />;
 };
 
 const router = createBrowserRouter([

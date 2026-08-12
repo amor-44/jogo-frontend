@@ -2,7 +2,7 @@ import React from 'react';
 
 // ─── App / UI Types ───────────────────────────────────────────────────────────
 
-export type Role = 'player' | 'club';
+export type Role = 'player' | 'scout';
 
 export interface User {
   id?: string;
@@ -47,14 +47,14 @@ export interface NotificationItem {
   type?: 'ai' | 'system';
 }
 
-export interface ClubData {
+export interface ScoutData {
   name: string;
   email: string;
-  role: 'club';
+  role: 'scout';
   avatar?: string;
-  league?: string;
+  organization?: string;
   country?: string;
-  managerName?: string;
+  experienceYears?: number;
 }
 
 export interface SkillItem {
@@ -78,11 +78,13 @@ export interface Message {
 export type ChatMessage = Message;
 
 export interface VideoHistoryItem {
+  id: string;
   title: string;
   date: string;
   duration: string;
   tag: string;
   bg: string;
+  status: VideoStatus;
 }
 
 export interface TrainingPlanItem {
@@ -138,16 +140,23 @@ export interface HomeSuggestedTableProps {
 export interface ProfileSidebarProps {
   user: User | null;
   playerProfile?: PlayerProfileDto | null;
+  onEditProfile?: () => void;
+  onAvatarUploaded?: (newUrl: string) => void;
 }
 
 export interface VideoHistoryProps {
   videos: VideoHistoryItem[];
   onUploadClick: () => void;
+  onDelete?: (id: string) => void;
+  onAnalyze?: (id: string) => void;
+  onRetry?: (id: string) => void;
+  onVideoClick?: (id: string) => void;
 }
 
 export interface VideoUploaderProps {
   uploadedVideoUrl: string | null;
   videoName: string;
+  isUploading?: boolean;
   onClearVideo: () => void;
   onTriggerUpload: () => void;
 }
@@ -259,12 +268,11 @@ export interface RegisterPlayerFormData {
 }
 
 export interface RegisterScoutCommand {
-  fullName: string;
   email: string;
   password: string;
-  confirmPassword: string;
-  clubName?: string;
-  licenseNumber?: string;
+  organization: string;
+  country: string;
+  experienceYears: number;
 }
 
 export interface RefreshCommand {
@@ -278,9 +286,8 @@ export interface LogoutCommand {
 export interface AuthResponseDto {
   accessToken: string;
   refreshToken: string;
-  tokenType: string;
-  expiresIn: number;
-  user: UserInfoDto;
+  role: string;
+  userId: string;
 }
 
 export interface UserInfoDto {
@@ -323,26 +330,15 @@ export interface PlayerProfileDto {
 }
 
 export interface UpdateProfileCommand {
-  fullName?: string;
-  dateOfBirth?: string;
-  country?: string;
-  nationality?: string;
   city?: string;
-  region?: string;
-  position?: Position | string;
-  primaryPosition?: Position | string;
-  secondaryPosition?: Position | string;
-  preferredFoot?: ApiPreferredFoot | PreferredFoot;
   height?: number;
   weight?: number;
+  secondaryPosition?: Position | string;
   currentClub?: string;
-  previousClub?: string;
-  bio?: string;
   biography?: string;
   footballExperience?: string;
   marketValue?: number;
   visibility?: ProfileVisibility;
-  profileVisibility?: ProfileVisibility;
 }
 
 export interface PlayerCardDto {
@@ -371,13 +367,12 @@ export interface PlayersQueryParams {
 
 export interface VideoDto {
   id: string;
-  title: string;
-  description?: string;
+  originalFileName: string;
+  storageUrl: string;
+  duration: string;
   uploadedAt: string;
-  durationSeconds?: number;
   status: VideoStatus;
-  thumbnailUrl?: string;
-  playbackUrl?: string;
+  canDelete: boolean;
 }
 
 export const VideoStatus = {

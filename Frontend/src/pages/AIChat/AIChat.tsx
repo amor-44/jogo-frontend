@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { getFullImageUrl } from '../../utils/url';
 import type { Message } from '../../types';
 import { 
   Send, 
@@ -117,10 +118,10 @@ const AIChat = () => {
           </div>
 
           <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 shrink-0">
+            <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-gray-200">
               <img 
-                src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"} 
-                alt="Player" 
+                src={getFullImageUrl(user?.avatar) || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"} 
+                alt="User" 
                 className="w-full h-full object-cover"
               />
             </div>

@@ -1,14 +1,19 @@
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Trophy, Clock, Star, Activity } from 'lucide-react';
+import { Bot, Trophy, Clock, Star, Activity, Camera, Loader2, Edit3 } from 'lucide-react';
 import type { ProfileSidebarProps } from '../../../types';
+import { playerService } from '../../../services/playerService';
+import { getFullImageUrl } from '../../../utils/url';
 
-export const ProfileSidebar = ({ user, playerProfile }: ProfileSidebarProps) => {
+export const ProfileSidebar = ({ user, playerProfile, onEditProfile, onAvatarUploaded }: ProfileSidebarProps) => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const displayName = playerProfile?.fullName || user?.name || 'أحمد الرشيدي';
+  const displayName = playerProfile?.fullName || user?.name || 'اللاعب';
   const displayAvatar =
-    playerProfile?.profilePictureUrl ||
-    user?.avatar ||
+    getFullImageUrl(playerProfile?.profilePictureUrl) ||
+    getFullImageUrl(user?.avatar) ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2B43A1&color=fff&size=128`;
   
   const positionMap: Record<string, string> = {
@@ -33,6 +38,7 @@ export const ProfileSidebar = ({ user, playerProfile }: ProfileSidebarProps) => 
     RW: 'جناح أيمن',
     ST: 'مهاجم',
   };
+
   const rawPos = (playerProfile?.primaryPosition || playerProfile?.position || '') as string;
   const displayPosition = positionMap[rawPos] || rawPos || 'لاعب كرة قدم';
   const displayClub = playerProfile?.currentClub || 'بدون نادي';
@@ -41,16 +47,62 @@ export const ProfileSidebar = ({ user, playerProfile }: ProfileSidebarProps) => 
   const displayCity = playerProfile?.city || playerProfile?.region;
   const displayLocation = displayCity ? `${displayCountry} (${displayCity})` : displayCountry;
 
+  const handleAvatarClick = () => {
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const newUrl = await playerService.uploadProfilePicture(formData);
+      if (newUrl && onAvatarUploaded) {
+        onAvatarUploaded(newUrl);
+      }
+    } catch (err) {
+      console.error('Failed to upload avatar', err);
+      alert('حدث خطأ أثناء رفع الصورة الشخصية.');
+    } finally {
+      setIsUploading(false);
+      // Reset input so the same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-3xl shadow-2xs border border-gray-100 flex flex-col items-center text-center font-sans">
-      <div className="relative mb-3">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md">
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        accept="image/*"
+        ref={fileInputRef} 
+        onChange={handleFileChange}
+        className="hidden" 
+      />
+
+      <div className="relative mb-3 group">
+        <div 
+          onClick={handleAvatarClick}
+          className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md relative cursor-pointer"
+        >
           <img 
             src={displayAvatar} 
             alt={displayName} 
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover transition-opacity ${isUploading ? 'opacity-50' : 'group-hover:opacity-80'}`}
           />
+          <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${isUploading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+            {isUploading ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
+          </div>
         </div>
+        
         <button 
           onClick={() => navigate('/chat')}
           className="absolute bottom-0 left-0 bg-[#2B43A1] text-white p-1.5 rounded-full border-2 border-white shadow-xs hover:scale-110 transition-transform cursor-pointer"
@@ -63,6 +115,14 @@ export const ProfileSidebar = ({ user, playerProfile }: ProfileSidebarProps) => 
       <h2 className="text-xl font-bold text-gray-900 mb-1">{displayName}</h2>
       <p className="text-gray-400 text-xs mb-4 font-medium">{displayPosition} | {displayClub}</p>
       
+      {/* Edit Profile Button */}
+      <button 
+        onClick={onEditProfile}
+        className="w-full flex items-center justify-center gap-2 py-2 px-4 mb-4 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-bold transition-colors border border-gray-200 cursor-pointer"
+      >
+        <Edit3 className="w-3.5 h-3.5" /> تعديل الملف الشخصي
+      </button>
+
       <div className="grid grid-cols-2 gap-4 w-full py-3 border-t border-b border-gray-100 text-xs my-2">
         <div>
           <span className="block text-gray-400 text-[11px] mb-0.5">العمر</span>
@@ -75,29 +135,26 @@ export const ProfileSidebar = ({ user, playerProfile }: ProfileSidebarProps) => 
       </div>
 
       <div className="w-full text-right mt-3">
-        <h4 className="text-xs font-bold text-gray-700 mb-3">إحصائيات سريعة</h4>
+        <h4 className="text-xs font-bold text-gray-700 mb-3">بيانات إضافية</h4>
         <div className="space-y-2.5">
-          <div className="flex justify-between items-center bg-gray-50/70 p-2.5 rounded-xl text-xs">
-            <span className="flex items-center gap-2 text-gray-600 font-medium">
-              <Trophy className="w-4 h-4 text-blue-600" /> مباريات مرفوعة
-            </span>
-            <span className="font-bold text-gray-900">12</span>
-          </div>
+          {playerProfile?.marketValue ? (
+            <div className="flex justify-between items-center bg-gray-50/70 p-2.5 rounded-xl text-xs">
+              <span className="flex items-center gap-2 text-gray-600 font-medium">
+                <Star className="w-4 h-4 text-blue-600" /> القيمة السوقية
+              </span>
+              <span className="font-bold text-gray-900">${playerProfile.marketValue.toLocaleString()}</span>
+            </div>
+          ) : null}
 
-          <div className="flex justify-between items-center bg-gray-50/70 p-2.5 rounded-xl text-xs">
-            <span className="flex items-center gap-2 text-gray-600 font-medium">
-              <Clock className="w-4 h-4 text-blue-600" /> ساعات محللة
-            </span>
-            <span className="font-bold text-gray-900">38.5 س</span>
-          </div>
-
-          <div className="flex justify-between items-center bg-gray-50/70 p-2.5 rounded-xl text-xs">
-            <span className="flex items-center gap-2 text-gray-600 font-medium">
-              <Star className="w-4 h-4 text-blue-600" /> متوسط الدرجة
-            </span>
-            <span className="font-bold text-gray-900">76.4</span>
-          </div>
-
+          {playerProfile?.footballExperience ? (
+            <div className="flex flex-col bg-gray-50/70 p-2.5 rounded-xl text-xs">
+              <span className="flex items-center gap-2 text-gray-600 font-medium mb-1">
+                <Trophy className="w-4 h-4 text-blue-600" /> الخبرة الكروية
+              </span>
+              <span className="font-bold text-gray-900 leading-relaxed text-right">{playerProfile.footballExperience}</span>
+            </div>
+          ) : null}
+          
           <div className="flex justify-between items-center bg-gray-50/70 p-2.5 rounded-xl text-xs">
             <span className="flex items-center gap-2 text-gray-600 font-medium">
               <Activity className="w-4 h-4 text-blue-600" /> أفضل أداء

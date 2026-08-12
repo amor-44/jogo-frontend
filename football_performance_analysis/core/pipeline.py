@@ -11,7 +11,10 @@ Orchestrates the full architecture from the spec:
 from __future__ import annotations
 import time
 import uuid
-import cv2
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 from typing import List
 
 from .models import FootballPerformanceReport, MetricResult

@@ -23,7 +23,7 @@ const Login = () => {
 
     try {
       const loggedInUser = await login(cleanEmail, password);
-      if (loggedInUser.role === 'club') {
+      if (loggedInUser.role === 'scout') {
         navigate('/dashboard');
       } else {
         navigate('/profile');

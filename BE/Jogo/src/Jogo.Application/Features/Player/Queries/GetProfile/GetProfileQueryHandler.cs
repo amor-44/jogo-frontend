@@ -47,6 +47,8 @@ public class GetProfileQueryHandler(
             profile.Biography,
             profile.ProfilePictureUrl,
             profile.Visibility,
+            profile.FootballExperience,
+            profile.MarketValue,
             profile.IsComplete);
 
         return dto;

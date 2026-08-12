@@ -62,21 +62,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('accessToken', authRes.accessToken);
       localStorage.setItem('refreshToken', authRes.refreshToken);
 
-      const isScoutOrClub =
-        authRes.user.role?.toLowerCase() === 'scout' ||
-        authRes.user.role?.toLowerCase() === 'club';
+      const isScout = authRes.role?.toLowerCase() === 'scout';
 
       let loggedInUser: User = {
-        id: authRes.user.id,
-        name: authRes.user.fullName || authRes.user.email,
-        email: authRes.user.email,
-        role: isScoutOrClub ? 'club' : 'player',
-        avatar:
-          authRes.user.profilePictureUrl ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(authRes.user.fullName || 'User')}&background=2B43A1&color=fff`,
+        id: authRes.userId,
+        name: emailOrUser, // Fallback, will be updated by getMe() for players
+        email: emailOrUser,
+        role: isScout ? 'scout' : 'player',
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent('User')}&background=2B43A1&color=fff`,
       };
 
-      if (!isScoutOrClub) {
+      if (!isScout) {
         try {
           const profile = await playerService.getMe();
           if (profile) {

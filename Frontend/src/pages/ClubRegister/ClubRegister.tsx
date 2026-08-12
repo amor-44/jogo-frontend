@@ -3,8 +3,14 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
-import { Building2, ShieldCheck, Mail, Lock, User as UserIcon, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Building2, Globe, Mail, Lock, Loader2, Eye, EyeOff, Briefcase } from 'lucide-react';
 import type { User, RegisterScoutCommand } from '../../types';
+
+const COUNTRIES_LIST = [
+  'مصر', 'السعودية', 'الإمارات', 'الكويت', 'قطر', 'البحرين',
+  'عمان', 'المغرب', 'الجزائر', 'تونس', 'العراق', 'الأردن',
+  'سوريا', 'لبنان', 'فلسطين', 'السودان', 'اليمن', 'ليبيا'
+];
 
 const ClubRegister = () => {
   const [searchParams] = useSearchParams();
@@ -13,12 +19,12 @@ const ClubRegister = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [clubName, setClubName] = useState('');
-  const [licenseNumber, setLicenseNumber] = useState('');
+  const [organization, setOrganization] = useState('');
+  const [country, setCountry] = useState('');
+  const [experienceYears, setExperienceYears] = useState<number | ''>('');
   
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -39,17 +45,21 @@ const ClubRegister = () => {
       setError('كلمة المرور يجب أن لا تقل عن 6 أحرف');
       return;
     }
+    
+    if (!country.trim()) {
+      setError('يرجى تحديد الدولة');
+      return;
+    }
 
     setIsLoading(true);
 
     try {
       const payload: RegisterScoutCommand = {
-        fullName: fullName.trim(),
         email: email.trim().toLowerCase(),
         password,
-        confirmPassword,
-        clubName: clubName.trim() || undefined,
-        licenseNumber: licenseNumber.trim() || undefined,
+        organization: organization.trim(),
+        country: country.trim(),
+        experienceYears: Number(experienceYears) || 0,
       };
 
       const authRes = await authService.registerScout(payload);
@@ -62,11 +72,11 @@ const ClubRegister = () => {
       }
 
       const loggedInUser: User = {
-        id: authRes.user?.id || 'new-scout',
-        name: authRes.user?.fullName || fullName,
-        email: authRes.user?.email || email,
-        role: 'club',
-        avatar: authRes.user?.profilePictureUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=2B43A1&color=fff`,
+        id: authRes.userId || 'new-scout',
+        name: organization.trim() || email,
+        email: email,
+        role: 'scout',
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(organization.trim() || 'Scout')}&background=2B43A1&color=fff`,
       };
 
       register(loggedInUser);
@@ -102,13 +112,13 @@ const ClubRegister = () => {
       <div className="bg-white rounded-4xl p-8 md:p-10 w-full max-w-xl shadow-2xl border border-gray-100">
         <div className="flex justify-center mb-4">
           <div className="bg-[#2B43A1] text-white px-6 py-2 rounded-2xl font-bold text-xl flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-emerald-400" /> بوابة تسجيل الكشافين / الأندية
+            <Building2 className="w-6 h-6 text-emerald-400" /> بوابة الكشافين / الأندية
           </div>
         </div>
 
-        <h2 className="text-2xl font-black text-[#1C2C5E] text-center mb-1">حساب كشاف جديد</h2>
+        <h2 className="text-2xl font-black text-[#1C2C5E] text-center mb-1">تسجيل كشاف جديد</h2>
         <p className="text-gray-400 text-xs text-center mb-6 font-medium">
-          سجل ككشاف أو ممثل نادي للوصول إلى قاعدة بيانات اللاعبين الشاملة
+          سجل ككشاف للوصول إلى قاعدة بيانات اللاعبين الشاملة
         </p>
 
         {error && (
@@ -118,18 +128,6 @@ const ClubRegister = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1 text-right">الاسم بالكامل <span className="text-red-500">*</span></label>
-            <div className="relative">
-              <input 
-                type="text" required value={fullName} onChange={e => setFullName(e.target.value)}
-                placeholder="اسم الكشاف أو الممثل"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-[#2B43A1] focus:bg-white pr-10 text-right"
-              />
-              <UserIcon className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            </div>
-          </div>
-
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1 text-right">البريد الإلكتروني <span className="text-red-500">*</span></label>
             <div className="relative">
@@ -184,28 +182,43 @@ const ClubRegister = () => {
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1 text-right">الجهة أو المنظمة (Organization) <span className="text-red-500">*</span></label>
+            <div className="relative">
+              <input 
+                type="text" required value={organization} onChange={e => setOrganization(e.target.value)}
+                placeholder="اسم النادي أو الأكاديمية أو الوكالة"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-[#2B43A1] focus:bg-white pr-10 text-right"
+              />
+              <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3 mt-2">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1 text-right">اسم النادي (اختياري)</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1 text-right">الدولة <span className="text-red-500">*</span></label>
               <div className="relative">
                 <input 
-                  type="text" value={clubName} onChange={e => setClubName(e.target.value)}
-                  placeholder="مثال: نادي الاتحاد"
+                  type="text" list="scout-countries" required value={country} onChange={e => setCountry(e.target.value)}
+                  placeholder="مثال: السعودية"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-[#2B43A1] focus:bg-white pr-10 text-right"
                 />
-                <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Globe className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <datalist id="scout-countries">
+                  {COUNTRIES_LIST.map(c => <option key={c} value={c} />)}
+                </datalist>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1 text-right">رقم الرخصة (اختياري)</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1 text-right">سنوات الخبرة <span className="text-red-500">*</span></label>
               <div className="relative">
                 <input 
-                  type="text" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)}
-                  placeholder="مثال: 12345"
+                  type="number" min="0" required value={experienceYears} onChange={e => setExperienceYears(Number(e.target.value))}
+                  placeholder="عدد سنوات الخبرة ككشاف"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-[#2B43A1] focus:bg-white pr-10 text-right"
                 />
-                <ShieldCheck className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Briefcase className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               </div>
             </div>
           </div>
@@ -216,7 +229,7 @@ const ClubRegister = () => {
             className="w-full flex items-center justify-center gap-2 bg-[#2B43A1] text-white py-3.5 rounded-xl font-bold text-xs hover:bg-blue-900 transition-colors shadow-md mt-6 cursor-pointer disabled:opacity-70"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            تفعيل الحساب
+            تفعيل حساب الكشاف
           </button>
         </form>
         

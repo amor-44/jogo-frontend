@@ -2,13 +2,14 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { LogOut, Settings } from 'lucide-react';
 import type { SidebarProps } from '../types';
+import { getFullImageUrl } from '../utils/url';
 
 const Sidebar = ({ isMobileOpen = false, onMobileClose }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   
-  const isClub = user?.role === 'club';
+  const isClub = user?.role === 'scout';
   const isActive = (path: string) => location.pathname === path;
 
   const handleLinkClick = () => {
@@ -117,7 +118,7 @@ const Sidebar = ({ isMobileOpen = false, onMobileClose }: SidebarProps) => {
           <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 shrink-0 bg-white">
             {isClub ? (
               <img 
-                src={user?.avatar || "https://upload.wikimedia.org/wikipedia/ar/7/70/Al-Ittihad_Saudi_Club_logo.png"} 
+                src={getFullImageUrl(user?.avatar) || "https://upload.wikimedia.org/wikipedia/ar/7/70/Al-Ittihad_Saudi_Club_logo.png"} 
                 alt="Club" 
                 className="w-full h-full object-cover"
                 onError={(e) => {

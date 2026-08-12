@@ -12,11 +12,11 @@ export const playerService = {
     apiClient.get<PlayerProfileDto>('/player/me').then((r) => r.data),
 
   updateMe: (data: UpdateProfileCommand) =>
-    apiClient.put<PlayerProfileDto>('/player/me', data).then((r) => r.data),
+    apiClient.put<void>('/player/me', data).then((r) => r.data),
 
   uploadProfilePicture: (formData: FormData) =>
     apiClient
-      .post<PlayerProfileDto>('/player/profile/image', formData, {
+      .post<string>('/player/profile/image', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then((r) => r.data),

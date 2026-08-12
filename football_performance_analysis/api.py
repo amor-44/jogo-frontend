@@ -20,7 +20,11 @@ try:
 except ImportError as e:  # pragma: no cover
     raise ImportError("httpx is not installed. Run: pip install httpx") from e
 
-from core.pipeline import analyze_video
+try:
+    from core.pipeline import analyze_video
+except ImportError:
+    def analyze_video(*args, **kwargs):
+        raise RuntimeError("Computer vision dependencies (opencv/numpy/scipy) are not fully installed yet!")
 
 app = FastAPI(title="Football Performance Analysis API")
 

@@ -1,15 +1,22 @@
-import { CheckCircle2, UploadCloud, X } from 'lucide-react';
+import { CheckCircle2, UploadCloud, X, Loader2 } from 'lucide-react';
 import type { VideoUploaderProps } from '../../../types';
 
 export const VideoUploader = ({
   uploadedVideoUrl,
   videoName,
+  isUploading,
   onClearVideo,
   onTriggerUpload,
 }: VideoUploaderProps) => {
   return (
     <div className="bg-[#F4F6FF] border-2 border-dashed border-[#2B43A1]/30 p-6 md:p-8 rounded-3xl text-center flex flex-col items-center justify-center shadow-2xs relative overflow-hidden transition-all">
-      {uploadedVideoUrl ? (
+      {isUploading ? (
+        <div className="flex flex-col items-center justify-center py-8">
+          <Loader2 className="w-10 h-10 animate-spin text-[#2B43A1] mb-4" />
+          <h3 className="font-extrabold text-[#1C2C5E] text-base mb-1">جاري رفع الفيديو...</h3>
+          <p className="text-gray-400 text-xs font-medium">يرجى الانتظار حتى يكتمل الرفع</p>
+        </div>
+      ) : uploadedVideoUrl ? (
         <div className="w-full flex flex-col items-center">
           <div className="flex justify-between items-center w-full mb-3">
             <span className="text-xs font-bold text-[#1C2C5E] truncate max-w-xs">{videoName}</span>
