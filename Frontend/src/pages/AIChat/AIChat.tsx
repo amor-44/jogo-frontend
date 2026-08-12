@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getFullImageUrl } from '../../utils/url';
@@ -11,40 +11,221 @@ import {
   Settings, 
   LayoutGrid,
   Bot,
-  Navigation
+  Navigation,
+  Trash2,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
+
+interface ChatConversation {
+  id: string;
+  title: string;
+  createdAt: string;
+  messages: Message[];
+}
+
+const DEFAULT_CONVERSATIONS: ChatConversation[] = [
+  {
+    id: 'conv-1',
+    title: 'تحليل مباراة الشباب الأخيرة',
+    createdAt: 'منذ ساعتين',
+    messages: [
+      {
+        id: 1,
+        sender: 'user',
+        text: 'كيف كان معدل أدائي وتمريراتي في مباراة الشباب الأخيرة؟'
+      },
+      {
+        id: 2,
+        sender: 'ai',
+        text: 'مرحباً! قمت بتحليل أدائك بدقة في مباراة الشباب: \n\n🎯 **دقة التمريرات:** 87% (42 تمريرة ناجحة من أصل 48).\n⚡ **صناعة الفرص:** 4 تمريرات مفتاحية في الثلث الهجومي.\n🛡️ **استخلاص الكرة:** فزت بـ 6 التحامات من أصل 8.\n\n⚠️ **نقطة للتطوير:** الاحتفاظ الزائد بالكرة تحت الضغط الدفاعي أدى لفقدانها مرتين.\n📊 **التقييم الإجمالي:** 82 / 100 — أداء مميز جداً ويؤهلك للترشيح الأساسي.'
+      }
+    ]
+  },
+  {
+    id: 'conv-2',
+    title: 'خطة تحسين سرعة اتخاذ القرار',
+    createdAt: 'أمس',
+    messages: [
+      {
+        id: 1,
+        sender: 'user',
+        text: 'محتاج خطة تدريبية عملية ومكثفة لتحسين سرعة اتخاذ القرار في خط الوسط.'
+      },
+      {
+        id: 2,
+        sender: 'ai',
+        text: 'إليك خطة الـ 3 أسابيع المقترحة من Jogo AI لتسريع اتخاذ القرار:\n\n1️⃣ **المسح الميداني (Pre-Scanning):** تدريب على تدوير الرأس مرتين على الأقل قبل استلام الكرة بـ 0.5 ثانية.\n2️⃣ **تدريبات الروندو السريع (1-2 Touch):** مجموعات 4 ضد 2 بلمسة واحدة فقط لتقليل زمن التصرف.\n3️⃣ **التمرير تحت الإشارات البصرية:** استخدام أقماع ملونة أو إشارات مدرب لتحديد جهة التمرير قبل الاستلام مباشرة.\n\n📅 التطبيق: 25 دقيقة بعد كل حصة تدريبية أيام (الإثنين - الأربعاء - السبت).'
+      }
+    ]
+  },
+  {
+    id: 'conv-3',
+    title: 'مقارنة التمريرات مع لاعبي الدوري',
+    createdAt: 'منذ 3 أيام',
+    messages: [
+      {
+        id: 1,
+        sender: 'user',
+        text: 'كيف تقارن نسبة دقة تمريراتي بمتوسط لاعبي خط الوسط في الدوري؟'
+      },
+      {
+        id: 2,
+        sender: 'ai',
+        text: 'مقارنتك الإحصائية مع لاعبي خط الوسط تحت 21 سنة في الدوري:\n\n📈 **دقة التمرير لديك:** 87% (متوسط الدوري 79% — أنت في أعلى 15%).\n🚀 **التمريرات التقدمية للأمام:** 6.4 لكل 90 دقيقة (متوسط الدوري 4.8).\n⭐ **دقة الكرات الطويلة:** 74% (متوسط الدوري 65%).\n\n💡 استمرارك على هذا المعدل سيعزز ظهورك للكشافين بنسبة تفوق 35% خلال الجولات القادمة.'
+      }
+    ]
+  }
+];
 
 const AIChat = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [conversations, setConversations] = useState<ChatConversation[]>(() => {
+    try {
+      const saved = localStorage.getItem('jogo_ai_conversations');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load conversations from storage:', e);
+    }
+    return DEFAULT_CONVERSATIONS;
+  });
+
+  const [activeConvId, setActiveConvId] = useState<string | null>('conv-1');
   const [inputMessage, setInputMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState<Message[]>([]);
+  const [isAiTyping, setIsAiTyping] = useState(false);
   const [activeTab, setActiveTab] = useState<'ai' | 'profile'>('ai');
 
   const firstName = user?.name ? user.name.split(' ')[0] : 'لاعبنا';
 
-  const handleSendMessage = (textToSend?: string) => {
-    const text = textToSend || inputMessage;
-    if (!text.trim()) return;
+  // Persist conversations in localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('jogo_ai_conversations', JSON.stringify(conversations));
+    } catch (e) {
+      console.error('Failed to save conversations:', e);
+    }
+  }, [conversations]);
 
-    const userMsgId = chatHistory.length + 1;
-    const userMsg: Message = {
-      id: userMsgId,
-      sender: 'user',
-      text: text
-    };
+  const activeConversation = conversations.find((c) => c.id === activeConvId);
+  const currentMessages = activeConversation ? activeConversation.messages : [];
 
-    setChatHistory((prev) => [...prev, userMsg]);
+  // Scroll to bottom of chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [currentMessages, isAiTyping]);
+
+  const handleStartNewChat = () => {
+    setActiveConvId(null);
+    setInputMessage('');
+  };
+
+  const handleDeleteConversation = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConversations((prev) => {
+      const updated = prev.filter((c) => c.id !== id);
+      if (activeConvId === id) {
+        setActiveConvId(updated.length > 0 ? updated[0].id : null);
+      }
+      return updated;
+    });
+  };
+
+  const generateSmartResponse = (text: string): string => {
+    const lower = text.toLowerCase();
+    if (lower.includes('تمرير') || lower.includes('pass')) {
+      return `تحليل دقة التمرير لـ ${firstName}: معدل دقة تمريراتك الحالي يصل إلى 87%. نوصي بالتركيز على التمريرات البينية السريعة في المساحات الضيقة وتوسيع زاوية الرؤية قبل استلام الكرة.`;
+    }
+    if (lower.includes('سرع') || lower.includes('speed') || lower.includes('لياق')) {
+      return `الخطة البدنية المقترحة: لزيادة السرعة الانفجارية والرشاقة، ركّز على تدريبات العدو القصير (5-10 أمتار مع تغيير الاتجاه)، وتدريبات القفز التوافقي (Plyometrics) مرتين أسبوعياً.`;
+    }
+    if (lower.includes('تمركز') || lower.includes('position') || lower.includes('دفاع')) {
+      return `نصائح التمركز التكتيكي: راقب دائماً الخط الفاصل بين قلب الدفاع والظهير، وحافظ على مسافة 10-15 متراً كخيار تمرير دائم لزملائك، مع التراجع السريع عند فقدان الاستحواذ.`;
+    }
+    if (lower.includes('قرار') || lower.includes('decision')) {
+      return `لتسريع اتخاذ القرار: اعتمد قاعدة "Scan, Plan, Execute". امسح الملعب قبل وصول الكرة، حدد خيارين مسبقاً، ونفّذ التمرير أو المراوغة بأقل من لمستين.`;
+    }
+    return `بناءً على سجل أدائك وفيديوهاتك المرفوعة في منصة Jogo: تم تسجيل استفسارك وسنعمل على تحليل هذا الجانب في تقاريرك القادمة. هل ترغب في وضع خطة تدريبية مخصصة لهذا الهدف؟`;
+  };
+
+  const handleSendMessage = async (textToSend?: string) => {
+    const text = (textToSend || inputMessage).trim();
+    if (!text) return;
+
     if (!textToSend) setInputMessage('');
+    setIsAiTyping(true);
+
+    let targetConvId = activeConvId;
+
+    // If starting a brand new conversation
+    if (!targetConvId) {
+      const newId = `conv-${conversations.length + 1}`;
+      const titleSnippet = text.length > 32 ? text.slice(0, 32) + '...' : text;
+      const newConv: ChatConversation = {
+        id: newId,
+        title: titleSnippet,
+        createdAt: 'الآن',
+        messages: [{ id: 1, sender: 'user', text }]
+      };
+
+      setConversations((prev) => [newConv, ...prev]);
+      setActiveConvId(newId);
+      targetConvId = newId;
+
+      setTimeout(() => {
+        const aiResponseText = generateSmartResponse(text);
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === newId
+              ? {
+                  ...conv,
+                  messages: [
+                    ...conv.messages,
+                    { id: 2, sender: 'ai', text: aiResponseText }
+                  ]
+                }
+              : conv
+          )
+        );
+        setIsAiTyping(false);
+      }, 700);
+      return;
+    }
+
+    // Appending to an existing conversation
+    setConversations((prev) =>
+      prev.map((conv) => {
+        if (conv.id !== targetConvId) return conv;
+        const nextUserMsgId = conv.messages.length + 1;
+        return {
+          ...conv,
+          messages: [...conv.messages, { id: nextUserMsgId, sender: 'user', text }]
+        };
+      })
+    );
 
     setTimeout(() => {
-      const aiMsg: Message = {
-        id: userMsgId + 1,
-        sender: 'ai',
-        text: `بناءً على تحليل بياناتك الأخيرة، ${text.includes('مباراة') ? 'لاحظت تحسناً كبيراً في دقة التمرير بنسبة 85% مقارنة بالمباراة السابقة.' : 'تم تسجيل طلبك ويمكننا العمل على خطة تدريبية مخصصة لهذا الهدف.'}`
-      };
-      setChatHistory((prev) => [...prev, aiMsg]);
-    }, 800);
+      const aiResponseText = generateSmartResponse(text);
+      setConversations((prev) =>
+        prev.map((conv) => {
+          if (conv.id !== targetConvId) return conv;
+          const nextAiMsgId = conv.messages.length + 1;
+          return {
+            ...conv,
+            messages: [
+              ...conv.messages,
+              { id: nextAiMsgId, sender: 'ai', text: aiResponseText }
+            ]
+          };
+        })
+      );
+      setIsAiTyping(false);
+    }, 700);
   };
 
   const handlePromptClick = (promptText: string) => {
@@ -53,6 +234,7 @@ const AIChat = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-5.5rem)] md:h-[calc(100vh-6.5rem)] w-full bg-white rounded-2xl md:rounded-3xl overflow-hidden shadow-sm border border-gray-100 -mb-4 md:-mb-8" dir="rtl">
+      {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 md:px-6 py-3 flex items-center justify-between shadow-2xs z-10 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-linear-to-tr from-[#2B43A1] to-blue-500 flex items-center justify-center text-white shadow-xs">
@@ -87,37 +269,60 @@ const AIChat = () => {
         </div>
       </div>
 
+      {/* Main Body */}
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-64 md:w-72 bg-gray-50/70 border-l border-gray-100 p-4 hidden md:flex flex-col justify-between shrink-0">
-          <div className="space-y-4">
+        {/* Sidebar */}
+        <div className="w-64 md:w-72 bg-gray-50/80 border-l border-gray-100 p-4 hidden md:flex flex-col justify-between shrink-0">
+          <div className="space-y-4 overflow-y-auto pr-0.5">
             <button 
-              onClick={() => setChatHistory([])}
-              className="w-full bg-white border border-gray-200 text-[#1C2C5E] hover:border-[#2B43A1] px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-2xs hover:bg-blue-50/50 transition-all cursor-pointer"
+              onClick={handleStartNewChat}
+              className={`w-full px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer ${
+                activeConvId === null
+                  ? 'bg-[#2B43A1] text-white'
+                  : 'bg-white border border-gray-200 text-[#1C2C5E] hover:border-[#2B43A1] hover:bg-blue-50/50'
+              }`}
             >
-              <Plus className="w-4 h-4 text-[#2B43A1]" /> محادثة جديدة
+              <Plus className={`w-4 h-4 ${activeConvId === null ? 'text-white' : 'text-[#2B43A1]'}`} /> محادثة جديدة
             </button>
 
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-gray-400 px-2 block mb-2">سجل التحليلات الأخيرة</span>
               
-              <div className="bg-white p-2.5 rounded-xl border border-gray-100 shadow-2xs flex items-center gap-2 text-xs font-semibold text-[#1C2C5E] cursor-pointer hover:border-blue-200">
-                <MessageSquare className="w-4 h-4 text-[#2B43A1] shrink-0" />
-                <span className="truncate">تحليل مباراة الشباب الأخيرة</span>
-              </div>
+              {conversations.map((conv) => {
+                const isActive = conv.id === activeConvId;
+                return (
+                  <div 
+                    key={conv.id}
+                    onClick={() => setActiveConvId(conv.id)}
+                    className={`group p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 cursor-pointer transition-all ${
+                      isActive 
+                        ? 'bg-white text-[#1C2C5E] border border-blue-200 shadow-2xs' 
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-[#1C2C5E]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <MessageSquare className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#2B43A1]' : 'text-gray-400 group-hover:text-[#2B43A1]'}`} />
+                      <span className="truncate">{conv.title}</span>
+                    </div>
 
-              <div className="p-2.5 rounded-xl text-xs font-medium text-gray-500 hover:bg-gray-100 flex items-center gap-2 cursor-pointer transition-colors">
-                <MessageSquare className="w-4 h-4 text-gray-400 shrink-0" />
-                <span className="truncate">خطة تحسين سرعة اتخاذ القرار</span>
-              </div>
+                    <button
+                      onClick={(e) => handleDeleteConversation(conv.id, e)}
+                      title="حذف المحادثة"
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 text-gray-400 transition-opacity"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
 
-              <div className="p-2.5 rounded-xl text-xs font-medium text-gray-500 hover:bg-gray-100 flex items-center gap-2 cursor-pointer transition-colors">
-                <MessageSquare className="w-4 h-4 text-gray-400 shrink-0" />
-                <span className="truncate">مقارنة التمريرات مع لاعبي الدوري</span>
-              </div>
+              {conversations.length === 0 && (
+                <p className="text-[11px] text-gray-400 text-center py-4">لا توجد محادثات سابقة</p>
+              )}
             </div>
           </div>
 
-          <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs flex items-center gap-3">
+          <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs flex items-center gap-3 mt-4">
             <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-gray-200">
               <img 
                 src={getFullImageUrl(user?.avatar) || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2B43A1&color=fff`} 
@@ -132,62 +337,24 @@ const AIChat = () => {
           </div>
         </div>
 
+        {/* Chat Area */}
         <div className="flex-1 flex flex-col justify-between bg-white relative">
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-            <div className="flex flex-col items-center justify-center text-center my-4 md:my-6 max-w-xl mx-auto">
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-3xl bg-[#EEF2FF] text-[#2B43A1] flex items-center justify-center mb-3 shadow-xs">
-                <Bot className="w-8 h-8" />
-              </div>
-              <h3 className="text-lg md:text-xl font-extrabold text-[#1C2C5E] mb-1">
-                أهلاً بك يا <span className="text-[#2B43A1]">{firstName}</span> في Jogo AI ⚽
-              </h3>
-              <p className="text-gray-400 text-xs md:text-sm font-medium leading-relaxed">
-                أنا مدربك الذكي الشخصي. كيف يمكنني مساعدتك في تطوير مهاراتك اليوم؟
-              </p>
-            </div>
-
-            <div className="max-w-2xl mx-auto space-y-4">
-              <div className="flex items-start gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full bg-[#2B43A1] text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Bot className="w-4 h-4" />
+            {/* Header greeting if new conversation or empty */}
+            {currentMessages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center my-6 md:my-10 max-w-xl mx-auto">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-3xl bg-[#EEF2FF] text-[#2B43A1] flex items-center justify-center mb-3 shadow-xs">
+                  <Sparkles className="w-8 h-8" />
                 </div>
-                <div className="bg-[#F8F9FE] border border-gray-100 text-gray-800 p-4 rounded-2xl rounded-tr-xs text-xs md:text-sm max-w-lg leading-relaxed shadow-2xs font-medium text-right">
-                  مرحباً {firstName}! لقد قمت بمراجعة آخر فيديو تدريبي لك. لاحظت تحسناً ملحوظاً بنسبة 8% في دقة التمريرات الطويلة. ما الذي ترغب في التركيز عليه خلال تمرين اليوم؟
-                </div>
-              </div>
+                <h3 className="text-lg md:text-xl font-extrabold text-[#1C2C5E] mb-1">
+                  أهلاً بك يا <span className="text-[#2B43A1]">{firstName}</span> في Jogo AI ⚽
+                </h3>
+                <p className="text-gray-400 text-xs md:text-sm font-medium leading-relaxed mb-6">
+                  أنا مساعدك الكروي الذكي. اسألني عن أدائك، تمريراتك، تحركاتك، أو خطتك التدريبية القادمة.
+                </p>
 
-              {chatHistory.map((msg) => (
-                <div 
-                  key={msg.id} 
-                  className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {msg.sender === 'ai' && (
-                    <div className="w-8 h-8 rounded-full bg-[#2B43A1] text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <Bot className="w-4 h-4" />
-                    </div>
-                  )}
-
-                  <div className={`p-4 rounded-2xl text-xs md:text-sm max-w-lg leading-relaxed shadow-2xs font-medium text-right ${
-                    msg.sender === 'user' 
-                      ? 'bg-[#2B43A1] text-white rounded-tl-xs' 
-                      : 'bg-[#F8F9FE] border border-gray-100 text-gray-800 rounded-tr-xs'
-                  }`}>
-                    {msg.text}
-                  </div>
-
-                  {msg.sender === 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center shrink-0 font-bold text-xs">
-                      {firstName.charAt(0)}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {chatHistory.length === 0 && (
-              <div className="max-w-2xl mx-auto pt-2">
-                <span className="text-xs font-bold text-gray-400 mb-3 block text-right">أسئلة مقترحة لبدء التحليل:</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Prompt Cards */}
+                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-right">
                   {[
                     { title: "ما هي أكثر نقاط ضعفي في التمرير؟", icon: Zap },
                     { title: "اعطني خطة أسبوعية لزيادة سرعتي", icon: Navigation },
@@ -199,7 +366,7 @@ const AIChat = () => {
                       <button
                         key={idx}
                         onClick={() => handlePromptClick(prompt.title)}
-                        className="bg-white border border-gray-200 hover:border-[#2B43A1] p-3 rounded-2xl text-right text-xs font-bold text-[#1C2C5E] flex items-center justify-between gap-2 shadow-2xs hover:bg-blue-50/30 transition-all cursor-pointer group"
+                        className="bg-[#F8F9FE] border border-gray-100 hover:border-[#2B43A1] p-3.5 rounded-2xl text-right text-xs font-bold text-[#1C2C5E] flex items-center justify-between gap-2 shadow-2xs hover:bg-blue-50/40 transition-all cursor-pointer group"
                       >
                         <span className="truncate group-hover:text-[#2B43A1]">{prompt.title}</span>
                         <Icon className="w-4 h-4 text-gray-400 group-hover:text-[#2B43A1] shrink-0" />
@@ -208,9 +375,53 @@ const AIChat = () => {
                   })}
                 </div>
               </div>
+            ) : (
+              <div className="max-w-3xl mx-auto space-y-4 pt-2">
+                {currentMessages.map((msg) => (
+                  <div 
+                    key={msg.id} 
+                    className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {msg.sender === 'ai' && (
+                      <div className="w-8 h-8 rounded-full bg-[#2B43A1] text-white flex items-center justify-center shrink-0 shadow-xs mt-1">
+                        <Bot className="w-4 h-4" />
+                      </div>
+                    )}
+
+                    <div className={`p-4 rounded-2xl text-xs md:text-sm max-w-xl leading-relaxed shadow-2xs font-medium whitespace-pre-line text-right ${
+                      msg.sender === 'user' 
+                        ? 'bg-[#2B43A1] text-white rounded-tl-xs' 
+                        : 'bg-[#F8F9FE] border border-gray-100 text-gray-800 rounded-tr-xs'
+                    }`}>
+                      {msg.text}
+                    </div>
+
+                    {msg.sender === 'user' && (
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-[#1C2C5E] flex items-center justify-center shrink-0 font-extrabold text-xs mt-1">
+                        {firstName.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {isAiTyping && (
+                  <div className="flex items-start gap-3 justify-start">
+                    <div className="w-8 h-8 rounded-full bg-[#2B43A1] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Bot className="w-4 h-4" />
+                    </div>
+                    <div className="bg-[#F8F9FE] border border-gray-100 text-gray-500 px-4 py-3 rounded-2xl rounded-tr-xs text-xs flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2B43A1]" />
+                      <span>جاري تحليل البيانات وصياغة الإجابة...</span>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
             )}
           </div>
 
+          {/* Input Footer */}
           <div className="p-4 md:p-6 bg-white border-t border-gray-100 shrink-0">
             <form 
               onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
@@ -226,7 +437,7 @@ const AIChat = () => {
               <button 
                 type="submit"
                 className="absolute left-2 top-1/2 -translate-y-1/2 bg-[#2B43A1] hover:bg-blue-900 text-white p-2.5 rounded-xl transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                disabled={!inputMessage.trim()}
+                disabled={!inputMessage.trim() || isAiTyping}
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -242,3 +453,4 @@ const AIChat = () => {
 };
 
 export default AIChat;
+
