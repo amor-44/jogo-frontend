@@ -29,6 +29,15 @@ except ImportError:
 
 app = FastAPI(title="Football Performance Analysis API")
 
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 ALLOWED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv"}
 
 # ---------------------------------------------------------------------------

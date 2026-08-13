@@ -12,18 +12,11 @@ export const TrainingPlan = ({ report }: TrainingPlanProps) => {
 
   if (recommendations.length === 0 && weaknesses.length === 0) return null;
 
-  const scheduleItems: TrainingPlanItem[] = recommendations.slice(0, 4).map((rec, index) => {
-    const days = [
-      'الإثنين / الأربعاء - 45 دقيقة',
-      'الثلاثاء / الخميس - 30 دقيقة',
-      'الجمعة - 30 دقيقة',
-      'السبت - 60 دقيقة',
-    ];
-    const tags = ['+4 تطوير مهارة', '+3 كفاءة', '+2 لياقة', '+5 أداء عام'];
+  const scheduleItems = recommendations.map((rec, index) => {
     return {
       title: rec,
-      time: days[index % days.length],
-      tag: tags[index % tags.length],
+      time: 'تدريب موصى به بناءً على التحليل',
+      tag: 'تطوير أداء',
     };
   });
 
