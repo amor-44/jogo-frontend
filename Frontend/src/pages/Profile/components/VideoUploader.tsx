@@ -59,7 +59,7 @@ export const VideoUploader = ({
                   <AlertTriangle className="w-4 h-4 text-red-500" />
                   <span>تعذر إتمام التحليل لهذا الفيديو</span>
                 </div>
-                {currentVideoId && onRetry && (
+                {currentVideoId && !currentVideoId.startsWith('local-vid') && onRetry && (
                   <button
                     onClick={() => onRetry(currentVideoId)}
                     className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"

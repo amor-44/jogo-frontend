@@ -3,6 +3,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { playerService } from '../../services/playerService';
 import { videoService } from '../../services/videoService';
 import { reportService } from '../../services/reportService';
+import { aiService } from '../../services/aiService';
+import { getArabicErrorMessage } from '../../services/api';
 import { getFullImageUrl } from '../../utils/url';
 import type { VideoHistoryItem, PlayerProfileDto, VideoDto, AnalysisReportDto } from '../../types';
 import { VideoStatus } from '../../types';
@@ -17,40 +19,6 @@ import TrainingPlan from './components/TrainingPlan';
 import EditProfileModal from './components/EditProfileModal';
 import ClubProfile from './ClubProfile';
 
-const getFallbackAnalysisReport = (videoId: string): AnalysisReportDto => ({
-  id: `static-report-${videoId}`,
-  videoId: videoId,
-  overallScore: 84,
-  summary: 'أظهر اللاعب خلال مقطع الفيديو إمكانيات تكتيكية عالية في التمركز ودقة التمريرات الأرضية بنسبة نجاح تفوق 88%، مع تميز في الرؤية الميدانية والتحكم الإيجابي بالكرة.',
-  strengths: [
-    'دقة التمرير وصناعة اللعب في المساحات الضيقة',
-    'التحكم بالكرة والمراوغة تحت الضغط الدفاعي',
-    'التمركز التكتيكي والرؤية الميدانية الممتازة'
-  ],
-  weaknesses: [
-    'سرعة اتخاذ القرار في الثلث الهجومي الأخير',
-    'كفاءة الحركة والمساندة بدون كرة'
-  ],
-  recommendations: [
-    'التركيز على المسح البصري للملعب قبل استلام الكرة بـ 0.5 ثانية لزيادة سرعة التمرير.',
-    'أداء تدريبات الجري الارتدادي القصير (5-10 أمتار) لتحسين الرشاقة وسرعة رد الفعل.',
-    'الاستمرار في تدريبات التمرير بلمسة ولمستين لتقليل زمن التصرف.'
-  ],
-  aiModelVersion: 'Jogo-AI-Vision-v1',
-  generatedAt: new Date().toISOString(),
-  completedAt: new Date().toISOString(),
-  metrics: {
-    positionScore: 85,
-    passingAccuracy: 88,
-    ballControl: 82,
-    positioningScore: 85,
-    movementEfficiency: 79,
-    defensiveActions: 74,
-    attackingImpact: 80,
-    decisionMaking: 78
-  }
-});
-
 const PlayerProfileView = () => {
   const { user, playerProfile: contextProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +32,7 @@ const PlayerProfileView = () => {
   const [videoName, setVideoName] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleProfileUpdated = (updatedProfile: PlayerProfileDto) => {
     setProfile(updatedProfile);
@@ -72,6 +41,14 @@ const PlayerProfileView = () => {
   const handleAvatarUploaded = (newAvatarUrl: string) => {
     setProfile((prev) => prev ? { ...prev, profilePictureUrl: newAvatarUrl } : prev);
   };
+
+  // Clear error after 8 seconds
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => setErrorMessage(null), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
 
   useEffect(() => {
     let isMounted = true;
@@ -89,30 +66,23 @@ const PlayerProfileView = () => {
             setProfile(profileRes.value);
           }
           if (videosRes.status === 'fulfilled' && videosRes.value) {
-            const rawList = videosRes.value.items || [];
-            const videoList = rawList.map(v => 
-              v.status === 'Failed' || v.status === 'Pending' ? { ...v, status: VideoStatus.Analyzed } : v
-            );
+            const videoList = videosRes.value.items || [];
             setVideos(videoList);
             if (videoList.length > 0) {
               const firstVid = videoList[0];
               setSelectedVideoId((prev) => prev || firstVid.id);
               setUploadedVideoUrl((prev) => prev || getFullImageUrl(firstVid.storageUrl));
               setVideoName((prev) => prev || firstVid.originalFileName);
-
-              const backendReports = (reportsRes.status === 'fulfilled' && reportsRes.value?.items) || [];
-              if (backendReports.length === 0) {
-                setReports([getFallbackAnalysisReport(firstVid.id)]);
-              } else {
-                setReports(backendReports);
-              }
             }
+            const backendReports = (reportsRes.status === 'fulfilled' && reportsRes.value?.items) || [];
+            setReports(backendReports);
           } else if (reportsRes.status === 'fulfilled' && reportsRes.value) {
             setReports(reportsRes.value.items || []);
           }
         }
       } catch (err) {
-        console.error('Failed to load profile/videos/reports:', err);
+        console.error('فشل تحميل البيانات:', err);
+        setErrorMessage(getArabicErrorMessage(err));
       }
     }
 
@@ -129,8 +99,8 @@ const PlayerProfileView = () => {
   const activeReport = selectedReportId
     ? reports.find((r) => r.id === selectedReportId)
     : selectedVideoId
-    ? reports.find((r) => r.videoId === selectedVideoId) || (reports.length > 0 ? reports[0] : null)
-    : reports.length > 0 ? reports[0] : (activeVideo ? getFallbackAnalysisReport(activeVideo.id) : null);
+    ? reports.find((r) => r.videoId === selectedVideoId) || null
+    : reports.length > 0 ? reports[0] : null;
 
   const firstName = profile?.fullName?.trim()
     ? profile.fullName.trim().split(' ')[0]
@@ -138,49 +108,174 @@ const PlayerProfileView = () => {
     ? user.name.trim().split(' ')[0]
     : 'اللاعب';
 
+  /**
+   * Poll the AI service for analysis completion.
+   * Uses the AI API's GET /analysis/{analysis_id} endpoint.
+   */
+  const pollAIAnalysis = async (analysisId: string, videoId: string, maxAttempts = 90, intervalMs = 5000) => {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      try {
+        const result = await aiService.getAnalysis(analysisId, videoId);
+
+        if (result.status === 'completed' && result.report) {
+          const report = { ...result.report, videoId };
+          setReports((prev) => {
+            const exists = prev.some(r => r.videoId === videoId);
+            return exists
+              ? prev.map(r => (r.videoId === videoId ? report : r))
+              : [report, ...prev];
+          });
+          setVideos((prev) => prev.map(v => v.id === videoId ? { ...v, status: VideoStatus.Analyzed } : v));
+          return;
+        }
+
+        if (result.status === 'failed' || result.status === 'error') {
+          setVideos((prev) => prev.map(v => v.id === videoId ? { ...v, status: VideoStatus.Failed } : v));
+          setErrorMessage('فشل التحليل بالذكاء الاصطناعي. يرجى المحاولة مرة أخرى.');
+          return;
+        }
+        // Still processing — continue polling
+      } catch (err) {
+        console.error(`فشل متابعة حالة التحليل للفيديو ${videoId}:`, err);
+        setErrorMessage(getArabicErrorMessage(err));
+        return;
+      }
+    }
+    setErrorMessage('انتهت مهلة انتظار نتيجة التحليل. يرجى التحقق لاحقاً.');
+  };
+
+  /**
+   * Fallback: poll via backend API if AI service is used through backend.
+   */
+  const pollBackendAnalysis = async (id: string, maxAttempts = 90, intervalMs = 5000) => {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      try {
+        const video = await videoService.getVideoById(id);
+        setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: video.status } : v));
+
+        if (video.status === VideoStatus.Analyzed) {
+          const reportsRes = await reportService.getReports({ page: 1, pageSize: 50 });
+          const matchingReport = (reportsRes.items || []).find(r => r.videoId === id);
+          if (matchingReport) {
+            setReports((prev) => {
+              const exists = prev.some(r => r.videoId === id);
+              return exists
+                ? prev.map(r => (r.videoId === id ? matchingReport : r))
+                : [matchingReport, ...prev];
+            });
+          }
+          return;
+        }
+        if (video.status === VideoStatus.Failed) {
+          setErrorMessage('فشل تحليل الفيديو. يرجى المحاولة مرة أخرى.');
+          return;
+        }
+      } catch (err) {
+        console.error(`فشل متابعة حالة التحليل للفيديو ${id}:`, err);
+        setErrorMessage(getArabicErrorMessage(err));
+        return;
+      }
+    }
+    setErrorMessage('انتهت مهلة انتظار نتيجة التحليل. يرجى التحقق لاحقاً.');
+  };
+
   const handleAnalyzeVideo = async (id: string) => {
+    setErrorMessage(null);
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Processing } : v));
+
+    const video = videos.find(v => v.id === id);
+    const videoUrl = video ? getFullImageUrl(video.storageUrl) : null;
+
+    // Try AI service first (analyze-by-url), then fall back to backend
+    if (videoUrl) {
+      try {
+        const aiResult = await aiService.analyzeByUrl(videoUrl);
+
+        // If result came back inline
+        if (aiResult.report) {
+          const report = { ...aiResult.report, videoId: id };
+          setReports((prev) => {
+            const exists = prev.some(r => r.videoId === id);
+            return exists
+              ? prev.map(r => (r.videoId === id ? report : r))
+              : [report, ...prev];
+          });
+          setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
+          return;
+        }
+
+        // Need to poll
+        if (aiResult.analysisId) {
+          await pollAIAnalysis(aiResult.analysisId, id);
+          return;
+        }
+      } catch (aiErr) {
+        console.warn('فشل التحليل عبر AI API، جاري المحاولة عبر الخادم الرئيسي...', aiErr);
+        // Fall through to backend
+      }
+    }
+
+    // Fallback: use backend analysis endpoint
     try {
       await videoService.analyzeVideo(id);
     } catch (err) {
-      console.warn('Backend analyze error, applying static fallback report:', err);
-    } finally {
-      setTimeout(() => {
-        setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
-        setReports((prev) => {
-          const exists = prev.some(r => r.videoId === id);
-          if (!exists) {
-            return [getFallbackAnalysisReport(id), ...prev];
-          }
-          return prev;
-        });
-      }, 1000);
+      console.error('فشل بدء التحليل:', err);
+      setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Failed } : v));
+      setErrorMessage(getArabicErrorMessage(err));
+      return;
     }
+    await pollBackendAnalysis(id);
   };
 
   const handleRetryAnalysis = async (id: string) => {
+    setErrorMessage(null);
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Processing } : v));
+
+    const video = videos.find(v => v.id === id);
+    const videoUrl = video ? getFullImageUrl(video.storageUrl) : null;
+
+    // Try AI service first
+    if (videoUrl) {
+      try {
+        const aiResult = await aiService.analyzeByUrl(videoUrl);
+        if (aiResult.report) {
+          const report = { ...aiResult.report, videoId: id };
+          setReports((prev) => {
+            const exists = prev.some(r => r.videoId === id);
+            return exists
+              ? prev.map(r => (r.videoId === id ? report : r))
+              : [report, ...prev];
+          });
+          setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
+          return;
+        }
+        if (aiResult.analysisId) {
+          await pollAIAnalysis(aiResult.analysisId, id);
+          return;
+        }
+      } catch {
+        // Fall through to backend retry
+      }
+    }
+
+    // Fallback: backend retry
     try {
       await videoService.retryAnalysis(id);
     } catch (err) {
-      console.warn('Backend retry error, applying static fallback report:', err);
-    } finally {
-      setTimeout(() => {
-        setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
-        setReports((prev) => {
-          const exists = prev.some(r => r.videoId === id);
-          if (!exists) {
-            return [getFallbackAnalysisReport(id), ...prev];
-          }
-          return prev;
-        });
-      }, 1000);
+      console.error('فشل إعادة التحليل:', err);
+      setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Failed } : v));
+      setErrorMessage(getArabicErrorMessage(err));
+      return;
     }
+    await pollBackendAnalysis(id);
   };
 
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setErrorMessage(null);
       const url = URL.createObjectURL(file);
       setUploadedVideoUrl(url);
       setVideoName(file.name);
@@ -191,26 +286,28 @@ const PlayerProfileView = () => {
         formData.append('file', file);
         formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
         const uploadResult = await videoService.uploadVideo(formData);
-        const vidId = uploadResult?.id || `vid-${videos.length + 1}`;
+        const vidId = uploadResult?.id;
+        if (!vidId) {
+          throw new Error('تم الرفع بنجاح لكن الخادم لم يُرجع معرّف الفيديو.');
+        }
         const newVid: VideoDto = {
           id: vidId,
           originalFileName: file.name,
           storageUrl: url,
           duration: '0:30',
           uploadedAt: new Date().toISOString(),
-          status: VideoStatus.Analyzed,
+          status: VideoStatus.Pending,
           canDelete: true,
         };
 
         setVideos((prev) => [newVid, ...prev]);
         setSelectedVideoId(vidId);
-        setReports((prev) => [getFallbackAnalysisReport(vidId), ...prev]);
-        
-        // Trigger background analyze
+
+        // Start analysis
         await handleAnalyzeVideo(vidId);
       } catch (err) {
-        console.error('Failed to upload video to backend:', err);
-        // Even if remote upload fails, show the video locally with full analysis!
+        console.error('فشل رفع الفيديو:', err);
+        setErrorMessage(getArabicErrorMessage(err));
         const fallbackVidId = `local-vid-${videos.length + 1}`;
         const localVid: VideoDto = {
           id: fallbackVidId,
@@ -218,12 +315,11 @@ const PlayerProfileView = () => {
           storageUrl: url,
           duration: '0:30',
           uploadedAt: new Date().toISOString(),
-          status: VideoStatus.Analyzed,
+          status: VideoStatus.Failed,
           canDelete: true,
         };
         setVideos((prev) => [localVid, ...prev]);
         setSelectedVideoId(fallbackVidId);
-        setReports((prev) => [getFallbackAnalysisReport(fallbackVidId), ...prev]);
       } finally {
         setIsUploading(false);
       }
@@ -256,8 +352,9 @@ const PlayerProfileView = () => {
     try {
       await videoService.deleteVideo(id);
     } catch (err) {
-      console.error('Failed to delete video:', err);
+      console.error('فشل حذف الفيديو:', err);
       setVideos(previousVideos);
+      setErrorMessage(getArabicErrorMessage(err));
     }
   };
 
@@ -317,6 +414,21 @@ const PlayerProfileView = () => {
         accept="video/*" 
         className="hidden" 
       />
+
+      {/* Error Toast */}
+      {errorMessage && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-lg w-full px-4 animate-in slide-in-from-top-2">
+          <div className="bg-red-50 border border-red-200 text-red-800 px-5 py-3.5 rounded-2xl shadow-lg flex items-center justify-between gap-3 text-xs font-bold">
+            <span>{errorMessage}</span>
+            <button 
+              onClick={() => setErrorMessage(null)} 
+              className="text-red-400 hover:text-red-600 shrink-0 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       <ProfileHeader />
 

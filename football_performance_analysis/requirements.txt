@@ -1,7 +1,13 @@
 # Core pipeline
-opencv-python>=4.8,<5.0.0
+# headless: no GUI/display deps (libGL etc.) needed for a server — the
+# regular opencv-python package needs system libraries this container
+# doesn't have and fails to import at runtime.
+opencv-python-headless>=4.8,<5.0.0
 numpy>=1.24
 scipy>=1.10
+
+# YOLOv8 for high-quality player + ball detection
+ultralytics>=8.2
 
 # API layer
 fastapi>=0.110
@@ -10,8 +16,3 @@ python-multipart>=0.0.9
 
 # HTTP client — used by /analyze-by-url to download videos from the backend
 httpx>=0.27
-
-# Optional future upgrade path:
-# ultralytics>=8.2
-# torch>=2.2
-# supervision>=0.20

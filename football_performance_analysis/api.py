@@ -7,7 +7,7 @@ import threading
 from typing import Dict, Any
 
 try:
-    from fastapi import FastAPI, UploadFile, File, HTTPException
+    from fastapi import BackgroundTasks, FastAPI, UploadFile, File, HTTPException
     from fastapi.responses import JSONResponse
     from fastapi.concurrency import run_in_threadpool
     from pydantic import BaseModel
@@ -28,6 +28,15 @@ except ImportError:
         raise RuntimeError("Computer vision dependencies (opencv/numpy/scipy) are not fully installed yet!")
 
 app = FastAPI(title="Football Performance Analysis API")
+
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 ALLOWED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv"}
 
@@ -73,14 +82,47 @@ async def analyze_football_performance(video: UploadFile = File(...)):
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
+def _run_analysis_in_background(analysis_id: str, tmp_path: str, tmp_dir: str) -> None:
+    """Runs the actual CV pipeline outside the request/response cycle.
+
+    /analyze-by-url used to run this inline and only respond once it was
+    done — fine on localhost, but any host fronted by a gateway/CDN with its
+    own request timeout (e.g. Cloudflare in front of FastAPI Cloud, ~100s)
+    will kill the connection before a real video finishes processing, and
+    the caller never gets a response at all. Now the request returns
+    immediately with status "processing"; the real result lands in
+    _result_store whenever this actually finishes, and the caller polls
+    GET /analysis/{analysis_id} for it (same contract the endpoint already
+    exposed, just actually honored now).
+    """
+    try:
+        report = analyze_video(tmp_path)
+        result = report.to_dict()
+        with _store_lock:
+            _result_store[analysis_id] = result
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        with _store_lock:
+            _result_store[analysis_id] = {
+                "analysis_id": analysis_id,
+                "status": "failed",
+                "error": str(exc),
+            }
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
 # ---------------------------------------------------------------------------
 # NEW: POST /analyze-by-url
 # Called by C# AiAnalysisService.TriggerAnalysisAsync().
 # Accepts { "video_url": "http://..." }, downloads the video from the backend
-# static file server, runs the pipeline, stores the result, returns analysis_id.
+# static file server, kicks off analysis in the background, and returns
+# analysis_id immediately with status "processing" — the caller polls
+# GET /analysis/{analysis_id} for the real result.
 # ---------------------------------------------------------------------------
 @app.post("/analyze-by-url")
-async def analyze_by_url(request: AnalyzeByUrlRequest):
+async def analyze_by_url(request: AnalyzeByUrlRequest, background_tasks: BackgroundTasks):
     url = request.video_url
     ext = os.path.splitext(url.split("?")[0])[1].lower() or ".mp4"
     if ext not in ALLOWED_EXTENSIONS:
@@ -91,7 +133,8 @@ async def analyze_by_url(request: AnalyzeByUrlRequest):
     tmp_path = os.path.join(tmp_dir, f"{analysis_id}{ext}")
 
     try:
-        # Download video from the backend's static file server
+        # Download video from the backend's static file server (this part is
+        # fast — fine to keep inline — the slow part is analysis itself).
         async with httpx.AsyncClient(timeout=120.0, follow_redirects=True) as client:
             response = await client.get(url)
             if response.status_code != 200:
@@ -101,34 +144,22 @@ async def analyze_by_url(request: AnalyzeByUrlRequest):
                 )
             with open(tmp_path, "wb") as f:
                 f.write(response.content)
-
-        # Same reasoning as /analyze/football-performance: keep the event loop
-        # free (health checks, other requests) while the pipeline runs.
-        report = await run_in_threadpool(analyze_video, tmp_path)
-        result = report.to_dict()
-
-        with _store_lock:
-            _result_store[analysis_id] = result
-
-        return JSONResponse(
-            content={"analysis_id": analysis_id, "status": "completed"},
-            status_code=200,
-        )
-
     except HTTPException:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
         raise
     except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        with _store_lock:
-            _result_store[analysis_id] = {
-                "analysis_id": analysis_id,
-                "status": "failed",
-                "error": str(exc),
-            }
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}")
-    finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+        raise HTTPException(status_code=502, detail=f"Failed to download video: {exc}") from exc
+
+    with _store_lock:
+        _result_store[analysis_id] = {"analysis_id": analysis_id, "status": "processing"}
+
+    background_tasks.add_task(_run_analysis_in_background, analysis_id, tmp_path, tmp_dir)
+
+    return JSONResponse(
+        content={"analysis_id": analysis_id, "status": "processing"},
+        status_code=200,
+    )
 
 
 # ---------------------------------------------------------------------------

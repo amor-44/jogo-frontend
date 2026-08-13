@@ -8,7 +8,9 @@ export const videoService = {
 
   uploadVideo: (formData: FormData) => {
     return apiClient.post<{ id: string }>('/Videos', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     }).then((r) => r.data);
   },
 

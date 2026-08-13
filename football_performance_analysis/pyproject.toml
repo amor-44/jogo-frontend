@@ -1,0 +1,22 @@
+[project]
+name = "football-performance-analysis"
+version = "0.1.0"
+description = "Jogo AI service: football performance analysis pipeline (detection, tracking, metrics, scoring, report generation)."
+requires-python = ">=3.11"
+dependencies = [
+    "opencv-python-headless>=4.8,<5.0.0",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "fastapi[standard]>=0.110",
+    "uvicorn[standard]>=0.29",
+    "python-multipart>=0.0.9",
+    "httpx>=0.27",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["api"]
+packages = ["core"]

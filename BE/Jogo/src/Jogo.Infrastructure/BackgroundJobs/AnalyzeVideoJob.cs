@@ -1,6 +1,8 @@
 using Jogo.Application.Common.Interfaces;
+using Jogo.Application.Features.Analysis.DTOs;
 using Jogo.Domain.Entities;
 using Jogo.Domain.ValueObjects;
+using Jogo.Infrastructure.Services.Ai.AiAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
@@ -64,17 +66,39 @@ public class AnalyzeVideoJob
                 cancellationToken
             );
 
-            _logger.LogInformation("Step 2: AI analysis triggered. AnalysisId={AnalysisId}. Retrieving report...", analysisId);
+            _logger.LogInformation("Step 2: AI analysis triggered. AnalysisId={AnalysisId}. Polling for report...", analysisId);
 
-            var reportDto = await _aiAnalysisService.GetAnalysisStatusAsync(
-                analysisId,
-                cancellationToken
-            );
+            // The AI service returns immediately and processes in the
+            // background (a real CV pipeline on a real video takes far
+            // longer than any single HTTP request should stay open for,
+            // especially behind a gateway with its own timeout). Poll
+            // until it's actually done instead of checking once — this
+            // job runs as a Hangfire background job, not inside a web
+            // request, so there's no reverse-proxy timeout to worry about
+            // here.
+            AiAnalysisReportDto? reportDto = null;
+            const int maxPollAttempts = 120; // 120 * 10s = 20 minutes
+            var pollInterval = TimeSpan.FromSeconds(10);
+            for (var attempt = 1; attempt <= maxPollAttempts; attempt++)
+            {
+                try
+                {
+                    reportDto = await _aiAnalysisService.GetAnalysisStatusAsync(analysisId, cancellationToken);
+                    break; // definitive result: completed (non-null) or genuinely failed (null)
+                }
+                catch (AnalysisStillProcessingException)
+                {
+                    _logger.LogInformation(
+                        "AnalysisId={AnalysisId} still processing (poll attempt {Attempt}/{Max}); waiting {Delay}s...",
+                        analysisId, attempt, maxPollAttempts, pollInterval.TotalSeconds);
+                    await Task.Delay(pollInterval, cancellationToken);
+                }
+            }
 
             if (reportDto == null)
             {
                 throw new Exception(
-                    $"Failed to retrieve analysis report for AnalysisId: {analysisId}"
+                    $"Failed to retrieve analysis report for AnalysisId: {analysisId} (either the analysis failed, or it didn't finish within {maxPollAttempts * pollInterval.TotalSeconds}s)"
                 );
             }
 
