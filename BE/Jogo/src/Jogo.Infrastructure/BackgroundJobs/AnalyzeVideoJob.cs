@@ -2,7 +2,7 @@ using Jogo.Application.Common.Interfaces;
 using Jogo.Application.Features.Analysis.DTOs;
 using Jogo.Domain.Entities;
 using Jogo.Domain.ValueObjects;
-using Jogo.Infrastructure.Services.Ai;
+using Jogo.Infrastructure.Services.Ai.AiAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
