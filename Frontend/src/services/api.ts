@@ -1,5 +1,68 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import type { AuthResponseDto, RefreshCommand } from '../types';
+
+// ─── Arabic Error Messages ────────────────────────────────────────────────────
+
+const HTTP_STATUS_ARABIC: Record<number, string> = {
+  400: 'البيانات المرسلة غير صحيحة. يرجى التحقق والمحاولة مرة أخرى.',
+  401: 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.',
+  403: 'ليس لديك صلاحية للوصول إلى هذا المحتوى.',
+  404: 'المورد المطلوب غير موجود.',
+  408: 'انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى.',
+  409: 'يوجد تعارض في البيانات. ربما هذا العنصر موجود بالفعل.',
+  413: 'حجم الملف كبير جداً. يرجى تقليل الحجم والمحاولة مرة أخرى.',
+  422: 'البيانات المدخلة غير صالحة. يرجى مراجعة الحقول والمحاولة مرة أخرى.',
+  429: 'تم إرسال طلبات كثيرة. يرجى الانتظار قليلاً والمحاولة مرة أخرى.',
+  500: 'حدث خطأ في الخادم. يرجى المحاولة لاحقاً.',
+  502: 'الخادم غير متاح حالياً. يرجى المحاولة لاحقاً.',
+  503: 'الخدمة غير متاحة حالياً. يرجى المحاولة لاحقاً.',
+};
+
+/**
+ * Extract a user-friendly Arabic error message from an Axios error.
+ * Falls back to a generic message if nothing specific is available.
+ */
+export function getArabicErrorMessage(error: unknown): string {
+  if (!error) return 'حدث خطأ غير متوقع.';
+
+  if (axios.isAxiosError(error)) {
+    const axErr = error as AxiosError<{ detail?: string; title?: string; message?: string; errors?: Record<string, string[]> }>;
+    const status = axErr.response?.status;
+    const data = axErr.response?.data;
+
+    // Try to extract server-provided detail first
+    if (data) {
+      if (typeof data === 'string') return data;
+      if (data.detail) return data.detail;
+      if (data.title) return data.title;
+      if (data.message) return data.message;
+      if (data.errors) {
+        const allErrors = Object.values(data.errors).flat();
+        if (allErrors.length > 0) return allErrors.join(' • ');
+      }
+    }
+
+    // Fall back to status-based Arabic message
+    if (status && HTTP_STATUS_ARABIC[status]) {
+      return HTTP_STATUS_ARABIC[status];
+    }
+
+    // Network error
+    if (axErr.code === 'ERR_NETWORK' || !axErr.response) {
+      return 'تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.';
+    }
+
+    if (axErr.code === 'ECONNABORTED') {
+      return 'انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى.';
+    }
+  }
+
+  if (error instanceof Error) {
+    return error.message || 'حدث خطأ غير متوقع.';
+  }
+
+  return 'حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.';
+}
 
 const rawUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://jogofootball.runasp.net/api/v1';
 const BASE_URL = rawUrl.replaceAll('[', '').replaceAll(']', '').trim();
