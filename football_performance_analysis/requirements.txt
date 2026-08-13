@@ -1,5 +1,8 @@
 # Core pipeline
-opencv-python>=4.8,<5.0.0
+# headless: no GUI/display deps (libGL etc.) needed for a server — the
+# regular opencv-python package needs system libraries this container
+# doesn't have and fails to import at runtime.
+opencv-python-headless>=4.8,<5.0.0
 numpy>=1.24
 scipy>=1.10
 

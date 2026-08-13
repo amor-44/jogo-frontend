@@ -1,11 +1,13 @@
 FROM python:3.11-slim-bookworm
 ENV PIP_DEFAULT_TIMEOUT=300
 
-# System deps for OpenCV headless
+# System deps for opencv-python-headless (the pip package in
+# requirements.txt). Previously this also apt-installed python3-opencv and
+# libgl1 — a second, conflicting cv2 install on a different Python
+# interpreter than the one pip/uvicorn use, and unnecessary GUI libs the
+# headless wheel doesn't need. Dropped both.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
-    libgl1 \
-    python3-opencv \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

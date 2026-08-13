@@ -48,88 +48,59 @@ public class AiAnalysisService : IAiAnalysisService
 
     /// <summary>
     /// Sends the video URL to the AI service, which downloads the file and runs analysis.
-    /// Returns the analysis_id to poll with.
+    /// Returns the analysis_id to poll with. Throws on any real failure — the
+    /// caller (AnalyzeVideoJob) already correctly marks the video Failed on
+    /// an exception; there is no legitimate reason to fabricate a fake
+    /// "fallback" analysis and return random scores as if it succeeded.
     /// </summary>
     public async Task<string> TriggerAnalysisAsync(string videoUrl, CancellationToken cancellationToken = default)
     {
-        try
+        if (videoUrl.StartsWith("/"))
         {
-            if (videoUrl.StartsWith("/"))
-            {
-                var apiBaseUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:5001";
-                videoUrl = $"{apiBaseUrl.TrimEnd('/')}{videoUrl}";
-            }
-
-            var payload = new { video_url = videoUrl };
-
-            _logger.LogInformation("Triggering AI analysis for video URL: {VideoUrl}", videoUrl);
-
-            var response = await _httpClient.PostAsJsonAsync(
-                "/analyze-by-url",
-                payload,
-                _jsonOptions,
-                cancellationToken);
-
-            var rawBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogInformation("AI trigger response: Status={StatusCode}, Body={Body}", response.StatusCode, rawBody);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("AI Analysis request returned status {StatusCode}. Details: {RawBody}. Falling back to simulated analysis.", response.StatusCode, rawBody);
-                return $"fallback-{Guid.NewGuid()}";
-            }
-
-            var result = JsonSerializer.Deserialize<AnalysisTriggerResponse>(rawBody, _jsonOptions);
-
-            var analysisId = result?.AnalysisId
-                   ?? throw new InvalidOperationException("AI service did not return an analysis_id.");
-
-            _logger.LogInformation("AI analysis triggered successfully. AnalysisId={AnalysisId}", analysisId);
-            return analysisId;
+            var apiBaseUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:5001";
+            videoUrl = $"{apiBaseUrl.TrimEnd('/')}{videoUrl}";
         }
-        catch (Exception ex)
+
+        var payload = new { video_url = videoUrl };
+
+        _logger.LogInformation("Triggering AI analysis for video URL: {VideoUrl}", videoUrl);
+
+        var response = await _httpClient.PostAsJsonAsync(
+            "/analyze-by-url",
+            payload,
+            _jsonOptions,
+            cancellationToken);
+
+        var rawBody = await response.Content.ReadAsStringAsync(cancellationToken);
+        _logger.LogInformation("AI trigger response: Status={StatusCode}, Body={Body}", response.StatusCode, rawBody);
+
+        if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning(ex, "Failed to connect to AI service. Falling back to local simulated analysis.");
-            return $"fallback-{Guid.NewGuid()}";
+            throw new HttpRequestException(
+                $"AI Analysis trigger request failed with {response.StatusCode}. Details: {rawBody}");
         }
+
+        var result = JsonSerializer.Deserialize<AnalysisTriggerResponse>(rawBody, _jsonOptions);
+
+        var analysisId = result?.AnalysisId
+               ?? throw new InvalidOperationException("AI service did not return an analysis_id.");
+
+        _logger.LogInformation("AI analysis triggered successfully. AnalysisId={AnalysisId}", analysisId);
+        return analysisId;
     }
 
     /// <summary>
-    /// Retrieves the completed report and maps it to AiAnalysisReportDto.
-    /// Returns null if the analysis is not found or failed.
+    /// Retrieves the report and maps it to AiAnalysisReportDto.
+    /// Returns null if the analysis genuinely failed or wasn't found.
+    /// Throws AnalysisStillProcessingException if it exists but isn't done
+    /// yet — callers should poll again after a delay rather than treat that
+    /// as failure. /analyze-by-url returns immediately and processes in the
+    /// background (needed on hosts with a request/gateway timeout shorter
+    /// than real analysis takes), so "not done yet" is the normal case for
+    /// a while, not an error.
     /// </summary>
     public async Task<AiAnalysisReportDto?> GetAnalysisStatusAsync(string analysisId, CancellationToken cancellationToken = default)
     {
-        if (analysisId.StartsWith("fallback-"))
-        {
-            _logger.LogInformation("Generating fallback AI analysis report for AnalysisId={AnalysisId}", analysisId);
-            var random = Random.Shared;
-            int overall = random.Next(74, 89);
-            var metrics = new PerformanceMetricsDto(
-                PositionScore: random.Next(70, 92),
-                PassingAccuracy: random.Next(75, 94),
-                BallControl: random.Next(72, 90),
-                PositioningScore: random.Next(70, 88),
-                MovementEfficiency: random.Next(68, 86),
-                DefensiveActions: random.Next(65, 82),
-                AttackingImpact: random.Next(68, 88),
-                DecisionMaking: random.Next(70, 87)
-            );
-
-            return new AiAnalysisReportDto(
-                overall,
-                "تم تحليل مقطع الفيديو بنجاح واستخراج مؤشرات الأداء الفني والبدني بالذكاء الاصطناعي.",
-                new List<string> { "دقة التمرير وصناعة اللعب", "التحكم بالكرة تحت الضغط", "التمركز التكتيكي السليم" },
-                new List<string> { "سرعة اتخاذ القرار في الثلث الهجومي", "كفاءة الحركة بدون كرة" },
-                new List<string> {
-                    "التركيز على المسح البصري للملعب قبل استلام الكرة لزيادة سرعة التمرير.",
-                    "أداء تدريبات الجري الارتدادي القصير (5-10 متر) لتحسين الرشاقة الحركية."
-                },
-                "football-perf-mvp-v1",
-                metrics
-            );
-        }
-
         _logger.LogInformation("Retrieving AI analysis status for AnalysisId={AnalysisId}", analysisId);
 
         try
@@ -159,6 +130,11 @@ public class AiAnalysisService : IAiAnalysisService
                 return null;
             }
 
+            if (aiResponse.Status == "processing")
+            {
+                throw new AnalysisStillProcessingException(analysisId);
+            }
+
             _logger.LogInformation(
                 "AI response deserialized. AnalysisId={AnalysisId}, Status={Status}, HasFootballPerformance={HasPerf}, HasScores={HasScores}",
                 aiResponse.AnalysisId,
@@ -173,6 +149,11 @@ public class AiAnalysisService : IAiAnalysisService
                 dto.OverallScore, dto.Strengths.Count, dto.Weaknesses.Count, dto.Recommendations.Count);
 
             return dto;
+        }
+        catch (AnalysisStillProcessingException)
+        {
+            // Not an error — let the caller's poll loop decide when to give up.
+            throw;
         }
         catch (Exception ex)
         {
@@ -231,3 +212,16 @@ public record AnalysisTriggerResponse(
     [property: JsonPropertyName("analysis_id")] string AnalysisId,
     string Status
 );
+
+/// <summary>
+/// Thrown by GetAnalysisStatusAsync when the AI service has the analysis_id
+/// but hasn't finished processing it yet — the analyze-by-url endpoint
+/// returns immediately and runs the real CV pipeline in the background, so
+/// this is the expected state for a while, not a failure. Callers should
+/// catch this and poll again after a delay.
+/// </summary>
+public class AnalysisStillProcessingException(string analysisId)
+    : Exception($"AI analysis {analysisId} is still processing.")
+{
+    public string AnalysisId { get; } = analysisId;
+}
