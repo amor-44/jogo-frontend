@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import Avatar from '../../../components/Avatar';
 import type { PlayerCardDto, HomeSuggestedTableProps } from '../../../types';
+import { Star } from 'lucide-react';
 
 const POSITION_ARABIC: Record<string, string> = {
   'Goalkeeper': 'حارس',
@@ -70,7 +71,12 @@ export const HomeSuggestedTable = ({ players }: HomeSuggestedTableProps) => {
                   </td>
                   <td className="py-3.5 text-gray-600 font-semibold">{arabicPos}</td>
                   <td className="py-3.5 text-gray-600 font-medium">{player.age || '--'}</td>
-                  <td className="py-3.5 text-amber-500 font-bold">⭐ {score !== undefined && score !== null ? score : '--'}</td>
+                  <td className="py-3.5 text-[#2B43A1] font-bold">
+                    <span className="inline-flex items-center justify-center gap-1">
+                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                      {score !== undefined && score !== null ? score : '--'}
+                    </span>
+                  </td>
                   <td className="py-3.5 text-gray-600 font-medium">{country}</td>
                   <td className="py-3.5 text-gray-600 font-medium">{player.currentClub || 'بدون نادي'}</td>
                   <td className="py-3.5 text-[#2B43A1] font-extrabold">{marketVal}</td>

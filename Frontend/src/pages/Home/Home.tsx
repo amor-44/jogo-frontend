@@ -44,7 +44,7 @@ const Home = () => {
     <div className="flex flex-col items-center w-full max-w-6xl mx-auto pb-10 font-sans" dir="rtl">
       <div className="text-center mb-6 md:mb-10 pt-4">
         <h1 className="text-2xl md:text-4xl font-extrabold text-[#1C2C5E] mb-2">
-          مرحباً <span className="text-[#2B43A1]">{displayName}</span> 👋
+          مرحباً <span className="text-[#2B43A1]">{displayName}</span>
         </h1>
         <p className="text-gray-400 text-xs font-medium">
           {currentDate} — إليك آخر ما يدور في المنصة

@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import PlayerCard from '../../components/PlayerCard';
 import { playerService } from '../../services/playerService';
 import type { PlayerCardDto } from '../../types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Bookmark } from 'lucide-react';
 
 const Saved = () => {
   const { savedPlayerIds } = useAuth();
@@ -36,7 +36,10 @@ const Saved = () => {
   return (
     <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto pb-10 pt-2 font-sans" dir="rtl">
       <div className="text-right mb-4">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-[#1C2C5E] mb-1">اللاعبون المحفوظون 🔖</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold text-[#1C2C5E] mb-1 flex items-center gap-2">
+          <Bookmark className="w-6 h-6 text-[#2B43A1]" />
+          اللاعبون المحفوظون
+        </h1>
         <p className="text-gray-400 text-xs font-medium">
           قائمة اللاعبين الذين قمت بحفظهم للرجوع إليهم لاحقاً ({displayedPlayers.length})
         </p>
@@ -54,7 +57,9 @@ const Saved = () => {
         </div>
       ) : (
         <div className="bg-white p-12 rounded-3xl border border-gray-100 text-center shadow-xs">
-          <span className="text-4xl mb-3 block">🔖</span>
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#2B43A1] flex items-center justify-center mx-auto mb-3">
+            <Bookmark className="w-7 h-7" />
+          </div>
           <h3 className="text-base font-bold text-gray-700 mb-1">لا يوجد لاعبون محفوظون حالياً</h3>
           <p className="text-xs text-gray-400">يمكنك حفظ اللاعبين من شاشة البحث أو الرئيسية عبر الضغط على أيقونة التثبيت/الحفظ.</p>
         </div>

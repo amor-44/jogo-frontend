@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import PlayerCard from '../../components/PlayerCard';
 import { playerService } from '../../services/playerService';
 import type { PlayerCardDto } from '../../types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search as SearchIcon, SlidersHorizontal, Users } from 'lucide-react';
 
 const ARAB_COUNTRIES = [
   'الكل', 'مصر', 'السعودية', 'الإمارات', 'المغرب', 'الجزائر', 'تونس', 
@@ -91,7 +91,7 @@ const Search = () => {
   return (
     <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto pb-10 pt-2 font-sans" dir="rtl">
       <div className="w-full bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
-        <span className="text-gray-400 text-lg mr-2">🔍</span>
+        <SearchIcon className="w-5 h-5 text-gray-400 mr-1 shrink-0" />
         <input 
           type="text" 
           placeholder="ابحث بالاسم أو النادي أو الدولة..." 
@@ -109,7 +109,7 @@ const Search = () => {
       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm text-right space-y-6">
         <div className="flex justify-between items-center border-b border-gray-50 pb-4">
           <h3 className="font-bold text-gray-800 text-base flex items-center gap-2">
-            <span>⚙️</span> تصفية متقدمة
+            <SlidersHorizontal className="w-4 h-4 text-[#2B43A1]" /> تصفية متقدمة
           </h3>
           <button 
             onClick={handleReset}
@@ -129,7 +129,7 @@ const Search = () => {
                   onClick={() => setSelectedPosition(pos)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     selectedPosition === pos 
-                      ? 'bg-[#2B43A1] text-white shadow-xs' 
+                       ? 'bg-[#2B43A1] text-white shadow-xs' 
                       : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                   }`}
                 >
@@ -193,7 +193,9 @@ const Search = () => {
           </div>
         ) : (
           <div className="bg-white p-12 rounded-3xl border border-gray-100 text-center shadow-xs">
-            <span className="text-4xl mb-3 block">⚽</span>
+            <div className="w-14 h-14 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center mx-auto mb-3">
+              <Users className="w-7 h-7" />
+            </div>
             <h3 className="text-base font-bold text-gray-700 mb-1">لم يتم العثور على لاعبين مطابقين</h3>
             <p className="text-xs text-gray-400">جرب تقليل الفلاتر أو تغيير مصطلحات البحث للعثور على النتائج المطلوبة.</p>
           </div>

@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getFullImageUrl } from '../utils/url';
-import type { PlayerCardDto } from '../types';
+import type { PlayerCardDto, AnalysisReportDto } from '../types';
+import { Heart, Star } from 'lucide-react';
 
 interface Props {
   player: PlayerCardDto;
@@ -42,7 +43,43 @@ const PlayerCard = ({ player }: Props) => {
 
   const rawPosition = player.primaryPosition ? String(player.primaryPosition) : (player.position ? String(player.position) : '');
   const rawCountry = player.country || player.nationality || 'غير محدد';
-  const rawScore = player.latestOverallScore ?? player.overallScore;
+  
+  // Resolve score dynamically (from API or from local evaluation reports)
+  const getScore = () => {
+    if (player.latestOverallScore != null && player.latestOverallScore > 0) return player.latestOverallScore;
+    if (player.overallScore != null && player.overallScore > 0) return player.overallScore;
+
+    try {
+      const saved = localStorage.getItem('saved_ai_analysis_reports');
+      if (saved) {
+        const reports = JSON.parse(saved) as (AnalysisReportDto & { playerId?: string })[];
+        if (Array.isArray(reports) && reports.length > 0) {
+          const match = reports.find((r) => 
+            String(r.playerId) === String(player.id) || 
+            String(r.videoId) === String(player.id)
+          );
+          if (match?.overallScore) return match.overallScore;
+
+          const userStr = localStorage.getItem('jogo_user');
+          if (userStr) {
+            const u = JSON.parse(userStr) as { id?: string; name?: string };
+            if (
+              (u.id && String(u.id) === String(player.id)) ||
+              (u.name && player.fullName && u.name.trim().toLowerCase() === player.fullName.trim().toLowerCase())
+            ) {
+              const best = Math.max(...reports.map((r) => r.overallScore || 0));
+              if (best > 0) return best;
+            }
+          }
+        }
+      }
+    } catch {
+      // Ignore parsing errors for reports
+    }
+    return null;
+  };
+
+  const displayScore = getScore();
   const avatarUrl = getFullImageUrl(player.profilePictureUrl);
 
   return (
@@ -79,7 +116,7 @@ const PlayerCard = ({ player }: Props) => {
             onClick={(e) => { e.stopPropagation(); toggleSavePlayer(String(player.id)); }}
             className={`p-1.5 rounded-lg transition-all cursor-pointer ${isSaved ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-400 hover:text-red-400 hover:bg-red-50'}`}
           >
-            {isSaved ? '♥' : '♡'}
+            <Heart className={`w-4 h-4 transition-colors ${isSaved ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
           </button>
         </div>
 
@@ -102,7 +139,10 @@ const PlayerCard = ({ player }: Props) => {
           </div>
           <div className="bg-gray-50/80 rounded-xl p-2.5 text-center">
             <span className="block text-[10px] text-gray-400 font-medium mb-0.5">التقييم</span>
-            <span className="font-extrabold text-[#2B43A1] text-xs">⭐ {rawScore ? `${rawScore}` : '--'}</span>
+            <span className="font-extrabold text-[#2B43A1] text-xs flex items-center justify-center gap-1">
+              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+              {displayScore != null ? `${displayScore}` : '--'}
+            </span>
           </div>
         </div>
 

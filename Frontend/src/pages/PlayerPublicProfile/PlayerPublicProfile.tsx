@@ -4,7 +4,7 @@ import { playerService } from '../../services/playerService';
 import { contactService } from '../../services/contactService';
 import { useAuth } from '../../hooks/useAuth';
 import type { PlayerProfileDto } from '../../types';
-import { Loader2, ArrowRight, Send, MapPin, Calendar, Shield, User, Heart, Building2 } from 'lucide-react';
+import { Loader2, ArrowRight, Send, MapPin, Calendar, Shield, User, Heart, Building2, UserX } from 'lucide-react';
 
 const PlayerPublicProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -78,7 +78,9 @@ const PlayerPublicProfile = () => {
   if (error || !player) {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-4" dir="rtl">
-        <span className="text-5xl">😔</span>
+        <div className="w-16 h-16 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center">
+          <UserX className="w-8 h-8" />
+        </div>
         <h2 className="text-lg font-bold text-gray-700">{error || 'اللاعب غير موجود'}</h2>
         <button 
           onClick={() => navigate(-1)} 
