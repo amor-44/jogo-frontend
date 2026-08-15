@@ -30,27 +30,9 @@ except ImportError:
 
 app = FastAPI(title="Football Performance Analysis API")
 
-<<<<<<< HEAD
-# ---------------------------------------------------------------------------
-# CORS Configuration: Allow requests from Frontend (Vercel) & Localhost
-# ---------------------------------------------------------------------------
-origins = [
-    "https://jogo-frontend-ghcq.vercel.app",
-    "https://localhost:5001",
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "*",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-=======
-from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
->>>>>>> 503264494064859f7edf6db101d4ba8cfd9b1713
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
