@@ -3,11 +3,13 @@ import { useAuth } from '../../hooks/useAuth';
 import { playerService } from '../../services/playerService';
 import { videoService } from '../../services/videoService';
 import { reportService } from '../../services/reportService';
-import { aiService } from '../../services/aiService';
+// import { aiService } from '../../services/aiService'; // DEMO_MODE_OFF: uncomment when re-enabling AI API
 import { getArabicErrorMessage } from '../../services/api';
 import { getFullImageUrl } from '../../utils/url';
 import type { VideoHistoryItem, PlayerProfileDto, VideoDto, AnalysisReportDto } from '../../types';
 import { VideoStatus } from '../../types';
+// DEMO_MODE: Mock data for MVP demo recording — remove these imports when re-enabling real API
+import { MOCK_ANALYSIS_CASES, MOCK_CHAT_RESPONSES } from '../../data/mockAiData';
 import ProfileHeader from './components/ProfileHeader';
 import ProfileSidebar from './components/ProfileSidebar';
 import VideoHistory from './components/VideoHistory';
@@ -108,82 +110,118 @@ const PlayerProfileView = () => {
     ? user.name.trim().split(' ')[0]
     : 'اللاعب';
 
-  /**
-   * Poll the AI service for analysis completion.
-   * Uses the AI API's GET /analysis/{analysis_id} endpoint.
+  /* DEMO_MODE_OFF — these polling helpers are unused in demo mode.
+   * Uncomment when re-enabling the real AI/backend API:
+   *
+   * const pollAIAnalysis = async (analysisId: string, videoId: string, maxAttempts = 90, intervalMs = 5000) => {
+   *   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+   *     await new Promise((resolve) => setTimeout(resolve, intervalMs));
+   *     try {
+   *       const result = await aiService.getAnalysis(analysisId, videoId);
+   *       if (result.status === 'completed' && result.report) {
+   *         const report = { ...result.report, videoId };
+   *         setReports((prev) => {
+   *           const exists = prev.some(r => r.videoId === videoId);
+   *           return exists
+   *             ? prev.map(r => (r.videoId === videoId ? report : r))
+   *             : [report, ...prev];
+   *         });
+   *         setVideos((prev) => prev.map(v => v.id === videoId ? { ...v, status: VideoStatus.Analyzed } : v));
+   *         return;
+   *       }
+   *       if (result.status === 'failed' || result.status === 'error') {
+   *         setVideos((prev) => prev.map(v => v.id === videoId ? { ...v, status: VideoStatus.Failed } : v));
+   *         setErrorMessage('فشل التحليل بالذكاء الاصطناعي. يرجى المحاولة مرة أخرى.');
+   *         return;
+   *       }
+   *     } catch (err) {
+   *       console.error(`فشل متابعة حالة التحليل للفيديو ${videoId}:`, err);
+   *       setErrorMessage(getArabicErrorMessage(err));
+   *       return;
+   *     }
+   *   }
+   *   setErrorMessage('انتهت مهلة انتظار نتيجة التحليل. يرجى التحقق لاحقاً.');
+   * };
+   *
+   * const pollBackendAnalysis = async (id: string, maxAttempts = 90, intervalMs = 5000) => {
+   *   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+   *     await new Promise((resolve) => setTimeout(resolve, intervalMs));
+   *     try {
+   *       const video = await videoService.getVideoById(id);
+   *       setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: video.status } : v));
+   *       if (video.status === VideoStatus.Analyzed) {
+   *         const reportsRes = await reportService.getReports({ page: 1, pageSize: 50 });
+   *         const matchingReport = (reportsRes.items || []).find(r => r.videoId === id);
+   *         if (matchingReport) {
+   *           setReports((prev) => {
+   *             const exists = prev.some(r => r.videoId === id);
+   *             return exists
+   *               ? prev.map(r => (r.videoId === id ? matchingReport : r))
+   *               : [matchingReport, ...prev];
+   *           });
+   *         }
+   *         return;
+   *       }
+   *       if (video.status === VideoStatus.Failed) {
+   *         setErrorMessage('فشل تحليل الفيديو. يرجى المحاولة مرة أخرى.');
+   *         return;
+   *       }
+   *     } catch (err) {
+   *       console.error(`فشل متابعة حالة التحليل للفيديو ${id}:`, err);
+   *       setErrorMessage(getArabicErrorMessage(err));
+   *       return;
+   *     }
+   *   }
+   *   setErrorMessage('انتهت مهلة انتظار نتيجة التحليل. يرجى التحقق لاحقاً.');
+   * };
    */
-  const pollAIAnalysis = async (analysisId: string, videoId: string, maxAttempts = 90, intervalMs = 5000) => {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
-      try {
-        const result = await aiService.getAnalysis(analysisId, videoId);
-
-        if (result.status === 'completed' && result.report) {
-          const report = { ...result.report, videoId };
-          setReports((prev) => {
-            const exists = prev.some(r => r.videoId === videoId);
-            return exists
-              ? prev.map(r => (r.videoId === videoId ? report : r))
-              : [report, ...prev];
-          });
-          setVideos((prev) => prev.map(v => v.id === videoId ? { ...v, status: VideoStatus.Analyzed } : v));
-          return;
-        }
-
-        if (result.status === 'failed' || result.status === 'error') {
-          setVideos((prev) => prev.map(v => v.id === videoId ? { ...v, status: VideoStatus.Failed } : v));
-          setErrorMessage('فشل التحليل بالذكاء الاصطناعي. يرجى المحاولة مرة أخرى.');
-          return;
-        }
-        // Still processing — continue polling
-      } catch (err) {
-        console.error(`فشل متابعة حالة التحليل للفيديو ${videoId}:`, err);
-        setErrorMessage(getArabicErrorMessage(err));
-        return;
-      }
-    }
-    setErrorMessage('انتهت مهلة انتظار نتيجة التحليل. يرجى التحقق لاحقاً.');
-  };
-
-  /**
-   * Fallback: poll via backend API if AI service is used through backend.
-   */
-  const pollBackendAnalysis = async (id: string, maxAttempts = 90, intervalMs = 5000) => {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
-      try {
-        const video = await videoService.getVideoById(id);
-        setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: video.status } : v));
-
-        if (video.status === VideoStatus.Analyzed) {
-          const reportsRes = await reportService.getReports({ page: 1, pageSize: 50 });
-          const matchingReport = (reportsRes.items || []).find(r => r.videoId === id);
-          if (matchingReport) {
-            setReports((prev) => {
-              const exists = prev.some(r => r.videoId === id);
-              return exists
-                ? prev.map(r => (r.videoId === id ? matchingReport : r))
-                : [matchingReport, ...prev];
-            });
-          }
-          return;
-        }
-        if (video.status === VideoStatus.Failed) {
-          setErrorMessage('فشل تحليل الفيديو. يرجى المحاولة مرة أخرى.');
-          return;
-        }
-      } catch (err) {
-        console.error(`فشل متابعة حالة التحليل للفيديو ${id}:`, err);
-        setErrorMessage(getArabicErrorMessage(err));
-        return;
-      }
-    }
-    setErrorMessage('انتهت مهلة انتظار نتيجة التحليل. يرجى التحقق لاحقاً.');
-  };
 
   const handleAnalyzeVideo = async (id: string) => {
     setErrorMessage(null);
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Processing } : v));
+
+    // ─── DEMO_MODE_START ─────────────────────────────────────────────────────────
+    // This block replaces real AI API calls for MVP demo recording.
+    // To restore real API: delete this block and uncomment the DEMO_MODE_OFF sections below.
+    await new Promise((resolve) => setTimeout(resolve, 1500)); // simulate processing time
+
+    const mockCase = MOCK_ANALYSIS_CASES[0]; // shooting_form_issue
+    const mockReport: AnalysisReportDto = {
+      id: `mock-report-${id}`,
+      videoId: id,
+      videoTitle: mockCase.videoTitle,
+      overallScore: mockCase.overallScore,
+      summary: mockCase.coachSummary,
+      strengths: mockCase.strengths,
+      weaknesses: mockCase.weaknesses,
+      recommendations: Object.keys(
+        MOCK_CHAT_RESPONSES[mockCase.suggestedChatContext]?.answers || {}
+      ),
+      aiModelVersion: 'JogoAI-Demo-v1',
+      generatedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      metrics: {
+        attackingImpact: mockCase.metrics.shootingAccuracy,
+        ballControl: mockCase.metrics.ballControl,
+        decisionMaking: mockCase.metrics.decisionMaking,
+        movementEfficiency: mockCase.metrics.staminaPace,
+      },
+    };
+
+    // Save chat context to localStorage so AIChat page picks it up
+    localStorage.setItem('selected_ai_context', mockCase.suggestedChatContext);
+
+    setReports((prev) => {
+      const exists = prev.some(r => r.videoId === id);
+      return exists
+        ? prev.map(r => (r.videoId === id ? mockReport : r))
+        : [mockReport, ...prev];
+    });
+    setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
+    return;
+    // ─── DEMO_MODE_END ───────────────────────────────────────────────────────────
+
+    /* DEMO_MODE_OFF — uncomment the block below to restore real API behavior:
 
     const video = videos.find(v => v.id === id);
     const videoUrl = video ? getFullImageUrl(video.storageUrl) : null;
@@ -203,6 +241,10 @@ const PlayerProfileView = () => {
               : [report, ...prev];
           });
           setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
+          // Save real context from report if available
+          if (aiResult.report?.suggestedChatContext) {
+            localStorage.setItem('selected_ai_context', aiResult.report.suggestedChatContext);
+          }
           return;
         }
 
@@ -227,11 +269,50 @@ const PlayerProfileView = () => {
       return;
     }
     await pollBackendAnalysis(id);
+
+    */ // end DEMO_MODE_OFF
   };
 
   const handleRetryAnalysis = async (id: string) => {
     setErrorMessage(null);
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Processing } : v));
+
+    // ─── DEMO_MODE_START ─────────────────────────────────────────────────────────
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const mockCase = MOCK_ANALYSIS_CASES[0];
+    const mockReport: AnalysisReportDto = {
+      id: `mock-report-${id}`,
+      videoId: id,
+      videoTitle: mockCase.videoTitle,
+      overallScore: mockCase.overallScore,
+      summary: mockCase.coachSummary,
+      strengths: mockCase.strengths,
+      weaknesses: mockCase.weaknesses,
+      recommendations: Object.keys(
+        MOCK_CHAT_RESPONSES[mockCase.suggestedChatContext]?.answers || {}
+      ),
+      aiModelVersion: 'JogoAI-Demo-v1',
+      generatedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      metrics: {
+        attackingImpact: mockCase.metrics.shootingAccuracy,
+        ballControl: mockCase.metrics.ballControl,
+        decisionMaking: mockCase.metrics.decisionMaking,
+        movementEfficiency: mockCase.metrics.staminaPace,
+      },
+    };
+    localStorage.setItem('selected_ai_context', mockCase.suggestedChatContext);
+    setReports((prev) => {
+      const exists = prev.some(r => r.videoId === id);
+      return exists
+        ? prev.map(r => (r.videoId === id ? mockReport : r))
+        : [mockReport, ...prev];
+    });
+    setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
+    return;
+    // ─── DEMO_MODE_END ───────────────────────────────────────────────────────────
+
+    /* DEMO_MODE_OFF — uncomment to restore real retry logic:
 
     const video = videos.find(v => v.id === id);
     const videoUrl = video ? getFullImageUrl(video.storageUrl) : null;
@@ -270,6 +351,8 @@ const PlayerProfileView = () => {
       return;
     }
     await pollBackendAnalysis(id);
+
+    */ // end DEMO_MODE_OFF
   };
 
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
