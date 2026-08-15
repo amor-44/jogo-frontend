@@ -178,7 +178,7 @@ public class AiAnalysisService : IAiAnalysisService
         var recommendations = perf?.Recommendations ?? new List<string>();
 
         var metrics = new PerformanceMetricsDto(
-            PositionScore: (int)Math.Round(perf?.Scores?.PositioningScore ?? 0),
+            PositionScore: (int)Math.Round(perf?.Scores?.PositionScore ?? perf?.Scores?.PositioningScore ?? 0),
             PassingAccuracy: (int)Math.Round(perf?.Scores?.PassingAccuracy ?? 0),
             BallControl: (int)Math.Round(perf?.Scores?.BallControl ?? 0),
             PositioningScore: (int)Math.Round(perf?.Scores?.PositioningScore ?? 0),
