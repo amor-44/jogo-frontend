@@ -47,6 +47,10 @@ ALLOWED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv"}
 _result_store: Dict[str, Dict[str, Any]] = {}
 _store_lock = threading.Lock()
 
+# Hard timeout (seconds) for the CV pipeline per video.
+# Prevents a job from staying "processing" forever if the worker hangs.
+_ANALYSIS_TIMEOUT_SECONDS = 600  # 10 minutes
+
 
 # ---------------------------------------------------------------------------
 # Schema for /analyze-by-url (matches backend AiAnalysisService contract)
@@ -79,23 +83,50 @@ async def analyze_football_performance(video: UploadFile = File(...)):
 
 
 def _run_analysis_in_background(analysis_id: str, tmp_path: str, tmp_dir: str) -> None:
-    """Runs the actual CV pipeline outside the request/response cycle."""
-    try:
-        report = analyze_video(tmp_path)
-        result = report.to_dict()
-        with _store_lock:
-            _result_store[analysis_id] = result
-    except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        with _store_lock:
-            _result_store[analysis_id] = {
+    """Runs the actual CV pipeline in a daemon thread with a hard timeout.
+
+    Uses a nested thread + join(timeout) so that even if the CV pipeline
+    hangs or the process is about to be killed, the outer thread can mark
+    the job as failed after _ANALYSIS_TIMEOUT_SECONDS.
+    """
+
+    result_holder: Dict[str, Any] = {}
+
+    def _worker():
+        try:
+            report = analyze_video(tmp_path)
+            result_holder["result"] = report.to_dict()
+        except Exception as exc:
+            import traceback
+            traceback.print_exc()
+            result_holder["result"] = {
                 "analysis_id": analysis_id,
                 "status": "failed",
                 "error": str(exc),
             }
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    worker = threading.Thread(target=_worker, daemon=True)
+    worker.start()
+    worker.join(timeout=_ANALYSIS_TIMEOUT_SECONDS)
+
+    if worker.is_alive():
+        # Timed out — mark as failed so the backend stops polling.
+        final = {
+            "analysis_id": analysis_id,
+            "status": "failed",
+            "error": f"Analysis timed out after {_ANALYSIS_TIMEOUT_SECONDS}s",
+        }
+    else:
+        final = result_holder.get("result", {
+            "analysis_id": analysis_id,
+            "status": "failed",
+            "error": "Worker exited without producing a result",
+        })
+
+    with _store_lock:
+        _result_store[analysis_id] = final
+
+    shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------
@@ -132,7 +163,14 @@ async def analyze_by_url(request: AnalyzeByUrlRequest, background_tasks: Backgro
     with _store_lock:
         _result_store[analysis_id] = {"analysis_id": analysis_id, "status": "processing"}
 
-    background_tasks.add_task(_run_analysis_in_background, analysis_id, tmp_path, tmp_dir)
+    # Use a real daemon thread instead of FastAPI's background task pool so that
+    # the timeout wrapper (_run_analysis_in_background) can join() the inner worker.
+    t = threading.Thread(
+        target=_run_analysis_in_background,
+        args=(analysis_id, tmp_path, tmp_dir),
+        daemon=True,
+    )
+    t.start()
 
     return JSONResponse(
         content={"analysis_id": analysis_id, "status": "processing"},
@@ -148,7 +186,18 @@ async def get_analysis(analysis_id: str):
     with _store_lock:
         result = _result_store.get(analysis_id)
     if result is None:
-        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+        # Return "failed" instead of 404 so the C# backend stops polling and
+        # marks the video as failed immediately, rather than retrying forever.
+        # (In-memory store is wiped on container restart; 404 would cause
+        # infinite retries since the C# side only stops on failed/completed.)
+        return JSONResponse(
+            content={
+                "analysis_id": analysis_id,
+                "status": "failed",
+                "error": "Analysis not found — the service may have restarted. Please re-submit.",
+            },
+            status_code=200,
+        )
     return JSONResponse(content=result)
 
 
