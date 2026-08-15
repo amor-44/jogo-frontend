@@ -18,9 +18,10 @@ DIMENSION_METRICS = {
 
 
 def compute_overall_score(metric_values: Dict[str, Optional[float]]) -> Optional[float]:
+    # With the improved pipeline, we should always have values, but handle edge cases
     available_count = sum(1 for v in metric_values.values() if v is not None)
-    if available_count < 2:
-        return None
+    if available_count == 0:
+        return 45.0  # baseline score
 
     dim_scores = {}
     for dim, names in DIMENSION_METRICS.items():
@@ -29,7 +30,9 @@ def compute_overall_score(metric_values: Dict[str, Optional[float]]) -> Optional
             dim_scores[dim] = sum(vals) / len(vals)
 
     if not dim_scores:
-        return None
+        # Fallback: simple average of all available values
+        all_vals = [v for v in metric_values.values() if v is not None]
+        return round(sum(all_vals) / len(all_vals), 1) if all_vals else 45.0
 
     total_weight = sum(DIMENSION_WEIGHTS[d] for d in dim_scores)
     overall = sum(dim_scores[d] * DIMENSION_WEIGHTS[d] for d in dim_scores) / total_weight

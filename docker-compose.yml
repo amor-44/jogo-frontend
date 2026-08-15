@@ -26,6 +26,7 @@ services:
         Server=sqlserver,1433;Database=JogoDb;User=sa;
         Password=YourStrong@Password1;
         TrustServerCertificate=True;MultipleActiveResultSets=True
+      ConnectionStrings__Redis: redis:6379
       # Override AiService:BaseUrl to reach the AI container on the internal network
       AiService__BaseUrl: http://jogo-ai:8000
       ApiBaseUrl: http://jogo-api:8080
@@ -35,7 +36,11 @@ services:
         condition: service_healthy
       jogo-ai:
         condition: service_healthy
+      redis:
+        condition: service_started
     restart: on-failure
+    volumes:
+      - jogo-uploads:/app/wwwroot/uploads
     networks:
       - jogo-net
 
@@ -54,6 +59,25 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    restart: on-failure
+    networks:
+      - jogo-net
+
+  # ─────────────────────────────────────────────────
+  #  React / Vite Frontend
+  # ─────────────────────────────────────────────────
+  jogo-frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5001/api/v1
+      - VITE_AI_API_URL=http://localhost:8000
+    depends_on:
+      - jogo-api
+      - jogo-ai
     restart: on-failure
     networks:
       - jogo-net
@@ -98,9 +122,21 @@ services:
     networks:
       - jogo-net
 
+  # ─────────────────────────────────────────────────
+  #  Redis — Distributed Cache
+  # ─────────────────────────────────────────────────
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always
+    networks:
+      - jogo-net
+
 volumes:
   sqlserver-data:
   seq-data:
+  jogo-uploads:
 
 networks:
   jogo-net:

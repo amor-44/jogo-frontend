@@ -3,7 +3,7 @@
 **Version:** v1
 
 **Servers:**
-- `http://localhost:5001/`
+- `https://jogofootball.runasp.net/`
 
 ## Authentication
 
