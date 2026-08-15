@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  MessageSquare,
+  Bot,
   ArrowLeft,
   Video,
   BarChart3,
@@ -20,8 +20,8 @@ const AIChat = () => {
 
         {/* Icon */}
         <div className="mb-6">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#2B43A1] to-[#3D5BC9] text-white flex items-center justify-center shadow-lg">
-            <MessageSquare className="w-10 h-10" />
+          <div className="w-20 h-20 rounded-3xl bg-linear-to-br from-[#2B43A1] to-[#3D5BC9] text-white flex items-center justify-center shadow-lg">
+            <Bot className="w-10 h-10" />
           </div>
         </div>
 
@@ -62,7 +62,7 @@ const AIChat = () => {
         {/* CTA Button */}
         <button
           onClick={() => navigate('/profile')}
-          className="bg-gradient-to-l from-[#2B43A1] to-[#3D5BC9] hover:opacity-95 text-white font-bold text-sm px-8 py-3.5 rounded-2xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] mx-auto"
+          className="bg-linear-to-l from-[#2B43A1] to-[#3D5BC9] hover:opacity-95 text-white font-bold text-sm px-8 py-3.5 rounded-2xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] mx-auto"
         >
           <span>انتقل لتحليل الفيديو الآن</span>
           <ArrowLeft className="w-4 h-4" />
