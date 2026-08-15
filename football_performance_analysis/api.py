@@ -8,6 +8,7 @@ from typing import Dict, Any
 
 try:
     from fastapi import BackgroundTasks, FastAPI, UploadFile, File, HTTPException
+    from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
     from fastapi.concurrency import run_in_threadpool
     from pydantic import BaseModel
@@ -29,7 +30,6 @@ except ImportError:
 
 app = FastAPI(title="Football Performance Analysis API")
 
-from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -47,6 +47,10 @@ ALLOWED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv"}
 _result_store: Dict[str, Dict[str, Any]] = {}
 _store_lock = threading.Lock()
 
+# Hard timeout (seconds) for the CV pipeline per video.
+# Prevents a job from staying "processing" forever if the worker hangs.
+_ANALYSIS_TIMEOUT_SECONDS = 600  # 10 minutes
+
 
 # ---------------------------------------------------------------------------
 # Schema for /analyze-by-url (matches backend AiAnalysisService contract)
@@ -56,7 +60,7 @@ class AnalyzeByUrlRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Existing file-upload endpoint (unchanged)
+# Existing file-upload endpoint
 # ---------------------------------------------------------------------------
 @app.post("/analyze/football-performance")
 async def analyze_football_performance(video: UploadFile = File(...)):
@@ -70,10 +74,6 @@ async def analyze_football_performance(video: UploadFile = File(...)):
         with open(tmp_path, "wb") as f:
             shutil.copyfileobj(video.file, f)
 
-        # analyze_video() is CPU-bound and can run for minutes on a real match
-        # clip. Running it inline would block this single-worker event loop —
-        # including /health — for the whole duration. Push it to a worker thread
-        # so the loop stays responsive while analysis runs.
         report = await run_in_threadpool(analyze_video, tmp_path)
         return JSONResponse(content=report.to_dict())
     except Exception as e:
@@ -83,43 +83,54 @@ async def analyze_football_performance(video: UploadFile = File(...)):
 
 
 def _run_analysis_in_background(analysis_id: str, tmp_path: str, tmp_dir: str) -> None:
-    """Runs the actual CV pipeline outside the request/response cycle.
+    """Runs the actual CV pipeline in a daemon thread with a hard timeout.
 
-    /analyze-by-url used to run this inline and only respond once it was
-    done — fine on localhost, but any host fronted by a gateway/CDN with its
-    own request timeout (e.g. Cloudflare in front of FastAPI Cloud, ~100s)
-    will kill the connection before a real video finishes processing, and
-    the caller never gets a response at all. Now the request returns
-    immediately with status "processing"; the real result lands in
-    _result_store whenever this actually finishes, and the caller polls
-    GET /analysis/{analysis_id} for it (same contract the endpoint already
-    exposed, just actually honored now).
+    Uses a nested thread + join(timeout) so that even if the CV pipeline
+    hangs or the process is about to be killed, the outer thread can mark
+    the job as failed after _ANALYSIS_TIMEOUT_SECONDS.
     """
-    try:
-        report = analyze_video(tmp_path)
-        result = report.to_dict()
-        with _store_lock:
-            _result_store[analysis_id] = result
-    except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        with _store_lock:
-            _result_store[analysis_id] = {
+
+    result_holder: Dict[str, Any] = {}
+
+    def _worker():
+        try:
+            report = analyze_video(tmp_path)
+            result_holder["result"] = report.to_dict()
+        except Exception as exc:
+            import traceback
+            traceback.print_exc()
+            result_holder["result"] = {
                 "analysis_id": analysis_id,
                 "status": "failed",
                 "error": str(exc),
             }
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    worker = threading.Thread(target=_worker, daemon=True)
+    worker.start()
+    worker.join(timeout=_ANALYSIS_TIMEOUT_SECONDS)
+
+    if worker.is_alive():
+        # Timed out — mark as failed so the backend stops polling.
+        final = {
+            "analysis_id": analysis_id,
+            "status": "failed",
+            "error": f"Analysis timed out after {_ANALYSIS_TIMEOUT_SECONDS}s",
+        }
+    else:
+        final = result_holder.get("result", {
+            "analysis_id": analysis_id,
+            "status": "failed",
+            "error": "Worker exited without producing a result",
+        })
+
+    with _store_lock:
+        _result_store[analysis_id] = final
+
+    shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------
-# NEW: POST /analyze-by-url
-# Called by C# AiAnalysisService.TriggerAnalysisAsync().
-# Accepts { "video_url": "http://..." }, downloads the video from the backend
-# static file server, kicks off analysis in the background, and returns
-# analysis_id immediately with status "processing" — the caller polls
-# GET /analysis/{analysis_id} for the real result.
+# POST /analyze-by-url
 # ---------------------------------------------------------------------------
 @app.post("/analyze-by-url")
 async def analyze_by_url(request: AnalyzeByUrlRequest, background_tasks: BackgroundTasks):
@@ -133,8 +144,6 @@ async def analyze_by_url(request: AnalyzeByUrlRequest, background_tasks: Backgro
     tmp_path = os.path.join(tmp_dir, f"{analysis_id}{ext}")
 
     try:
-        # Download video from the backend's static file server (this part is
-        # fast — fine to keep inline — the slow part is analysis itself).
         async with httpx.AsyncClient(timeout=120.0, follow_redirects=True) as client:
             response = await client.get(url)
             if response.status_code != 200:
@@ -154,7 +163,14 @@ async def analyze_by_url(request: AnalyzeByUrlRequest, background_tasks: Backgro
     with _store_lock:
         _result_store[analysis_id] = {"analysis_id": analysis_id, "status": "processing"}
 
-    background_tasks.add_task(_run_analysis_in_background, analysis_id, tmp_path, tmp_dir)
+    # Use a real daemon thread instead of FastAPI's background task pool so that
+    # the timeout wrapper (_run_analysis_in_background) can join() the inner worker.
+    t = threading.Thread(
+        target=_run_analysis_in_background,
+        args=(analysis_id, tmp_path, tmp_dir),
+        daemon=True,
+    )
+    t.start()
 
     return JSONResponse(
         content={"analysis_id": analysis_id, "status": "processing"},
@@ -163,15 +179,25 @@ async def analyze_by_url(request: AnalyzeByUrlRequest, background_tasks: Backgro
 
 
 # ---------------------------------------------------------------------------
-# NEW: GET /analysis/{analysis_id}
-# Called by C# AiAnalysisService.GetAnalysisStatusAsync().
+# GET /analysis/{analysis_id}
 # ---------------------------------------------------------------------------
 @app.get("/analysis/{analysis_id}")
 async def get_analysis(analysis_id: str):
     with _store_lock:
         result = _result_store.get(analysis_id)
     if result is None:
-        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+        # Return "failed" instead of 404 so the C# backend stops polling and
+        # marks the video as failed immediately, rather than retrying forever.
+        # (In-memory store is wiped on container restart; 404 would cause
+        # infinite retries since the C# side only stops on failed/completed.)
+        return JSONResponse(
+            content={
+                "analysis_id": analysis_id,
+                "status": "failed",
+                "error": "Analysis not found — the service may have restarted. Please re-submit.",
+            },
+            status_code=200,
+        )
     return JSONResponse(content=result)
 
 

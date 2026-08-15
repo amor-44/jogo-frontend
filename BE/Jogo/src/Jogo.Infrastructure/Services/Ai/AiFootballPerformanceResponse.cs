@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Jogo.Infrastructure.Services.Ai.Performance;
 
@@ -17,11 +18,14 @@ public record AiFootballPerformanceData(
     string AnalysisQuality);
 
 public record AiScores(
-    float? OverallScore,
-    float? PassingAccuracy,
-    float? BallControl,
-    float? MovementEfficiency,
-    float? AttackingImpact,
-    float? PositioningScore,
-    float? DefensiveActions,
-    float? DecisionMaking);
+    // Python model outputs both position_score and positioning_score.
+    // Use explicit JsonPropertyName so snake_case auto-naming doesn't mangle them.
+    [property: JsonPropertyName("overall_score")] float? OverallScore,
+    [property: JsonPropertyName("passing_accuracy")] float? PassingAccuracy,
+    [property: JsonPropertyName("ball_control")] float? BallControl,
+    [property: JsonPropertyName("movement_efficiency")] float? MovementEfficiency,
+    [property: JsonPropertyName("attacking_impact")] float? AttackingImpact,
+    [property: JsonPropertyName("positioning_score")] float? PositioningScore,
+    [property: JsonPropertyName("position_score")] float? PositionScore,
+    [property: JsonPropertyName("defensive_actions")] float? DefensiveActions,
+    [property: JsonPropertyName("decision_making")] float? DecisionMaking);
