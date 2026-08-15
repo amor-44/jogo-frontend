@@ -38,7 +38,7 @@ origins = [
     "https://localhost:5001",
     "http://localhost:3000",
     "http://localhost:5173",
-    "*",  # يسمح لجميع النطاقات بالاتصال لمنع مشاكل الـ CORS مستقبلاً
+    "*",
 ]
 
 app.add_middleware(
