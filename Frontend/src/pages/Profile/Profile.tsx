@@ -8,8 +8,8 @@ import { getArabicErrorMessage } from '../../services/api';
 import { getFullImageUrl } from '../../utils/url';
 import type { VideoHistoryItem, PlayerProfileDto, VideoDto, AnalysisReportDto } from '../../types';
 import { VideoStatus } from '../../types';
-// DEMO_MODE: remove these two imports when re-enabling real API
-import { MOCK_ANALYSIS_CASES, MOCK_CHAT_RESPONSES } from '../../data/mockAiData';
+// DEMO_MODE: dynamic generator for AI analysis
+import { generateDynamicAnalysisReport } from '../../data/mockAiData';
 import ProfileHeader from './components/ProfileHeader';
 import ProfileSidebar from './components/ProfileSidebar';
 import VideoHistory from './components/VideoHistory';
@@ -77,6 +77,15 @@ const PlayerProfileView = () => {
   useEffect(() => {
     let isMounted = true;
 
+    // Read locally-persisted reports first — our source of truth for demo mode
+    let localReports: AnalysisReportDto[] = [];
+    try {
+      const saved = localStorage.getItem(REPORTS_STORAGE_KEY);
+      localReports = saved ? (JSON.parse(saved) as AnalysisReportDto[]) : [];
+    } catch {
+      // ignore parsing error
+    }
+
     async function loadData() {
       try {
         const [profileRes, videosRes, reportsRes] = await Promise.allSettled([
@@ -89,9 +98,9 @@ const PlayerProfileView = () => {
           if (profileRes.status === 'fulfilled' && profileRes.value) {
             setProfile(profileRes.value);
           }
+
           if (videosRes.status === 'fulfilled' && videosRes.value) {
             const videoList = videosRes.value.items || [];
-            setVideos(videoList);
             const backendReports = (reportsRes.status === 'fulfilled' && reportsRes.value?.items) || [];
 
             // ── Merge: backend reports first, then fill gaps with local persisted reports ──
@@ -99,7 +108,7 @@ const PlayerProfileView = () => {
             const videoIdSet = new Set(videoList.map(v => v.id));
             const mergedReports: AnalysisReportDto[] = [
               ...backendReports,
-              ...reports.filter(
+              ...localReports.filter(
                 lr => videoIdSet.has(lr.videoId) && !backendReports.some(br => br.videoId === lr.videoId)
               ),
             ];
@@ -141,7 +150,7 @@ const PlayerProfileView = () => {
     return () => {
       isMounted = false;
     };
-  }, [reports]);
+  }, []);
 
   // ── Sync reports to localStorage whenever they change ──────────────────────────
   useEffect(() => {
@@ -170,112 +179,50 @@ const PlayerProfileView = () => {
     ? Math.max(...reports.map(r => r.overallScore || 0))
     : null;
 
-  /* DEMO_MODE_OFF — uncomment these polling helpers when re-enabling real AI/backend API:
-   *
-   * const pollAIAnalysis = async (analysisId: string, videoId: string, maxAttempts = 90, intervalMs = 5000) => { ... };
-   * const pollBackendAnalysis = async (id: string, maxAttempts = 90, intervalMs = 5000) => { ... };
-   */
-
-  // ── Helper: build a mock AnalysisReportDto from MOCK_ANALYSIS_CASES[0] ──────────────────
-  // DEMO_MODE — delete this function and restore real API calls when backend is ready
+  // ── Helper: build a dynamic AnalysisReportDto based on video metadata ──────────────────
   const buildMockReport = (videoId: string): AnalysisReportDto => {
-    const mc = MOCK_ANALYSIS_CASES[0];
-    return {
-      id: `mock-report-${videoId}`,
-      videoId,
-      videoTitle: mc.videoTitle,
-      overallScore: mc.overallScore,
-      summary: mc.coachSummary,
-      strengths: mc.strengths,
-      weaknesses: mc.weaknesses,
-      recommendations: Object.keys(MOCK_CHAT_RESPONSES[mc.suggestedChatContext]?.answers || {}),
-      aiModelVersion: 'JogoAI-Demo-v1',
-      generatedAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      metrics: {
-        attackingImpact: mc.metrics.shootingAccuracy,
-        ballControl: mc.metrics.ballControl,
-        decisionMaking: mc.metrics.decisionMaking,
-        movementEfficiency: mc.metrics.staminaPace,
-      },
-    };
+    const targetVideo = videos.find(v => v.id === videoId);
+    return generateDynamicAnalysisReport(videoId, targetVideo?.originalFileName);
   };
 
   const handleAnalyzeVideo = async (id: string) => {
     setErrorMessage(null);
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Processing } : v));
 
-    // ─── DEMO_MODE_START: 3-second simulated analysis ──────────────────────────────────
-    // Replace this whole block with real API logic (DEMO_MODE_OFF) when ready
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // ─── DEMO_MODE_START: 2.5-second simulated dynamic analysis ─────────────────────────
+    await new Promise((resolve) => setTimeout(resolve, 2500));
     const mockReport = buildMockReport(id);
-    localStorage.setItem('selected_ai_context', MOCK_ANALYSIS_CASES[0].suggestedChatContext);
+    
     setReports((prev) => {
       const exists = prev.some(r => r.videoId === id);
       const updated = exists ? prev.map(r => r.videoId === id ? mockReport : r) : [mockReport, ...prev];
       persistReports(updated);
       return updated;
     });
+    setSelectedReportId(mockReport.id);
+    setSelectedVideoId(id);
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
     return;
     // ─── DEMO_MODE_END ───────────────────────────────────────────────────────────
-
-    /* DEMO_MODE_OFF — real API flow (uncomment & delete block above to restore):
-
-    const video = videos.find(v => v.id === id);
-    const videoUrl = video ? getFullImageUrl(video.storageUrl) : null;
-
-    if (videoUrl) {
-      try {
-        const aiResult = await aiService.analyzeByUrl(videoUrl);
-        if (aiResult.report) {
-          const report = { ...aiResult.report, videoId: id };
-          setReports((prev) => {
-            const exists = prev.some(r => r.videoId === id);
-            return exists ? prev.map(r => r.videoId === id ? report : r) : [report, ...prev];
-          });
-          setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
-          if (aiResult.report?.suggestedChatContext) {
-            localStorage.setItem('selected_ai_context', aiResult.report.suggestedChatContext);
-          }
-          return;
-        }
-        if (aiResult.analysisId) {
-          await pollAIAnalysis(aiResult.analysisId, id);
-          return;
-        }
-      } catch {
-        // fall through to backend
-      }
-    }
-
-    try {
-      await videoService.analyzeVideo(id);
-    } catch (err) {
-      console.error('فشل بدء التحليل:', err);
-      setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Failed } : v));
-      setErrorMessage(getArabicErrorMessage(err));
-      return;
-    }
-    await pollBackendAnalysis(id);
-
-    */ // end DEMO_MODE_OFF
   };
 
   const handleRetryAnalysis = async (id: string) => {
     setErrorMessage(null);
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Processing } : v));
 
-    // ─── DEMO_MODE_START ─────────────────────────────────────────────────────────
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    const mockReport = buildMockReport(id);
-    localStorage.setItem('selected_ai_context', MOCK_ANALYSIS_CASES[0].suggestedChatContext);
+    // ─── DEMO_MODE_START: 2.5-second simulated dynamic analysis ─────────────────────────
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    const targetVideo = videos.find(v => v.id === id);
+    const mockReport = generateDynamicAnalysisReport(id, targetVideo?.originalFileName, Date.now());
+    
     setReports((prev) => {
       const exists = prev.some(r => r.videoId === id);
       const updated = exists ? prev.map(r => r.videoId === id ? mockReport : r) : [mockReport, ...prev];
       persistReports(updated);
       return updated;
     });
+    setSelectedReportId(mockReport.id);
+    setSelectedVideoId(id);
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
     return;
     // ─── DEMO_MODE_END ─────────────────────────────────────────────────────────
@@ -349,24 +296,22 @@ const PlayerProfileView = () => {
 
         setVideos((prev) => [newVid, ...prev]);
         setSelectedVideoId(vidId);
-
-        // Start analysis
         await handleAnalyzeVideo(vidId);
       } catch (err) {
-        console.error('فشل رفع الفيديو:', err);
-        setErrorMessage(getArabicErrorMessage(err));
-        const fallbackVidId = `local-vid-${videos.length + 1}`;
+        console.error('فشل رفع الفيديو للخادم، سيتم تحليله محلياً:', err);
+        const fallbackVidId = `local-vid-${Date.now()}`;
         const localVid: VideoDto = {
           id: fallbackVidId,
           originalFileName: file.name,
           storageUrl: url,
           duration: '0:30',
           uploadedAt: new Date().toISOString(),
-          status: VideoStatus.Failed,
+          status: VideoStatus.Processing,
           canDelete: true,
         };
         setVideos((prev) => [localVid, ...prev]);
         setSelectedVideoId(fallbackVidId);
+        await handleAnalyzeVideo(fallbackVidId);
       } finally {
         setIsUploading(false);
       }
