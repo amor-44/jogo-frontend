@@ -11,7 +11,6 @@ import {
   Eye, 
   EyeOff, 
   Globe, 
-  Calendar, 
   Loader2,
   CheckCircle2
 } from 'lucide-react';
@@ -350,9 +349,8 @@ const Register = () => {
                     max={new Date().toISOString().split('T')[0]}
                     onChange={(e) => setDateOfBirth(e.target.value)}
                     required
-                    className="w-full bg-gray-50/70 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl text-xs outline-none focus:border-[#2B43A1] focus:bg-white text-right pr-10 shadow-2xs transition-all" 
+                    className="w-full bg-gray-50/70 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl text-xs outline-none focus:border-[#2B43A1] focus:bg-white text-right shadow-2xs transition-all cursor-pointer font-medium" 
                   />
-                  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 </div>
               </div>
             </div>
