@@ -13,7 +13,6 @@ export const authService = {
     apiClient.post<AuthResponseDto>('/auth/login', data).then((r) => r.data),
 
   registerPlayer: (data: RegisterPlayerCommand) => {
-    console.log('Register Payload:', data);
     return apiClient.post<AuthResponseDto>('/auth/register/player', data).then((r) => r.data);
   },
 

@@ -174,8 +174,6 @@ const Register = () => {
         country: country.trim() || 'مصر',
       };
 
-      console.log('Register Payload:', registerPayload);
-
       // Send registration request to backend API
       const authRes = await authService.registerPlayer(registerPayload);
 

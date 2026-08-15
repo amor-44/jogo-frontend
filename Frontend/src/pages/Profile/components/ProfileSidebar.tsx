@@ -5,7 +5,7 @@ import type { ProfileSidebarProps } from '../../../types';
 import { playerService } from '../../../services/playerService';
 import { getFullImageUrl } from '../../../utils/url';
 
-export const ProfileSidebar = ({ user, playerProfile, onEditProfile, onAvatarUploaded }: ProfileSidebarProps) => {
+export const ProfileSidebar = ({ user, playerProfile, bestAiScore, onEditProfile, onAvatarUploaded }: ProfileSidebarProps & { bestAiScore?: number | null }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -159,7 +159,9 @@ export const ProfileSidebar = ({ user, playerProfile, onEditProfile, onAvatarUpl
             <span className="flex items-center gap-2 text-gray-600 font-medium">
               <Activity className="w-4 h-4 text-blue-600" /> أفضل أداء
             </span>
-            <span className="font-bold text-gray-900">82</span>
+            <span className="font-bold text-gray-900">
+              {bestAiScore != null ? `${bestAiScore} / 100` : '—'}
+            </span>
           </div>
         </div>
       </div>

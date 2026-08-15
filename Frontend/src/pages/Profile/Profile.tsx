@@ -3,11 +3,13 @@ import { useAuth } from '../../hooks/useAuth';
 import { playerService } from '../../services/playerService';
 import { videoService } from '../../services/videoService';
 import { reportService } from '../../services/reportService';
-import { aiService } from '../../services/aiService';
+// import { aiService } from '../../services/aiService'; // DEMO_MODE_OFF
 import { getArabicErrorMessage } from '../../services/api';
 import { getFullImageUrl } from '../../utils/url';
 import type { VideoHistoryItem, PlayerProfileDto, VideoDto, AnalysisReportDto } from '../../types';
 import { VideoStatus } from '../../types';
+// DEMO_MODE: remove these two imports when re-enabling real API
+import { MOCK_ANALYSIS_CASES, MOCK_CHAT_RESPONSES } from '../../data/mockAiData';
 import ProfileHeader from './components/ProfileHeader';
 import ProfileSidebar from './components/ProfileSidebar';
 import VideoHistory from './components/VideoHistory';
@@ -108,116 +110,88 @@ const PlayerProfileView = () => {
     ? user.name.trim().split(' ')[0]
     : 'اللاعب';
 
-  /**
-   * Poll the AI service for analysis completion.
-   * Uses the AI API's GET /analysis/{analysis_id} endpoint.
+  // Best AI score across all reports — drives the "Best Performance" card in ProfileSidebar
+  const bestAiScore = reports.length > 0
+    ? Math.max(...reports.map(r => r.overallScore || 0))
+    : null;
+
+  /* DEMO_MODE_OFF — uncomment these polling helpers when re-enabling real AI/backend API:
+   *
+   * const pollAIAnalysis = async (analysisId: string, videoId: string, maxAttempts = 90, intervalMs = 5000) => { ... };
+   * const pollBackendAnalysis = async (id: string, maxAttempts = 90, intervalMs = 5000) => { ... };
    */
-  const pollAIAnalysis = async (analysisId: string, videoId: string, maxAttempts = 90, intervalMs = 5000) => {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
-      try {
-        const result = await aiService.getAnalysis(analysisId, videoId);
 
-        if (result.status === 'completed' && result.report) {
-          const report = { ...result.report, videoId };
-          setReports((prev) => {
-            const exists = prev.some(r => r.videoId === videoId);
-            return exists
-              ? prev.map(r => (r.videoId === videoId ? report : r))
-              : [report, ...prev];
-          });
-          setVideos((prev) => prev.map(v => v.id === videoId ? { ...v, status: VideoStatus.Analyzed } : v));
-          return;
-        }
-
-        if (result.status === 'failed' || result.status === 'error') {
-          setVideos((prev) => prev.map(v => v.id === videoId ? { ...v, status: VideoStatus.Failed } : v));
-          setErrorMessage('فشل التحليل بالذكاء الاصطناعي. يرجى المحاولة مرة أخرى.');
-          return;
-        }
-        // Still processing — continue polling
-      } catch (err) {
-        console.error(`فشل متابعة حالة التحليل للفيديو ${videoId}:`, err);
-        setErrorMessage(getArabicErrorMessage(err));
-        return;
-      }
-    }
-    setErrorMessage('انتهت مهلة انتظار نتيجة التحليل. يرجى التحقق لاحقاً.');
-  };
-
-  /**
-   * Fallback: poll via backend API if AI service is used through backend.
-   */
-  const pollBackendAnalysis = async (id: string, maxAttempts = 90, intervalMs = 5000) => {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
-      try {
-        const video = await videoService.getVideoById(id);
-        setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: video.status } : v));
-
-        if (video.status === VideoStatus.Analyzed) {
-          const reportsRes = await reportService.getReports({ page: 1, pageSize: 50 });
-          const matchingReport = (reportsRes.items || []).find(r => r.videoId === id);
-          if (matchingReport) {
-            setReports((prev) => {
-              const exists = prev.some(r => r.videoId === id);
-              return exists
-                ? prev.map(r => (r.videoId === id ? matchingReport : r))
-                : [matchingReport, ...prev];
-            });
-          }
-          return;
-        }
-        if (video.status === VideoStatus.Failed) {
-          setErrorMessage('فشل تحليل الفيديو. يرجى المحاولة مرة أخرى.');
-          return;
-        }
-      } catch (err) {
-        console.error(`فشل متابعة حالة التحليل للفيديو ${id}:`, err);
-        setErrorMessage(getArabicErrorMessage(err));
-        return;
-      }
-    }
-    setErrorMessage('انتهت مهلة انتظار نتيجة التحليل. يرجى التحقق لاحقاً.');
+  // ── Helper: build a mock AnalysisReportDto from MOCK_ANALYSIS_CASES[0] ──────────────────
+  // DEMO_MODE — delete this function and restore real API calls when backend is ready
+  const buildMockReport = (videoId: string): AnalysisReportDto => {
+    const mc = MOCK_ANALYSIS_CASES[0];
+    return {
+      id: `mock-report-${videoId}`,
+      videoId,
+      videoTitle: mc.videoTitle,
+      overallScore: mc.overallScore,
+      summary: mc.coachSummary,
+      strengths: mc.strengths,
+      weaknesses: mc.weaknesses,
+      recommendations: Object.keys(MOCK_CHAT_RESPONSES[mc.suggestedChatContext]?.answers || {}),
+      aiModelVersion: 'JogoAI-Demo-v1',
+      generatedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      metrics: {
+        attackingImpact: mc.metrics.shootingAccuracy,
+        ballControl: mc.metrics.ballControl,
+        decisionMaking: mc.metrics.decisionMaking,
+        movementEfficiency: mc.metrics.staminaPace,
+      },
+    };
   };
 
   const handleAnalyzeVideo = async (id: string) => {
     setErrorMessage(null);
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Processing } : v));
 
+    // ─── DEMO_MODE_START: 3-second simulated analysis ──────────────────────────────────
+    // Replace this whole block with real API logic (DEMO_MODE_OFF) when ready
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    const mockReport = buildMockReport(id);
+    localStorage.setItem('selected_ai_context', MOCK_ANALYSIS_CASES[0].suggestedChatContext);
+    setReports((prev) => {
+      const exists = prev.some(r => r.videoId === id);
+      return exists ? prev.map(r => r.videoId === id ? mockReport : r) : [mockReport, ...prev];
+    });
+    setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
+    return;
+    // ─── DEMO_MODE_END ───────────────────────────────────────────────────────────
+
+    /* DEMO_MODE_OFF — real API flow (uncomment & delete block above to restore):
+
     const video = videos.find(v => v.id === id);
     const videoUrl = video ? getFullImageUrl(video.storageUrl) : null;
 
-    // Try AI service first (analyze-by-url), then fall back to backend
     if (videoUrl) {
       try {
         const aiResult = await aiService.analyzeByUrl(videoUrl);
-
-        // If result came back inline
         if (aiResult.report) {
           const report = { ...aiResult.report, videoId: id };
           setReports((prev) => {
             const exists = prev.some(r => r.videoId === id);
-            return exists
-              ? prev.map(r => (r.videoId === id ? report : r))
-              : [report, ...prev];
+            return exists ? prev.map(r => r.videoId === id ? report : r) : [report, ...prev];
           });
           setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
+          if (aiResult.report?.suggestedChatContext) {
+            localStorage.setItem('selected_ai_context', aiResult.report.suggestedChatContext);
+          }
           return;
         }
-
-        // Need to poll
         if (aiResult.analysisId) {
           await pollAIAnalysis(aiResult.analysisId, id);
           return;
         }
-      } catch (aiErr) {
-        console.warn('فشل التحليل عبر AI API، جاري المحاولة عبر الخادم الرئيسي...', aiErr);
-        // Fall through to backend
+      } catch {
+        // fall through to backend
       }
     }
 
-    // Fallback: use backend analysis endpoint
     try {
       await videoService.analyzeVideo(id);
     } catch (err) {
@@ -227,16 +201,31 @@ const PlayerProfileView = () => {
       return;
     }
     await pollBackendAnalysis(id);
+
+    */ // end DEMO_MODE_OFF
   };
 
   const handleRetryAnalysis = async (id: string) => {
     setErrorMessage(null);
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Processing } : v));
 
+    // ─── DEMO_MODE_START ─────────────────────────────────────────────────────────
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    const mockReport = buildMockReport(id);
+    localStorage.setItem('selected_ai_context', MOCK_ANALYSIS_CASES[0].suggestedChatContext);
+    setReports((prev) => {
+      const exists = prev.some(r => r.videoId === id);
+      return exists ? prev.map(r => r.videoId === id ? mockReport : r) : [mockReport, ...prev];
+    });
+    setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
+    return;
+    // ─── DEMO_MODE_END ─────────────────────────────────────────────────────────
+
+    /* DEMO_MODE_OFF — real retry logic:
+
     const video = videos.find(v => v.id === id);
     const videoUrl = video ? getFullImageUrl(video.storageUrl) : null;
 
-    // Try AI service first
     if (videoUrl) {
       try {
         const aiResult = await aiService.analyzeByUrl(videoUrl);
@@ -244,9 +233,7 @@ const PlayerProfileView = () => {
           const report = { ...aiResult.report, videoId: id };
           setReports((prev) => {
             const exists = prev.some(r => r.videoId === id);
-            return exists
-              ? prev.map(r => (r.videoId === id ? report : r))
-              : [report, ...prev];
+            return exists ? prev.map(r => r.videoId === id ? report : r) : [report, ...prev];
           });
           setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
           return;
@@ -260,7 +247,6 @@ const PlayerProfileView = () => {
       }
     }
 
-    // Fallback: backend retry
     try {
       await videoService.retryAnalysis(id);
     } catch (err) {
@@ -270,6 +256,8 @@ const PlayerProfileView = () => {
       return;
     }
     await pollBackendAnalysis(id);
+
+    */ // end DEMO_MODE_OFF
   };
 
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -436,7 +424,8 @@ const PlayerProfileView = () => {
         <div className="lg:col-span-4 flex flex-col gap-6">
           <ProfileSidebar 
             user={user} 
-            playerProfile={profile} 
+            playerProfile={profile}
+            bestAiScore={bestAiScore}
             onEditProfile={() => setIsEditModalOpen(true)}
             onAvatarUploaded={handleAvatarUploaded}
           />
