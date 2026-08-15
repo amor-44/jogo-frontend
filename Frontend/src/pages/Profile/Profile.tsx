@@ -27,7 +27,20 @@ const PlayerProfileView = () => {
 
   const [profile, setProfile] = useState<PlayerProfileDto | null>(contextProfile);
   const [videos, setVideos] = useState<VideoDto[]>([]);
-  const [reports, setReports] = useState<AnalysisReportDto[]>([]);
+
+  // ── localStorage key for persisting analysis reports across navigation/refresh
+  const REPORTS_STORAGE_KEY = 'saved_ai_analysis_reports';
+
+  // Initialise reports from localStorage so they survive page refresh & navigation
+  const [reports, setReports] = useState<AnalysisReportDto[]>(() => {
+    try {
+      const saved = localStorage.getItem(REPORTS_STORAGE_KEY);
+      return saved ? (JSON.parse(saved) as AnalysisReportDto[]) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
@@ -35,6 +48,15 @@ const PlayerProfileView = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // ── Helper: persist reports list to localStorage whenever it changes ──────────
+  const persistReports = (updated: AnalysisReportDto[]) => {
+    try {
+      localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(updated));
+    } catch {
+      // quota exceeded — fail silently
+    }
+  };
 
   const handleProfileUpdated = (updatedProfile: PlayerProfileDto) => {
     setProfile(updatedProfile);
@@ -94,6 +116,13 @@ const PlayerProfileView = () => {
       isMounted = false;
     };
   }, []);
+
+  // ── Sync reports to localStorage whenever they change ──────────────────────────
+  useEffect(() => {
+    if (reports.length > 0) {
+      persistReports(reports);
+    }
+  }, [reports]);
 
   // Selected active video and active report
   const activeVideo = videos.find((v) => v.id === selectedVideoId) || (videos.length > 0 ? videos[0] : null);
@@ -157,7 +186,9 @@ const PlayerProfileView = () => {
     localStorage.setItem('selected_ai_context', MOCK_ANALYSIS_CASES[0].suggestedChatContext);
     setReports((prev) => {
       const exists = prev.some(r => r.videoId === id);
-      return exists ? prev.map(r => r.videoId === id ? mockReport : r) : [mockReport, ...prev];
+      const updated = exists ? prev.map(r => r.videoId === id ? mockReport : r) : [mockReport, ...prev];
+      persistReports(updated);
+      return updated;
     });
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
     return;
@@ -215,7 +246,9 @@ const PlayerProfileView = () => {
     localStorage.setItem('selected_ai_context', MOCK_ANALYSIS_CASES[0].suggestedChatContext);
     setReports((prev) => {
       const exists = prev.some(r => r.videoId === id);
-      return exists ? prev.map(r => r.videoId === id ? mockReport : r) : [mockReport, ...prev];
+      const updated = exists ? prev.map(r => r.videoId === id ? mockReport : r) : [mockReport, ...prev];
+      persistReports(updated);
+      return updated;
     });
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
     return;
@@ -329,6 +362,17 @@ const PlayerProfileView = () => {
     const videoToDelete = videos.find(v => v.id === id);
     
     setVideos((prev) => prev.filter(v => v.id !== id));
+
+    // ── Remove matching report from state AND localStorage ──────────────────────
+    setReports((prev) => {
+      const updated = prev.filter(r => r.videoId !== id);
+      if (updated.length === 0) {
+        localStorage.removeItem(REPORTS_STORAGE_KEY);
+      } else {
+        persistReports(updated);
+      }
+      return updated;
+    });
     
     if (
       videoToDelete && 
