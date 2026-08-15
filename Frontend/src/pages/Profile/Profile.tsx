@@ -92,16 +92,42 @@ const PlayerProfileView = () => {
           if (videosRes.status === 'fulfilled' && videosRes.value) {
             const videoList = videosRes.value.items || [];
             setVideos(videoList);
-            if (videoList.length > 0) {
-              const firstVid = videoList[0];
+            const backendReports = (reportsRes.status === 'fulfilled' && reportsRes.value?.items) || [];
+
+            // ── Merge: backend reports first, then fill gaps with local persisted reports ──
+            // Local reports only apply if the video still exists on the server
+            const videoIdSet = new Set(videoList.map(v => v.id));
+            const mergedReports: AnalysisReportDto[] = [
+              ...backendReports,
+              ...reports.filter(
+                lr => videoIdSet.has(lr.videoId) && !backendReports.some(br => br.videoId === lr.videoId)
+              ),
+            ];
+
+            // ── Mark videos as Analyzed if we have a report for them (local or backend) ──
+            const analyzedIds = new Set(mergedReports.map(r => r.videoId));
+            const enrichedVideos = videoList.map(v =>
+              analyzedIds.has(v.id) ? { ...v, status: VideoStatus.Analyzed } : v
+            );
+
+            setVideos(enrichedVideos);
+            if (enrichedVideos.length > 0) {
+              const firstVid = enrichedVideos[0];
               setSelectedVideoId((prev) => prev || firstVid.id);
               setUploadedVideoUrl((prev) => prev || getFullImageUrl(firstVid.storageUrl));
               setVideoName((prev) => prev || firstVid.originalFileName);
             }
-            const backendReports = (reportsRes.status === 'fulfilled' && reportsRes.value?.items) || [];
-            setReports(backendReports);
+            // Only overwrite if merged has real content; else keep the localStorage-init state
+            if (mergedReports.length > 0) {
+              setReports(mergedReports);
+              persistReports(mergedReports); // keep localStorage fresh
+            }
           } else if (reportsRes.status === 'fulfilled' && reportsRes.value) {
-            setReports(reportsRes.value.items || []);
+            const backendReports = reportsRes.value.items || [];
+            // If backend returned real reports, use them; else keep what localStorage gave us
+            if (backendReports.length > 0) {
+              setReports(backendReports);
+            }
           }
         }
       } catch (err) {
@@ -115,7 +141,7 @@ const PlayerProfileView = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [reports]);
 
   // ── Sync reports to localStorage whenever they change ──────────────────────────
   useEffect(() => {
