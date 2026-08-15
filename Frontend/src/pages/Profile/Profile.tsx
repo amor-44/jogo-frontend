@@ -6,6 +6,7 @@ import { reportService } from '../../services/reportService';
 // import { aiService } from '../../services/aiService'; // DEMO_MODE_OFF
 import { getArabicErrorMessage } from '../../services/api';
 import { getFullImageUrl } from '../../utils/url';
+import { formatDuration } from '../../utils/formatters';
 import type { VideoHistoryItem, PlayerProfileDto, VideoDto, AnalysisReportDto } from '../../types';
 import { VideoStatus } from '../../types';
 // DEMO_MODE: dynamic generator for AI analysis
@@ -226,44 +227,6 @@ const PlayerProfileView = () => {
     setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
     return;
     // ─── DEMO_MODE_END ─────────────────────────────────────────────────────────
-
-    /* DEMO_MODE_OFF — real retry logic:
-
-    const video = videos.find(v => v.id === id);
-    const videoUrl = video ? getFullImageUrl(video.storageUrl) : null;
-
-    if (videoUrl) {
-      try {
-        const aiResult = await aiService.analyzeByUrl(videoUrl);
-        if (aiResult.report) {
-          const report = { ...aiResult.report, videoId: id };
-          setReports((prev) => {
-            const exists = prev.some(r => r.videoId === id);
-            return exists ? prev.map(r => r.videoId === id ? report : r) : [report, ...prev];
-          });
-          setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Analyzed } : v));
-          return;
-        }
-        if (aiResult.analysisId) {
-          await pollAIAnalysis(aiResult.analysisId, id);
-          return;
-        }
-      } catch {
-        // Fall through to backend retry
-      }
-    }
-
-    try {
-      await videoService.retryAnalysis(id);
-    } catch (err) {
-      console.error('فشل إعادة التحليل:', err);
-      setVideos((prev) => prev.map(v => v.id === id ? { ...v, status: VideoStatus.Failed } : v));
-      setErrorMessage(getArabicErrorMessage(err));
-      return;
-    }
-    await pollBackendAnalysis(id);
-
-    */ // end DEMO_MODE_OFF
   };
 
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -375,22 +338,6 @@ const PlayerProfileView = () => {
     }
   };
 
-  const formatTimeSpan = (ts?: string) => {
-    if (!ts || typeof ts !== 'string') return '00:30';
-    const parts = ts.split(':');
-    if (parts.length === 3) {
-      const min = parts[1]?.padStart(2, '0') || '00';
-      const sec = parts[2]?.split('.')[0]?.padStart(2, '0') || '00';
-      return `${min}:${sec}`;
-    }
-    if (parts.length === 2) {
-      const min = parts[0]?.padStart(2, '0') || '00';
-      const sec = parts[1]?.split('.')[0]?.padStart(2, '0') || '00';
-      return `${min}:${sec}`;
-    }
-    return ts;
-  };
-
   const displayVideos: VideoHistoryItem[] = videos.map((v) => ({
     id: v.id,
     title: v.originalFileName,
@@ -399,7 +346,7 @@ const PlayerProfileView = () => {
       month: 'short',
       day: 'numeric',
     }),
-    duration: formatTimeSpan(v.duration),
+    duration: formatDuration(v.duration),
     tag: v.status === 'Analyzed' ? 'تم التحليل' : 
          v.status === 'Processing' ? 'جاري التحليل' :
          v.status === 'Failed' ? 'فشل' : 'جاهز للتحليل',

@@ -1,30 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import Avatar from '../../../components/Avatar';
+import { getPositionLabel } from '../../../utils/football';
 import type { PlayerCardDto, HomeSuggestedTableProps } from '../../../types';
 import { Star } from 'lucide-react';
-
-const POSITION_ARABIC: Record<string, string> = {
-  'Goalkeeper': 'حارس',
-  'GK': 'حارس',
-  'CenterBack': 'قلب دفاع',
-  'CB': 'قلب دفاع',
-  'RightBack': 'ظهير أيمن',
-  'RB': 'ظهير أيمن',
-  'LeftBack': 'ظهير أيسر',
-  'LB': 'ظهير أيسر',
-  'DefensiveMidfielder': 'وسط دفاعي',
-  'CDM': 'وسط دفاعي',
-  'CentralMidfielder': 'وسط',
-  'CM': 'وسط',
-  'AttackingMidfielder': 'وسط هجومي',
-  'CAM': 'وسط هجومي',
-  'LeftWinger': 'جناح أيسر',
-  'LW': 'جناح أيسر',
-  'RightWinger': 'جناح أيمن',
-  'RW': 'جناح أيمن',
-  'Striker': 'مهاجم',
-  'ST': 'مهاجم',
-};
 
 export const HomeSuggestedTable = ({ players }: HomeSuggestedTableProps) => {
   const navigate = useNavigate();
@@ -57,8 +35,8 @@ export const HomeSuggestedTable = ({ players }: HomeSuggestedTableProps) => {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {players.map((player: PlayerCardDto) => {
-              const pos = player.primaryPosition ? String(player.primaryPosition) : (player.position ? String(player.position) : 'غير محدد');
-              const arabicPos = POSITION_ARABIC[pos] || pos;
+              const rawPos = player.primaryPosition ? String(player.primaryPosition) : (player.position ? String(player.position) : '');
+              const arabicPos = getPositionLabel(rawPos);
               const country = player.country || player.nationality || '--';
               const score = player.latestOverallScore ?? player.overallScore;
               const marketVal = player.marketValue ? `$${Number(player.marketValue).toLocaleString()}` : '---';

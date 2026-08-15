@@ -1,14 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import PlayerCard from '../../components/PlayerCard';
 import { playerService } from '../../services/playerService';
+import { ARAB_COUNTRIES, POSITION_SEARCH_OPTIONS } from '../../utils/football';
 import type { PlayerCardDto } from '../../types';
 import { Loader2, Search as SearchIcon, SlidersHorizontal, Users } from 'lucide-react';
-
-const ARAB_COUNTRIES = [
-  'الكل', 'مصر', 'السعودية', 'الإمارات', 'المغرب', 'الجزائر', 'تونس', 
-  'قطر', 'الكويت', 'البحرين', 'عمان', 'الأردن', 'لبنان', 'سوريا', 
-  'العراق', 'فلسطين', 'السودان', 'ليبيا', 'اليمن', 'موريتانيا'
-];
 
 const POSITION_VALUE_MAP: Record<string, string> = {
   'مهاجم': 'Striker',
@@ -34,7 +29,7 @@ const Search = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [totalPlayers, setTotalPlayers] = useState(0);
 
-  const positions = ['الكل', 'مهاجم', 'جناح أيمن', 'جناح أيسر', 'وسط', 'وسط دفاعي', 'وسط هجومي', 'قلب دفاع', 'ظهير أيمن', 'ظهير أيسر', 'حارس'];
+  const positions = POSITION_SEARCH_OPTIONS;
 
   const fetchPlayers = useCallback(async () => {
     setIsLoading(true);

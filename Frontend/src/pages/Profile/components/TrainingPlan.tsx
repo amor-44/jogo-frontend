@@ -1,4 +1,4 @@
-import type { AnalysisReportDto, TrainingPlanItem } from '../../../types';
+import type { AnalysisReportDto } from '../../../types';
 
 interface TrainingPlanProps {
   report?: AnalysisReportDto | null;
@@ -12,13 +12,11 @@ export const TrainingPlan = ({ report }: TrainingPlanProps) => {
 
   if (recommendations.length === 0 && weaknesses.length === 0) return null;
 
-  const scheduleItems = recommendations.map((rec, index) => {
-    return {
-      title: rec,
-      time: 'تدريب موصى به بناءً على التحليل',
-      tag: 'تطوير أداء',
-    };
-  });
+  const scheduleItems = recommendations.map((rec) => ({
+    title: rec,
+    time: 'تدريب موصى به بناءً على التحليل',
+    tag: 'تطوير أداء',
+  }));
 
   const targetScore = Math.min(100, (report.overallScore || 70) + 8);
 

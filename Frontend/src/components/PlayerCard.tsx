@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getFullImageUrl } from '../utils/url';
+import { getPositionLabel } from '../utils/football';
 import type { PlayerCardDto, AnalysisReportDto } from '../types';
 import { Heart, Star } from 'lucide-react';
 
@@ -12,34 +13,6 @@ const PlayerCard = ({ player }: Props) => {
   const { savedPlayerIds, toggleSavePlayer } = useAuth();
   const navigate = useNavigate();
   const isSaved = savedPlayerIds.map(String).includes(String(player.id));
-
-  // Map English position values to Arabic
-  const positionLabel = (pos?: string) => {
-    if (!pos) return 'غير محدد';
-    const map: Record<string, string> = {
-      'Goalkeeper': 'حارس',
-      'GK': 'حارس',
-      'CenterBack': 'قلب دفاع',
-      'CB': 'قلب دفاع',
-      'RightBack': 'ظهير أيمن',
-      'RB': 'ظهير أيمن',
-      'LeftBack': 'ظهير أيسر',
-      'LB': 'ظهير أيسر',
-      'DefensiveMidfielder': 'وسط دفاعي',
-      'CDM': 'وسط دفاعي',
-      'CentralMidfielder': 'وسط',
-      'CM': 'وسط',
-      'AttackingMidfielder': 'وسط هجومي',
-      'CAM': 'وسط هجومي',
-      'LeftWinger': 'جناح أيسر',
-      'LW': 'جناح أيسر',
-      'RightWinger': 'جناح أيمن',
-      'RW': 'جناح أيمن',
-      'Striker': 'مهاجم',
-      'ST': 'مهاجم',
-    };
-    return map[String(pos)] || String(pos);
-  };
 
   const rawPosition = player.primaryPosition ? String(player.primaryPosition) : (player.position ? String(player.position) : '');
   const rawCountry = player.country || player.nationality || 'غير محدد';
@@ -123,7 +96,7 @@ const PlayerCard = ({ player }: Props) => {
         {/* Position badge */}
         <div className="mb-4">
           <span className="inline-block bg-[#EBF1FF] text-[#2B43A1] text-[10px] font-bold px-3 py-1 rounded-lg">
-            {positionLabel(rawPosition)}
+            {getPositionLabel(rawPosition)}
           </span>
         </div>
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { playerService } from '../../services/playerService';
 import { contactService } from '../../services/contactService';
 import { useAuth } from '../../hooks/useAuth';
+import { getPositionLabel } from '../../utils/football';
 import type { PlayerProfileDto } from '../../types';
 import { Loader2, ArrowRight, Send, MapPin, Calendar, Shield, User, Heart, Building2, UserX } from 'lucide-react';
 
@@ -54,17 +55,6 @@ const PlayerPublicProfile = () => {
       console.error('Failed to send contact request:', err);
       setContactStatus('error');
     }
-  };
-
-  const positionLabel = (pos?: string) => {
-    if (!pos) return '--';
-    const map: Record<string, string> = {
-      'Goalkeeper': 'حارس', 'CenterBack': 'قلب دفاع', 'RightBack': 'ظهير أيمن',
-      'LeftBack': 'ظهير أيسر', 'DefensiveMidfielder': 'وسط دفاعي',
-      'CentralMidfielder': 'وسط', 'AttackingMidfielder': 'وسط هجومي',
-      'LeftWinger': 'جناح أيسر', 'RightWinger': 'جناح أيمن', 'Striker': 'مهاجم',
-    };
-    return map[pos] || pos;
   };
 
   if (isLoading) {
@@ -120,7 +110,7 @@ const PlayerPublicProfile = () => {
                 <h1 className="text-xl md:text-2xl font-extrabold text-[#1C2C5E]">{player.fullName}</h1>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <span className="inline-block bg-[#EBF1FF] text-[#2B43A1] text-[11px] font-bold px-3 py-0.5 rounded-lg">
-                    {positionLabel(primaryPos)}
+                    {getPositionLabel(primaryPos)}
                   </span>
                   {player.currentClub && (
                     <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
@@ -179,12 +169,12 @@ const PlayerPublicProfile = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="text-gray-400">المركز الأساسي</span>
-              <span className="font-bold text-gray-700">{positionLabel(primaryPos)}</span>
+              <span className="font-bold text-gray-700">{getPositionLabel(primaryPos)}</span>
             </div>
             {player.secondaryPosition && (
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-400">المركز الثانوي</span>
-                <span className="font-bold text-gray-700">{positionLabel(player.secondaryPosition)}</span>
+                <span className="font-bold text-gray-700">{getPositionLabel(player.secondaryPosition)}</span>
               </div>
             )}
             {player.height && (

@@ -1,4 +1,5 @@
 import { BarChart3, Video } from 'lucide-react';
+import { formatDateArabic } from '../../../utils/formatters';
 import type { AnalysisReportDto } from '../../../types';
 
 interface PerformanceSummaryProps {
@@ -22,15 +23,7 @@ export const PerformanceSummary = ({ report }: PerformanceSummaryProps) => {
 
   const metrics = report.metrics || report.performanceMetrics || {};
   const overall = report.overallScore || 0;
-  
-  const dateStr = report.completedAt || report.generatedAt;
-  const formattedDate = dateStr
-    ? new Date(dateStr).toLocaleDateString('ar-EG', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : 'حديثاً';
+  const formattedDate = formatDateArabic(report.completedAt || report.generatedAt);
 
   const items = [
     { 
